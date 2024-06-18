@@ -29,7 +29,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductDTO> displayAllProducts() {
         var listOfProducts = productRepository.findAll();
-
         List<ProductDTO> newlist = new ArrayList<>();
 
         for (Product product : listOfProducts) {
@@ -37,8 +36,5 @@ public class ProductServiceImpl implements ProductService {
             newlist.add(convertedProduct);
         }
         return newlist;
-
     }
-
-
 }

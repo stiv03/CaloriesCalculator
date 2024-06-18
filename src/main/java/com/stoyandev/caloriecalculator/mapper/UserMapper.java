@@ -4,6 +4,7 @@ import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.entity.Users;
 
 public class UserMapper {
+    private UserMapper(){}
 
     public static UserDTO mapToUserDTO(Users user) {
         return new UserDTO(
