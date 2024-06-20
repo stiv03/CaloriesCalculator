@@ -93,4 +93,19 @@ public class UserMealsServiceImpl implements UserMealsService {
         return totalFats;
     }
 
+    @Override
+    public UserMealsDTO updateMealQuantity(long id, double newQuantity) {
+        final var userMeal = usersMealsRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found" + id));
+        userMeal.setQuantity(newQuantity);
+        var savedUserMeal = usersMealsRepository.save(userMeal);
+        return UserMealsMapper.mapToUserProductDTO(savedUserMeal);
+    }
+
+    @Override
+    public void deleteByUserMealID(long id){
+        usersMealsRepository.deleteByUserMealsID(id);
+    }
+
 }

@@ -2,6 +2,7 @@ package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.GetAllMealsForDate;
 import com.stoyandev.caloriecalculator.dto.MealRequest;
+import com.stoyandev.caloriecalculator.dto.UpdateMealQuantityDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
@@ -50,5 +51,17 @@ public class UserMealsController {
     @GetMapping("/meals/{userId}/fats")
     public double calculateTotalFatsForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
         return userMealsService.calculateTotalFatsForDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
+    }
+
+    @GetMapping("/meals/upgrade/quantity/{id}")
+    public ResponseEntity<UserMealsDTO> updateMealQuantity(@PathVariable Long id, @RequestBody UpdateMealQuantityDTO newQuantity) {
+        var updatedUserMeal = userMealsService.updateMealQuantity(id, newQuantity.newQuantity());
+        return ResponseEntity.ok(updatedUserMeal);
+    }
+
+    @PutMapping("/delete/meal/{id}")
+    public ResponseEntity<Void> deleteByUserMealID(@PathVariable Long id) {
+        userMealsService.deleteByUserMealID(id);
+        return ResponseEntity.ok().build();
     }
 }

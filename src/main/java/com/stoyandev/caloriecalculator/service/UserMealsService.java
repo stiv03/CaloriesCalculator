@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.service;
 
+import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 
 import java.time.LocalDate;
@@ -17,4 +18,10 @@ public interface UserMealsService {
     double calculateTotalFatsForDay(Long id, LocalDate date);
 
     void addMealForUser(Long userId, Long productId, Integer grams);
+
+    UserMealsDTO updateMealQuantity(long id, double newQuantity);
+
+    void deleteByUserMealID(long id);
+
+
 }
