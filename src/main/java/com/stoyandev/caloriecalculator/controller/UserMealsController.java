@@ -3,9 +3,8 @@ package com.stoyandev.caloriecalculator.controller;
 import com.stoyandev.caloriecalculator.dto.GetAllMealsForDate;
 import com.stoyandev.caloriecalculator.dto.MealRequest;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
-import com.stoyandev.caloriecalculator.service.UsersProductService;
+import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,42 +17,38 @@ import java.util.List;
 @RequestMapping
 @AllArgsConstructor
 public class UserMealsController {
-    private UsersProductService usersProductService;
+    private UserMealsService userMealsService;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("d-MM-yyyy");
 
     @PostMapping("/meals/{userId}")
     public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequest mealRequest) {
-        usersProductService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams());
+        userMealsService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/meals/date/{id}/")
-    public ResponseEntity<List<UserMealsDTO>> displayProductsForUserForDay(@PathVariable Long id, @RequestBody GetAllMealsForDate date){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-MM-yyyy");
-        var products = usersProductService.findAllUserMealsRelForSpecificDay(id, LocalDate.parse(date.value(), formatter));
+    @GetMapping("/meals/date/{userId}")
+    public ResponseEntity<List<UserMealsDTO>> displayProductsForUserForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
+        var products = userMealsService.findAllUserMealsRelForSpecificDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @GetMapping("/meals/{id}/calories")
-    public double calculateTotalCaloriesForDay(@PathVariable Long id, @RequestBody GetAllMealsForDate date){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-MM-yyyy");
-        return usersProductService.calculateTotalCaloriesForDay(id,LocalDate.parse(date.value(), formatter));
+    @GetMapping("/meals/{userId}/calories")
+    public double calculateTotalCaloriesForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
+        return userMealsService.calculateTotalCaloriesForDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
     }
 
-    @GetMapping("/meals/{id}/protein")
-    public double calculateTotalProteinForDay(@PathVariable Long id, @RequestBody GetAllMealsForDate date){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-MM-yyyy");
-        return usersProductService.calculateTotalProteinForDay(id, LocalDate.parse(date.value(), formatter));
+    @GetMapping("/meals/{userId}/protein")
+    public double calculateTotalProteinForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
+        return userMealsService.calculateTotalProteinForDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
     }
 
-    @GetMapping("/meals/{id}/carbs")
-    public double calculateTotalCarbsForDay(@PathVariable Long id, @RequestBody GetAllMealsForDate date){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-MM-yyyy");
-        return usersProductService.calculateTotalCarbsForDay(id, LocalDate.parse(date.value(), formatter));
+    @GetMapping("/meals/{userId}/carbs")
+    public double calculateTotalCarbsForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
+        return userMealsService.calculateTotalCarbsForDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
     }
 
-    @GetMapping("/meals/{id}/fats")
-    public double calculateTotalFatsForDay(@PathVariable Long id, @RequestBody GetAllMealsForDate date){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-MM-yyyy");
-        return usersProductService.calculateTotalFatsForDay(id, LocalDate.parse(date.value(), formatter));
+    @GetMapping("/meals/{userId}/fats")
+    public double calculateTotalFatsForDay(@PathVariable Long userId, @RequestBody GetAllMealsForDate date) {
+        return userMealsService.calculateTotalFatsForDay(userId, LocalDate.parse(date.dateAsString(), FORMATTER));
     }
 }
