@@ -5,7 +5,8 @@ import com.stoyandev.caloriecalculator.entity.UserMeals;
 
 public class UserMealsMapper {
 
-    private UserMealsMapper(){}
+    private UserMealsMapper() {
+    }
 
     public static UserMealsDTO mapToUserProductDTO(UserMeals userMeals) {
         return new UserMealsDTO(

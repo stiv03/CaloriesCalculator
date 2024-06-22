@@ -1,6 +1,6 @@
 package com.stoyandev.caloriecalculator.dto;
 
-import com.stoyandev.caloriecalculator.entity.ProductType;
+import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

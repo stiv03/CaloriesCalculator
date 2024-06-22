@@ -1,4 +1,5 @@
 package com.stoyandev.caloriecalculator.service.ServiceImpl;
+
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
@@ -6,7 +7,6 @@ import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
 
 
 @Service
@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO updateWeight(final long id, final double newWeight) {
-       final var user = userRepository
+        final var user = userRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
         user.setWeight(newWeight);
@@ -51,8 +51,9 @@ public class UserServiceImpl implements UserService {
         final var savedUser = userRepository.save(user);
         return UserMapper.mapToUserDTO(savedUser);
     }
+
     @Override
-    public void deleteByUserID(long id){
+    public void deleteByUserID(long id) {
         userRepository.deleteByUserID(id);
     }
 }

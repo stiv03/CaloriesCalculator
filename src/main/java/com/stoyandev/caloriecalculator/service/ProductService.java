@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface ProductService {
     ProductDTO createProduct(ProductDTO productDTO);
+
     List<ProductDTO> displayAllProducts();
 }

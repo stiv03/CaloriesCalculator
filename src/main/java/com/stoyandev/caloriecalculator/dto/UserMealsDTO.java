@@ -1,4 +1,5 @@
 package com.stoyandev.caloriecalculator.dto;
+
 import com.stoyandev.caloriecalculator.entity.Product;
 import com.stoyandev.caloriecalculator.entity.Users;
 import lombok.AllArgsConstructor;

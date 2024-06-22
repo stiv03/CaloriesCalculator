@@ -104,7 +104,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public void deleteByUserMealID(long id){
+    public void deleteByUserMealID(long id) {
         usersMealsRepository.deleteByUserMealsID(id);
     }
 

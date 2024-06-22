@@ -1,6 +1,5 @@
 package com.stoyandev.caloriecalculator.service;
 
-import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 
 import java.time.LocalDate;

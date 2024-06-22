@@ -1,20 +1,27 @@
 package com.stoyandev.caloriecalculator.entity;
 
+import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users {
+public class Users implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -38,4 +45,39 @@ public class Users {
     @Column(name = "height", length = 3, nullable = false)
     private int height;
 
+    @Column(name = "username", length = 100, nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "password", length = 100, nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'CUSTOMER'")
+    private UserType userType;
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(userType.name()));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

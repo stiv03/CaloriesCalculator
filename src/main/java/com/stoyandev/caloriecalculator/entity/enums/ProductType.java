@@ -1,4 +1,4 @@
-package com.stoyandev.caloriecalculator.entity;
+package com.stoyandev.caloriecalculator.entity.enums;
 
 public enum ProductType {
     MEAT,
@@ -8,4 +8,6 @@ public enum ProductType {
     LEGUMES,
     CEREALS,
     TUBERS
+
+    //todo move this out of this folder.
 }

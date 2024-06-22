@@ -1,22 +1,20 @@
-package com.stoyandev.caloriecalculator.dto;
+package com.stoyandev.caloriecalculator.security.auth;
 
-import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDTO {
-
+public class RegisterRequest {
     private String name;
     private int age;
     private double weight;
     private int height;
     private String username;
     private String password;
-    private UserType userType;
+
 }

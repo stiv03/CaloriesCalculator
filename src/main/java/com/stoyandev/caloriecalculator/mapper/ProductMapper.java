@@ -4,7 +4,9 @@ import com.stoyandev.caloriecalculator.dto.ProductDTO;
 import com.stoyandev.caloriecalculator.entity.Product;
 
 public class ProductMapper {
-private ProductMapper(){}
+
+    private ProductMapper() {
+    }
 
     public static ProductDTO mapToProductDTO(Product product) {
         return new ProductDTO(

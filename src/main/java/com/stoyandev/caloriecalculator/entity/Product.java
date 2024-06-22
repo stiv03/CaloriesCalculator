@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.entity;
 
+import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
