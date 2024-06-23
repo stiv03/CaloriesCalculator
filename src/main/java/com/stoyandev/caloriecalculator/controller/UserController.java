@@ -8,6 +8,7 @@ import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +18,7 @@ public class UserController {
 
     private UserService userService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping("/new/user")
     public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
         var savedUSer = userService.createUser(userDTO);
