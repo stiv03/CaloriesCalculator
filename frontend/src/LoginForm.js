@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
-import './RegistrationForm.css';
+import './LoginForm.css'; // Create a separate CSS file for styling
 import { setToken } from './utils/auth'; // Import the setToken utility
 
-const RegistrationForm = () => {
+const LoginForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    weight: '',
-    height: '',
     username: '',
     password: ''
   });
@@ -24,16 +20,16 @@ const RegistrationForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/auth/register', formData);
+      const response = await axios.post('/auth/login', formData);
       const token = response.data.token; // Assuming the token is returned in the response data as `token`
       setToken(token); // Store the token in localStorage
-      console.log('Registration successful:', response.data);
-      setSuccessMessage('Registration successful!'); // Set the success message
+      console.log('Login successful:', response.data);
+      setSuccessMessage('Login successful!'); // Set the success message
       setError(''); // Clear any previous error messages
     } catch (error) {
       if (error.response) {
         console.error('Response error:', error.response.data);
-        setError(error.response.data.message || 'Registration failed. Please try again.');
+        setError(error.response.data.message || 'Login failed. Please try again.');
       } else if (error.request) {
         console.error('Request error:', error.request);
         setError('No response from the server. Please try again later.');
@@ -47,57 +43,8 @@ const RegistrationForm = () => {
 
   return (
     <div className="container">
-      <h1>Register</h1>
+      <h1>Login</h1>
       <form onSubmit={handleSubmit}>
-        {/* Form fields remain the same */}
-        <div className="form-group">
-          <label htmlFor="name">Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="age">Age</label>
-          <input
-            type="number"
-            id="age"
-            name="age"
-            value={formData.age}
-            onChange={handleChange}
-            min="1"
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="weight">Weight</label>
-          <input
-            type="number"
-            step="0.1"
-            id="weight"
-            name="weight"
-            value={formData.weight}
-            onChange={handleChange}
-            min="1"
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="height">Height</label>
-          <input
-            type="number"
-            id="height"
-            name="height"
-            value={formData.height}
-            onChange={handleChange}
-            min="1"
-            required
-          />
-        </div>
         <div className="form-group">
           <label htmlFor="username">Username</label>
           <input
@@ -120,7 +67,7 @@ const RegistrationForm = () => {
             required
           />
         </div>
-        <button type="submit">Register</button>
+        <button type="submit">Login</button>
         {successMessage && <p className="success">{successMessage}</p>}
         {error && <p className="error">{error}</p>}
       </form>
@@ -128,4 +75,4 @@ const RegistrationForm = () => {
   );
 };
 
-export default RegistrationForm;
+export default LoginForm;
