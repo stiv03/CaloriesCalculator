@@ -1,0 +1,98 @@
+/* RegistrationForm.css */
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Times New Roman', sans-serif;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  top: -10px; /* Extend beyond the viewport */
+  left: -10px; /* Extend beyond the viewport */
+  width: calc(100% + 30px); /* Extend beyond the viewport */
+  height: calc(100% + 30px); /* Extend beyond the viewport */
+  background-image: url('/background.jpeg'); /* Replace 'background.jpeg' with the actual URL of your image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(10px); /* Adjust the blur radius as needed */
+  z-index: -1; /* Ensure the background stays behind the content */
+}
+
+
+
+.container {
+  background: #fff;
+  padding: 4rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 300px;
+  max-height: 700px;
+  text-align: center;
+}
+
+.container h1 {
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 20px;
+  background:  #00cc66;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #1aff8c;
+}
+
+.success {
+  color: green;
+  margin-top: 1rem;
+}
+
+.error {
+  color: red;
+  margin-top: 1rem;
+}
