@@ -1,21 +1,20 @@
 // src/axiosConfig.js
 
 import axios from 'axios';
-import { getToken } from './utils/auth'; // Adjust the path as necessary
+import { getToken } from './utils/auth';
 
-// Create an axios instance
 const instance = axios.create({
-  baseURL: 'http://localhost:8080/api/v1/', // Your base URL
+  baseURL: 'http://localhost:8080/api/v1/',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add a request interceptor to include the token in the headers
 instance.interceptors.request.use(
   (config) => {
     const token = getToken();
-    if (token) {
+    // Do not add Authorization header for registration endpoint
+    if (token && !config.url.includes('/auth/register')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

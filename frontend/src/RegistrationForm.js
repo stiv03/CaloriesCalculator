@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './RegistrationForm.css';
 import { setToken } from './utils/auth'; // Import the setToken utility
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,6 @@ const RegistrationForm = () => {
     <div className="container">
       <h1>Register</h1>
       <form onSubmit={handleSubmit}>
-        {/* Form fields remain the same */}
         <div className="form-group">
           <label htmlFor="name">Name</label>
           <input
@@ -124,6 +124,9 @@ const RegistrationForm = () => {
         {successMessage && <p className="success">{successMessage}</p>}
         {error && <p className="error">{error}</p>}
       </form>
+      <p>
+        Already have an account? <Link to="/login">Login here</Link>
+      </p>
     </div>
   );
 };

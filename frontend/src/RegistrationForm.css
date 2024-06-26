@@ -1,33 +1,3 @@
-/* RegistrationForm.css */
-
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-  font-family: 'Times New Roman', sans-serif;
-  background: #fff;
-  position: relative;
-  overflow: hidden;
-}
-
-body::before {
-  content: "";
-  position: absolute;
-  top: -10px; /* Extend beyond the viewport */
-  left: -10px; /* Extend beyond the viewport */
-  width: calc(100% + 30px); /* Extend beyond the viewport */
-  height: calc(100% + 30px); /* Extend beyond the viewport */
-  background-image: url('/background.jpeg'); /* Replace 'background.jpeg' with the actual URL of your image */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(10px); /* Adjust the blur radius as needed */
-  z-index: -1; /* Ensure the background stays behind the content */
-}
-
-
 
 .container {
   background: #fff;
@@ -95,4 +65,18 @@ button:hover {
 .error {
   color: red;
   margin-top: 1rem;
+}
+
+p {
+  margin-top: 1rem;
+  color: #555;
+}
+
+p a {
+  color: #00cc66;
+  text-decoration: none;
+}
+
+p a:hover {
+  text-decoration: underline;
 }
