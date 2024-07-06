@@ -1,9 +1,9 @@
 package com.stoyandev.caloriecalculator.security.controller;
 
 import com.stoyandev.caloriecalculator.security.auth.AuthenticationResponse;
-import com.stoyandev.caloriecalculator.security.service.AuthenticationService;
 import com.stoyandev.caloriecalculator.security.auth.LoginRequest;
 import com.stoyandev.caloriecalculator.security.auth.RegisterRequest;
+import com.stoyandev.caloriecalculator.security.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +22,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
 
     }
+
     @CrossOrigin(origins = "http://localhost:3000/login")
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> authenticate(

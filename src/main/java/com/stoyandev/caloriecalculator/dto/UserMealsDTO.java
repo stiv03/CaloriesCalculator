@@ -1,7 +1,6 @@
 package com.stoyandev.caloriecalculator.dto;
 
 import com.stoyandev.caloriecalculator.entity.Product;
-import com.stoyandev.caloriecalculator.entity.Users;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,10 +13,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserMealsDTO {
-    private Users user;
     private Product product;
-    private double totalCalories;
-    private double proteinForMeal;
     private double quantity;
     private LocalDateTime consumedAt;
 }
+
+//todo: make Requests named requests and response named responses

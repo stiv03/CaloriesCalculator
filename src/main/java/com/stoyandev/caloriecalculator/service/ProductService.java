@@ -1,7 +1,6 @@
 package com.stoyandev.caloriecalculator.service;
 
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
-import com.stoyandev.caloriecalculator.entity.Product;
 import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 
 import java.util.List;

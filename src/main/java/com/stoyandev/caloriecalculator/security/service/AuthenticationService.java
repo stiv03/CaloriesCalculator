@@ -1,7 +1,7 @@
 package com.stoyandev.caloriecalculator.security.service;
 
-import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import com.stoyandev.caloriecalculator.entity.Users;
+import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.security.auth.AuthenticationResponse;
 import com.stoyandev.caloriecalculator.security.auth.LoginRequest;
@@ -31,8 +31,8 @@ public class AuthenticationService {
                 .userType(UserType.USER)
                 .build();
         repository.save(user);
-          var jwtToken = JwtService.generateToken(user);
-          return AuthenticationResponse.builder().token(jwtToken).build();
+        var jwtToken = JwtService.generateToken(user);
+        return AuthenticationResponse.builder().token(jwtToken).build();
     }
 
     public AuthenticationResponse authenticate(LoginRequest request) {

@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.service.ServiceImpl;
 
+import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 import com.stoyandev.caloriecalculator.entity.UserMeals;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
@@ -20,6 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserMealsServiceImpl implements UserMealsService {
 
+    public static final int HUNDRED_GRAMS_DENOMINATOR = 100;
     private final MealsRepository usersMealsRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
@@ -55,7 +57,7 @@ public class UserMealsServiceImpl implements UserMealsService {
 
         double totalCalories = 0;
         for (var userProduct : usersProduct) {
-            totalCalories += userProduct.getProduct().getCaloriesPer100Grams() * (userProduct.getQuantity() / 100);
+            totalCalories += userProduct.getProduct().getCaloriesPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
         }
         return totalCalories;
     }
@@ -66,7 +68,7 @@ public class UserMealsServiceImpl implements UserMealsService {
 
         double totalProtein = 0;
         for (var userProduct : usersProduct) {
-            totalProtein += userProduct.getProduct().getProteinPer100Grams() * (userProduct.getQuantity() / 100);
+            totalProtein += userProduct.getProduct().getProteinPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
         }
         return totalProtein;
     }
@@ -77,7 +79,7 @@ public class UserMealsServiceImpl implements UserMealsService {
 
         double totalCarbs = 0;
         for (var userProduct : usersProduct) {
-            totalCarbs += userProduct.getProduct().getCarbsPer100Grams() * (userProduct.getQuantity() / 100);
+            totalCarbs += userProduct.getProduct().getCarbsPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
         }
         return totalCarbs;
     }
@@ -88,9 +90,28 @@ public class UserMealsServiceImpl implements UserMealsService {
 
         double totalFats = 0;
         for (var userProduct : usersProduct) {
-            totalFats += userProduct.getProduct().getFatPer100Grams() * (userProduct.getQuantity() / 100);
+            totalFats += userProduct.getProduct().getFatPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
         }
         return totalFats;
+    }
+
+    @Override
+    public DailyMacrosDTO calculateDailyMacros(Long userId, LocalDate date) {
+        List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
+        double totalCalories = 0;
+        double totalProtein = 0;
+        double totalCarbs = 0;
+        double totalFats = 0;
+
+        for (final var userProduct : usersProduct) {
+            final var product = userProduct.getProduct();
+            double quantity = userProduct.getQuantity();
+            totalCalories += product.getCaloriesPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalProtein += product.getProteinPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalCarbs += product.getCarbsPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalFats += product.getFatPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+        }
+        return new DailyMacrosDTO((int) totalCalories, totalProtein, totalFats, totalCarbs);
     }
 
     @Override

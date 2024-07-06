@@ -1,11 +1,9 @@
 package com.stoyandev.caloriecalculator.service.ServiceImpl;
 
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
-import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 import com.stoyandev.caloriecalculator.entity.Product;
 import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import com.stoyandev.caloriecalculator.mapper.ProductMapper;
-import com.stoyandev.caloriecalculator.mapper.UserMealsMapper;
 import com.stoyandev.caloriecalculator.repository.ProductRepository;
 import com.stoyandev.caloriecalculator.service.ProductService;
 import org.springframework.stereotype.Service;
@@ -42,11 +40,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDTO> filterByType(ProductType type){
+    public List<ProductDTO> filterByType(ProductType type) {
         var allProducts = productRepository.findAll();
         List<ProductDTO> filteredProduct = new ArrayList<>();
         for (var product : allProducts) {
-            if (type.equals(product.getProductType())){
+            if (type.equals(product.getProductType())) {
                 filteredProduct.add(ProductMapper.mapToProductDTO(product));
 
             }
