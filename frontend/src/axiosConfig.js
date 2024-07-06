@@ -14,7 +14,7 @@ instance.interceptors.request.use(
   (config) => {
     const token = getToken();
     // Do not add Authorization header for registration endpoint
-    if (token && !config.url.includes('/auth/register')) {
+    if (token && !config.url.includes('/auth/')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

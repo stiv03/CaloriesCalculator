@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 public class UserMealsDTO {
     private Users user;
     private Product product;
+    private double totalCalories;
+    private double proteinForMeal;
     private double quantity;
     private LocalDateTime consumedAt;
 }

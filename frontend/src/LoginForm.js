@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './LoginForm.css'; // Create a separate CSS file for styling
-import { setToken } from './utils/auth'; // Import the setToken utility
+import { setToken, removeToken } from './utils/auth'; // Import the setToken utility
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const LoginForm = () => {
 
   const [error, setError] = useState(''); // State to store any error messages
   const [successMessage, setSuccessMessage] = useState(''); // State to store the success message
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,12 +22,14 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+     // removeToken();
       const response = await axios.post('/auth/login', formData);
       const token = response.data.token; // Assuming the token is returned in the response data as `token`
       setToken(token); // Store the token in localStorage
       console.log('Login successful:', response.data);
       setSuccessMessage('Login successful!'); // Set the success message
       setError(''); // Clear any previous error messages
+      navigate('/calories-calculator'); // Redirect to /calories-calculator after successful login
     } catch (error) {
       if (error.response) {
         console.error('Response error:', error.response.data);

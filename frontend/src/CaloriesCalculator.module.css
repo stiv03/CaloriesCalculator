@@ -1,0 +1,39 @@
+.container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+  color: #333;
+}
+
+.date, .totals, .foodList {
+  margin: 20px 0;
+}
+
+.addMealForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addMealForm input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.addButton {
+  padding: 10px 20px;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  background: #218838;
+}
