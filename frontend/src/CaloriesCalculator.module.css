@@ -5,6 +5,8 @@
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+
 }
 
 h1, h2 {
@@ -44,6 +46,37 @@ h1, h2 {
   justify-content: space-between;
 }
 
+.addProductButton {
+  margin-top: 20px;
+  padding: 10px 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 20px;
+}
+
+.addProductButton:hover {
+  background-color: #218838;
+}
+
+.addProductForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.addProductForm input,
+.addProductForm select {
+  margin-bottom: 10px;
+  padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.addProductForm button {
+  align-self: flex-start;
+}
+
 .totals h2 {
   font-size: 25px;
   margin-bottom: 10px;
@@ -70,6 +103,7 @@ h1, h2 {
 }
 
 .addButton {
+ margin-bottom: 10px;
   padding: 10px 20px;
   background: #28a745;
   color: #fff;
