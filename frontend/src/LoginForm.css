@@ -3,12 +3,10 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
   margin: 0;
   font-family: 'Times New Roman', sans-serif;
   background: #fff;
   position: relative;
-  overflow-x: hidden;
 }
 
 body::before {
@@ -16,7 +14,7 @@ body::before {
   position: absolute;
   top: -10px;
   left: -10px;
-  width: calc(100% + 30px);
+  width: calc(100% );
   height: calc(100% + 30px);
   background-image: url('/background.jpeg'); /* Replace 'background.jpeg' with the actual URL of your image */
   background-size: cover;
@@ -28,13 +26,14 @@ body::before {
 
 .container {
   max-width: 400px;
-  margin: 0 auto;
+  margin: 300px auto;
   padding: 35px;
   border: 1px solid #ccc;
   border-radius: 10px;
   background: #fff;
+
+
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  overflow-x: hidden;
 }
 
 h1 {

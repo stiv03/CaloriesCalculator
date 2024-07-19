@@ -10,6 +10,7 @@ import com.stoyandev.caloriecalculator.repository.ProductRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -119,6 +120,9 @@ public class UserMealsServiceImpl implements UserMealsService {
         final var userMeal = usersMealsRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found" + id));
+        // Validate authentication of user:
+        SecurityContextHolder.getContext().getAuthentication();
+
         userMeal.setQuantity(newQuantity);
         var savedUserMeal = usersMealsRepository.save(userMeal);
         return UserMealsMapper.mapToUserProductDTO(savedUserMeal);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import styles from './CaloriesCalculator.module.css';
+import { getUserId } from './utils/auth';
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -17,7 +18,6 @@ const CaloriesCalculator = () => {
     fatPer100Grams: '',
     carbsPer100Grams: '',
   });
-  const userId = 48; // Replace with the actual user ID
 
   useEffect(() => {
     fetchMeals();
@@ -35,7 +35,7 @@ const CaloriesCalculator = () => {
 
   const fetchMeals = async () => {
     try {
-      const response = await axios.get(`meals/date/${userId}`, { params: { date } });
+      const response = await axios.get(`meals/date/${getUserId()}`, { params: { date } });
       console.log('Meals fetched:', response.data); // Add this line to check the response
       setMeals(response.data);
     } catch (error) {
@@ -45,7 +45,7 @@ const CaloriesCalculator = () => {
 
   const fetchTotals = async () => {
     try {
-      const dailyMacrosResponse = await axios.get(`meals/${userId}/totalMacros`, { params: { date } });
+      const dailyMacrosResponse = await axios.get(`meals/${getUserId()}/totalMacros`, { params: { date } });
       const responseData = dailyMacrosResponse.data;
       setTotals({
         calories: responseData.calories,
@@ -62,7 +62,7 @@ const CaloriesCalculator = () => {
   const handleAddFood = async () => {
     try {
       console.log('Adding meal:', newMeal);
-      const response = await axios.post(`/meals/${userId}`, newMeal);
+      const response = await axios.post(`/meals/${getUserId()}`, newMeal);
       console.log('Meal added successfully:', response.data);
       setNewMeal({ productId: '', grams: '' }); // Clear the form
       fetchMeals(); // Refresh the meal list
@@ -217,9 +217,13 @@ const MealList = ({ meals }) => {
           console.log('Meal:', meal); // Log each meal
           const totalKcal = (meal.quantity / 100) * meal.product.caloriesPer100Grams;
           const totalProtein = (meal.quantity / 100) * meal.product.proteinPer100Grams;
+          const totalCarbs = (meal.quantity / 100) * meal.product.carbsPer100Grams;
+          const totalFats = (meal.quantity / 100) * meal.product.fatPer100Grams;
+
           return (
             <li key={meal.product.id}>
               {meal.product.name} - {meal.quantity} g - {totalKcal.toFixed(1)} kcal - {totalProtein.toFixed(1)} g protein
+               - {totalCarbs.toFixed(1)} g carbs - {totalFats.toFixed(1)} g fats
             </li>
           );
         })}
@@ -234,7 +238,7 @@ const Totals = ({ totals }) => {
       <h2>Total:</h2>
       <p>Calories: <span>{totals.calories.toFixed(2)}</span>kcal</p>
       <p>Proteins: <span>{totals.proteins.toFixed(2)}</span>g</p>
-      <p>Carbs: <span>{totals.carbs}</span>g</p>
+      <p>Carbs: <span>{totals.carbs.toFixed(2)}</span>g</p>
       <p>Fats: <span>{totals.fats.toFixed(2)}</span>g</p>
     </div>
   );

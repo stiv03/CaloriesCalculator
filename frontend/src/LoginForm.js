@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './LoginForm.css'; // Create a separate CSS file for styling
-import { setToken, removeToken } from './utils/auth'; // Import the setToken utility
+import { setToken, setUserId } from './utils/auth'; // Import the setToken utility
 import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 
 const LoginForm = () => {
@@ -22,10 +22,9 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-     // removeToken();
       const response = await axios.post('/auth/login', formData);
-      const token = response.data.token; // Assuming the token is returned in the response data as `token`
-      setToken(token); // Store the token in localStorage
+      setToken(response.data.token); // Store the token in localStorage
+      setUserId(response.data.userId) // Store the userId in localStorage
       console.log('Login successful:', response.data);
       setSuccessMessage('Login successful!'); // Set the success message
       setError(''); // Clear any previous error messages

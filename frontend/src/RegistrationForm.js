@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './RegistrationForm.css';
-import { setToken } from './utils/auth'; // Import the setToken utility
+import { setToken, setUserId } from './utils/auth'; // Import the setToken utility
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 
 const RegistrationForm = () => {
@@ -26,8 +26,8 @@ const RegistrationForm = () => {
     e.preventDefault();
     try {
       const response = await axios.post('/auth/register', formData);
-      const token = response.data.token; // Assuming the token is returned in the response data as `token`
-      setToken(token); // Store the token in localStorage
+      setToken(response.data.token); // Store the token in localStorage
+      setUserId(response.data.userId) // Store the userId in localStorage
       console.log('Registration successful:', response.data);
       setSuccessMessage('Registration successful!'); // Set the success message
       setError(''); // Clear any previous error messages

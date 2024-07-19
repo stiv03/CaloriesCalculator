@@ -8,6 +8,8 @@ import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,6 +25,7 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/meals/{userId}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequest mealRequest) {
         userMealsService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams());
         return new ResponseEntity<>(HttpStatus.CREATED);
@@ -30,6 +33,7 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/date/{userId}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<List<UserMealsDTO>> displayProductsForUserForDay(@PathVariable Long userId, @RequestParam String date) {
         var products = userMealsService.findAllUserMealsRelForSpecificDay(userId, LocalDate.parse(date, FORMATTER));
         return new ResponseEntity<>(products, HttpStatus.OK);
@@ -37,29 +41,35 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/calories")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public double calculateTotalCaloriesForDay(@PathVariable Long userId, @RequestParam String date) {
         return userMealsService.calculateTotalCaloriesForDay(userId, LocalDate.parse(date, FORMATTER));
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/protein")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public double calculateTotalProteinForDay(@PathVariable Long userId, @RequestParam String date) {
         return userMealsService.calculateTotalProteinForDay(userId, LocalDate.parse(date, FORMATTER));
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/carbs")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public double calculateTotalCarbsForDay(@PathVariable Long userId, @RequestParam String date) {
         return userMealsService.calculateTotalCarbsForDay(userId, LocalDate.parse(date, FORMATTER));
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/fats")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    //todo: save userId in the jwt claims/subject instead.
     public double calculateTotalFatsForDay(@PathVariable Long userId, @RequestParam String date) {
         return userMealsService.calculateTotalFatsForDay(userId, LocalDate.parse(date, FORMATTER));
     }
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/totalMacros")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<DailyMacrosDTO> fetchMacrosForDate(@PathVariable Long userId, @RequestParam String date) {
         final var dailyMacros = userMealsService.calculateDailyMacros(userId, LocalDate.parse(date, FORMATTER));
         return ResponseEntity.ok(dailyMacros);
@@ -67,6 +77,7 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/meals/upgrade/quantity/{id}")
+    // todo: parse the user ID in the method, for verification
     public ResponseEntity<UserMealsDTO> updateMealQuantity(@PathVariable Long id, @RequestBody UpdateMealQuantityDTO newQuantity) {
         var updatedUserMeal = userMealsService.updateMealQuantity(id, newQuantity.newQuantity());
         return ResponseEntity.ok(updatedUserMeal);
