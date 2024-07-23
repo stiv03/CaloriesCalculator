@@ -13,6 +13,7 @@ import lombok.Setter;
 public class ProductDTO {
 
     private String name;
+    private Long productId;
     private ProductType productType;
     private double caloriesPer100Grams;
     private double proteinPer100Grams;

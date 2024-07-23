@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import styles from './CaloriesCalculator.module.css';
 import { getUserId } from './utils/auth';
+import Autosuggest from 'react-autosuggest';
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -18,6 +19,49 @@ const CaloriesCalculator = () => {
     fatPer100Grams: '',
     carbsPer100Grams: '',
   });
+
+  // Autosuggest state and functions
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const fetchProductSuggestions = async (query) => {
+    try {
+      const response = await axios.get(`products/search`, { params: { query } });
+      setSuggestions(response.data);
+    } catch (error) {
+      console.error('Error fetching product suggestions:', error);
+    }
+  };
+
+  const onSuggestionsFetchRequested = ({ value }) => {
+    fetchProductSuggestions(value);
+  };
+
+  const onSuggestionsClearRequested = () => {
+    setSuggestions([]);
+  };
+
+  const getSuggestionValue = (suggestion) => suggestion.name;
+
+  const renderSuggestion = (suggestion) => (
+    <div>{suggestion.name}</div>
+  );
+
+  const onChange = (event, { newValue }) => {
+    setQuery(newValue);
+  };
+
+  const onSuggestionSelected = (event, { suggestion }) => {
+    setSelectedProduct(suggestion);
+    setNewMeal({ ...newMeal, productId: suggestion.productId });
+  };
+
+  const inputProps = {
+    placeholder: 'Type a product name',
+    value: query,
+    onChange: onChange,
+  };
 
   useEffect(() => {
     fetchMeals();
@@ -65,6 +109,8 @@ const CaloriesCalculator = () => {
       const response = await axios.post(`/meals/${getUserId()}`, newMeal);
       console.log('Meal added successfully:', response.data);
       setNewMeal({ productId: '', grams: '' }); // Clear the form
+      setSelectedProduct(null); // Clear the selected product
+      setQuery(''); // Clear the query
       fetchMeals(); // Refresh the meal list
       fetchTotals(); // Refresh the totals
       setLoading(false);
@@ -114,13 +160,14 @@ const CaloriesCalculator = () => {
       <Totals totals={totals} />
       <div className={styles.addMealForm}>
         <h2>Add New Meal</h2>
-        <input
-          type="number"
-          name="productId"
-          value={newMeal.productId}
-          onChange={handleInputChange}
-          placeholder="Product ID"
-          required
+        <Autosuggest
+          suggestions={suggestions}
+          onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+          onSuggestionsClearRequested={onSuggestionsClearRequested}
+          getSuggestionValue={getSuggestionValue}
+          renderSuggestion={renderSuggestion}
+          inputProps={inputProps}
+          onSuggestionSelected={onSuggestionSelected}
         />
         <input
           type="number"
@@ -130,7 +177,9 @@ const CaloriesCalculator = () => {
           placeholder="Grams"
           required
         />
-        <button className={styles.addButton} onClick={handleAddFood}>Add Meal</button>
+        <button className={styles.addButton} onClick={handleAddFood} disabled={loading || !selectedProduct || !newMeal.grams}>
+          {loading ? 'Adding...' : 'Add Meal'}
+        </button>
       </div>
       <button className={`${styles.addButton} ${styles.addProductButton}`} onClick={() => setShowProductForm(!showProductForm)}>
         {showProductForm ? 'Cancel' : 'Add New Product'}
@@ -147,22 +196,21 @@ const CaloriesCalculator = () => {
             required
           />
           <select
-           name="productType"
-           value={newProduct.productType}
-           onChange={handleProductInputChange}
-           placeholder="Product Type"
-           required
-            >
-           <option value="" disabled>Select Product Type</option>
-           <option value="MEAT">Meat</option>
-           <option value="FRUITS">Fruits</option>
-           <option value="VEGETABLES">Vegetables</option>
-           <option value="DAIRY">Dairy</option>
-           <option value="LEGUMES">Legumes</option>
-           <option value="CEREALS">Cereals</option>
-           <option value="TUBERS">Tubers</option>
-           </select>
-
+            name="productType"
+            value={newProduct.productType}
+            onChange={handleProductInputChange}
+            placeholder="Product Type"
+            required
+          >
+            <option value="" disabled>Select Product Type</option>
+            <option value="MEAT">Meat</option>
+            <option value="FRUITS">Fruits</option>
+            <option value="VEGETABLES">Vegetables</option>
+            <option value="DAIRY">Dairy</option>
+            <option value="LEGUMES">Legumes</option>
+            <option value="CEREALS">Cereals</option>
+            <option value="TUBERS">Tubers</option>
+          </select>
           <input
             type="number"
             name="caloriesPer100Grams"

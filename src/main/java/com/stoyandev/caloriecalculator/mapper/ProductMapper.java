@@ -11,6 +11,7 @@ public class ProductMapper {
     public static ProductDTO mapToProductDTO(Product product) {
         return new ProductDTO(
                 product.getName(),
+                product.getId(),
                 product.getProductType(),
                 product.getCaloriesPer100Grams(),
                 product.getProteinPer100Grams(),

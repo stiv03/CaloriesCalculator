@@ -11,4 +11,6 @@ public interface ProductService {
     List<ProductDTO> displayAllProducts();
 
     List<ProductDTO> filterByType(ProductType type);
+
+    List<ProductDTO> searchProducts(String query);
 }

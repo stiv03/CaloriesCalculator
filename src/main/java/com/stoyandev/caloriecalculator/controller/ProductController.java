@@ -5,6 +5,7 @@ import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import com.stoyandev.caloriecalculator.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,12 @@ public class ProductController {
     public ResponseEntity<List<ProductDTO>> filterByType(@PathVariable ProductType type) {
         var allProductsFromType = productService.filterByType(type);
         return new ResponseEntity<>(allProductsFromType, HttpStatus.OK);
+    }
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/products/search")
+    public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String query) {
+        List<ProductDTO> products = productService.searchProducts(query);
+        return ResponseEntity.ok(products);
     }
 
 
