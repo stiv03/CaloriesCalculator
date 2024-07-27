@@ -45,6 +45,18 @@ h1, h2 {
   display: flex;
   justify-content: space-between;
 }
+.profileIcon {
+  position: center;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+}
+
+.profileIcon img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
 
 .addProductButton {
   margin-top: 20px;

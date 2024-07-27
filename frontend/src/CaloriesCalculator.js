@@ -3,6 +3,8 @@ import axios from './axiosConfig';
 import styles from './CaloriesCalculator.module.css';
 import { getUserId } from './utils/auth';
 import Autosuggest from 'react-autosuggest';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -148,12 +150,17 @@ const CaloriesCalculator = () => {
     }
   };
 
+  const navigate = useNavigate(); // Initialize useNavigate for navigation
+
   if (loading) {
     return <div className={styles.loader}>Loading...</div>;
   }
 
   return (
     <div className={styles.container}>
+      <div className={styles.profileIcon} onClick={() => navigate('/user-profile')}>
+        <img src="../profile-icon.png" alt="Profile" />
+      </div>
       <h1>Calories Calculator</h1>
       <div className={styles.date}>{date}</div>
       <MealList meals={meals} />

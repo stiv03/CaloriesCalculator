@@ -12,4 +12,5 @@ public interface UserService {
     UserDTO updateHeight(long id, int newHeight);
 
     void deleteByUserID(long id);
+    public UserDTO getUserById(Long id);
 }

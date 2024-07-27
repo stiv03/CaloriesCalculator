@@ -1,6 +1,7 @@
 package com.stoyandev.caloriecalculator.service.ServiceImpl;
 
 import com.stoyandev.caloriecalculator.dto.UserDTO;
+import com.stoyandev.caloriecalculator.entity.Users;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
@@ -20,6 +21,11 @@ public class UserServiceImpl implements UserService {
         var user = UserMapper.mapToUser(userDTO);
         var savedUser = userRepository.save(user);
         return UserMapper.mapToUserDTO(savedUser);
+    }
+
+    public UserDTO getUserById(Long id) {
+        Users user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Not found"));
+        return UserMapper.mapToUserDTO(user);
     }
 
     @Override

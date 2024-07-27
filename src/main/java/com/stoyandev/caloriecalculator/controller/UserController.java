@@ -25,13 +25,19 @@ public class UserController {
         return new ResponseEntity<>(savedUSer, HttpStatus.CREATED);
 
     }
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/user/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        UserDTO user = userService.getUserById(id);
+        return ResponseEntity.ok(user);
+    }
 
     @PutMapping("/update/age/{id}")
     public ResponseEntity<UserDTO> updateAge(@PathVariable Long id, @RequestBody UpdateUserAgeRequestDTO userAgeRequestDTO) {
         var updatedUser = userService.updateAge(id, userAgeRequestDTO.newAge());
         return ResponseEntity.ok(updatedUser);
     }
-
+    @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/update/weight/{id}")
     public ResponseEntity<UserDTO> updateWeight(@PathVariable Long id, @RequestBody UpdateUserWeightRequestDTO userWeightRequestDTO) {
         var updatedUser = userService.updateWeight(id, userWeightRequestDTO.newWeight());
