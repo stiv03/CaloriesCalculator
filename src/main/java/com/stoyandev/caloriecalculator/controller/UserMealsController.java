@@ -1,9 +1,6 @@
 package com.stoyandev.caloriecalculator.controller;
 
-import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
-import com.stoyandev.caloriecalculator.dto.MealRequest;
-import com.stoyandev.caloriecalculator.dto.UpdateMealQuantityDTO;
-import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
+import com.stoyandev.caloriecalculator.dto.*;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -88,5 +85,13 @@ public class UserMealsController {
     public ResponseEntity<Void> deleteByUserMealID(@PathVariable Long id) {
         userMealsService.deleteByUserMealID(id);
         return ResponseEntity.ok().build();
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/meals/{userId}/allMacros")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<List<DailyMacrosDTO>> fetchAllMacros(@PathVariable Long userId) {
+        List<DailyMacrosDTO> allMacros = userMealsService.fetchAllMacros(userId);
+        return ResponseEntity.ok(allMacros);
     }
 }

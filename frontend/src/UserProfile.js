@@ -11,6 +11,8 @@ const UserProfile = () => {
     height: ''
   });
   const [newWeight, setNewWeight] = useState('');
+  const [allMacros, setAllMacros] = useState([]); // State to store all macros data
+  const [showMacros, setShowMacros] = useState(false); // State to track visibility
 
   useEffect(() => {
     const userId = getUserId();
@@ -19,6 +21,7 @@ const UserProfile = () => {
       return;
     }
 
+    // Fetch user data
     axios.get(`/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${getToken()}`
@@ -31,8 +34,23 @@ const UserProfile = () => {
     .catch(error => {
       console.error('Error fetching user data:', error.response || error.message);
     });
-  }, []);
 
+    // Fetch all macros data
+    axios.get(`/meals/${userId}/allMacros`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Macros data fetched successfully:', response.data);
+      // Sort macros by date in descending order
+      const sortedMacros = response.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setAllMacros(sortedMacros);
+    })
+    .catch(error => {
+      console.error('Error fetching macros data:', error.response || error.message);
+    });
+  }, []);
 
   const handleWeightChange = (event) => {
     setNewWeight(event.target.value);
@@ -64,9 +82,12 @@ const UserProfile = () => {
     });
   };
 
+  const toggleShowMacros = () => {
+    setShowMacros(!showMacros);
+  };
+
   return (
     <div className="profile-container">
-
       <h1>Profile of |{user.name}|</h1>
       <div className="profile-details">
         <p><strong>Age:</strong> {user.age}</p>
@@ -83,6 +104,31 @@ const UserProfile = () => {
           min="1"
         />
         <button onClick={handleWeightUpdate}>Update Weight</button>
+      </div>
+      <div className="all-macros">
+        <button onClick={toggleShowMacros}>
+          {showMacros ? 'Hide Macros' : 'Show Macros'}
+        </button>
+        {showMacros && (
+          <div>
+            <h2>Daily Macros and Calories</h2>
+            <ul>
+              {allMacros.map((macro, index) => (
+                <li key={index} className="macro-item">
+                  <div className="macro-date">
+                    <strong>Date:</strong> {macro.date}
+                  </div>
+                  <div className="macro-details">
+                    <p><strong>Calories:</strong> {macro.calories.toFixed(2)} kcal</p>
+                    <p><strong>Proteins:</strong> {macro.protein.toFixed(2)} g</p>
+                    <p><strong>Carbs:</strong> {macro.carb.toFixed(2)} g</p>
+                    <p><strong>Fats:</strong> {macro.fat.toFixed(2)} g</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

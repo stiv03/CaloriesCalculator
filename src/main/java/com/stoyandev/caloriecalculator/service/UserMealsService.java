@@ -25,5 +25,7 @@ public interface UserMealsService {
 
     void deleteByUserMealID(long id);
 
+    List<DailyMacrosDTO> fetchAllMacros(Long userId);
+
 
 }

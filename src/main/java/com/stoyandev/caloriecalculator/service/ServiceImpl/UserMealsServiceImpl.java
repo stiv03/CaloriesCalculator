@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -112,7 +113,7 @@ public class UserMealsServiceImpl implements UserMealsService {
             totalCarbs += product.getCarbsPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
             totalFats += product.getFatPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
         }
-        return new DailyMacrosDTO((int) totalCalories, totalProtein, totalFats, totalCarbs);
+        return new DailyMacrosDTO(date.toString(), (int) totalCalories, totalProtein, totalFats, totalCarbs);
     }
 
     @Override
@@ -131,6 +132,16 @@ public class UserMealsServiceImpl implements UserMealsService {
     @Override
     public void deleteByUserMealID(long id) {
         usersMealsRepository.deleteByUserMealsID(id);
+    }
+
+
+    @Override
+    public List<DailyMacrosDTO> fetchAllMacros(Long userId) {
+        return usersMealsRepository.findAllByUserId(userId).stream()
+                .collect(Collectors.groupingBy(meal -> meal.getConsumedAt().toLocalDate()))
+                .keySet().stream()
+                .map(date -> calculateDailyMacros(userId, date))
+                .toList();
     }
 
 }
