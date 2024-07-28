@@ -2,9 +2,11 @@ package com.stoyandev.caloriecalculator.service.ServiceImpl;
 
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
+import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.entity.UserMeals;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.UserMealsMapper;
+import com.stoyandev.caloriecalculator.repository.GoalRepository;
 import com.stoyandev.caloriecalculator.repository.MealsRepository;
 import com.stoyandev.caloriecalculator.repository.ProductRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
@@ -27,6 +29,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     private final MealsRepository usersMealsRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final GoalRepository goalRepository;
 
     @Override
     public void addMealForUser(final Long userId, Long productId, Integer grams) {
@@ -142,6 +145,18 @@ public class UserMealsServiceImpl implements UserMealsService {
                 .keySet().stream()
                 .map(date -> calculateDailyMacros(userId, date))
                 .toList();
+    }
+
+    @Override
+    public Goal setUserGoal(Long userId, Goal goal) {
+        var user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        goal.setUser(user);
+        return goalRepository.save(goal);
+    }
+
+    @Override
+    public Goal getUserGoal(Long userId) {
+        return goalRepository.findByUserId(userId);
     }
 
 }

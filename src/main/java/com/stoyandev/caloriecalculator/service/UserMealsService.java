@@ -2,6 +2,7 @@ package com.stoyandev.caloriecalculator.service;
 
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
+import com.stoyandev.caloriecalculator.entity.Goal;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +27,8 @@ public interface UserMealsService {
     void deleteByUserMealID(long id);
 
     List<DailyMacrosDTO> fetchAllMacros(Long userId);
-
-
+    Goal setUserGoal(Long userId, Goal goal);
+    Goal getUserGoal(Long userId);
 }
+
+

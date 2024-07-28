@@ -1,6 +1,7 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
+import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -94,4 +95,20 @@ public class UserMealsController {
         List<DailyMacrosDTO> allMacros = userMealsService.fetchAllMacros(userId);
         return ResponseEntity.ok(allMacros);
     }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @PostMapping("/user/{userId}/setGoal")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<Goal> setUserGoal(@PathVariable Long userId, @RequestBody Goal goal) {
+        Goal savedGoal = userMealsService.setUserGoal(userId, goal);
+        return ResponseEntity.ok(savedGoal);
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/user/{userId}/getGoal")
+    public ResponseEntity<Goal> getUserGoal(@PathVariable Long userId) {
+        Goal goal = userMealsService.getUserGoal(userId);
+        return ResponseEntity.ok(goal);
+    }
+
 }

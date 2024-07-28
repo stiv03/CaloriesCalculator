@@ -15,6 +15,8 @@ h1, h2 {
 }
 
 .date{
+font-weight: bold;
+font-size: 1.3em;
   margin: 20px 0;
 }
 
@@ -38,12 +40,14 @@ h1, h2 {
 }
 
 .totals {
+margin-top: -35px;
   background: #d0f7d6;
   padding: 10px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: space-between;
+  font-size: 1.05em;
 }
 .profileIcon {
   position: center;
@@ -95,6 +99,7 @@ h1, h2 {
   color: #4CAF50;
   flex-basis: 20%;
   text-align: center;
+
 }
 
 .totals:hover {
@@ -125,6 +130,21 @@ h1, h2 {
 
 .addButton:hover {
   background: #218838;
+}
+
+.goals {
+  margin-top: 15px;
+  background: #ffda91;
+    padding: 1px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.0em;
+
+}
+
+.goals h2 {
+  margin-bottom: 10px;
+  margin-top: 10px;
 }
 
 

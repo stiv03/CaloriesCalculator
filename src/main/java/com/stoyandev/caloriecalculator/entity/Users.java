@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -55,7 +56,7 @@ public class Users implements UserDetails {
     @Column(name = "user_type", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'CUSTOMER'")
     private UserType userType;
 
-
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(userType.name()));

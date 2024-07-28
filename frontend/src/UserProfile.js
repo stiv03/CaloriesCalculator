@@ -13,6 +13,12 @@ const UserProfile = () => {
   const [newWeight, setNewWeight] = useState('');
   const [allMacros, setAllMacros] = useState([]); // State to store all macros data
   const [showMacros, setShowMacros] = useState(false); // State to track visibility
+  const [goals, setGoals] = useState({
+    calories: "",
+    protein: "",
+    carbs: "",
+    fat: ""
+  });
 
   useEffect(() => {
     const userId = getUserId();
@@ -50,6 +56,20 @@ const UserProfile = () => {
     .catch(error => {
       console.error('Error fetching macros data:', error.response || error.message);
     });
+
+    // Fetch goals data
+    axios.get(`/user/${userId}/getGoal`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Goals data fetched successfully:', response.data);
+      setGoals(response.data);
+    })
+    .catch(error => {
+      console.error('Error fetching goals data:', error.response || error.message);
+    });
   }, []);
 
   const handleWeightChange = (event) => {
@@ -82,6 +102,31 @@ const UserProfile = () => {
     });
   };
 
+  const handleGoalChange = (event) => {
+    const { name, value } = event.target;
+    setGoals({
+      ...goals,
+      [name]: value
+    });
+  };
+
+  const handleGoalSubmit = () => {
+    const userId = getUserId();
+    axios.post(`/user/${userId}/setGoal`, goals, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Goals set successfully:', response.data);
+      setGoals(response.data);
+    })
+    .catch(error => {
+      console.error('Error setting goals:', error.response || error.message);
+    });
+  };
+
   const toggleShowMacros = () => {
     setShowMacros(!showMacros);
   };
@@ -104,6 +149,42 @@ const UserProfile = () => {
           min="1"
         />
         <button onClick={handleWeightUpdate}>Update Weight</button>
+      </div>
+      <div className="set-goals">
+        <h2>Set Goals: </h2>
+        <input
+          type="number"
+          name="calories"
+          value={goals.calories}
+          onChange={handleGoalChange}
+          placeholder="Calories"
+          min="1"
+        />
+        <input
+          type="number"
+          name="protein"
+          value={goals.protein}
+          onChange={handleGoalChange}
+          placeholder="Protein"
+          min="1"
+        />
+        <input
+          type="number"
+          name="carbs"
+          value={goals.carbs}
+          onChange={handleGoalChange}
+          placeholder="Carbs"
+          min="1"
+        />
+        <input
+          type="number"
+          name="fat"
+          value={goals.fat}
+          onChange={handleGoalChange}
+          placeholder="Fat"
+          min="1"
+        />
+        <button onClick={handleGoalSubmit}>Set Goals</button>
       </div>
       <div className="all-macros">
         <button onClick={toggleShowMacros}>

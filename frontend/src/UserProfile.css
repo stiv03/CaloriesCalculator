@@ -78,3 +78,19 @@
   margin: 2px 0;
   color: #555;
 }
+
+.set-goals h2 {
+   color: #333;
+   margin-bottom: 20px;
+ }
+
+ .set-goals input {
+   width: 80%;
+   padding: 10px;
+   margin-bottom: 10px;
+   border: 1px solid #ccc;
+   border-radius: 4px;
+   font-size: 16px;
+ }
+
+

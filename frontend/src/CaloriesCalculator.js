@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import styles from './CaloriesCalculator.module.css';
-import { getUserId } from './utils/auth';
+import { getUserId, getToken } from './utils/auth';
 import Autosuggest from 'react-autosuggest';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
-
+import { useNavigate } from 'react-router-dom';
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -20,6 +19,12 @@ const CaloriesCalculator = () => {
     proteinPer100Grams: '',
     fatPer100Grams: '',
     carbsPer100Grams: '',
+  });
+  const [goals, setGoals] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
   });
 
   // Autosuggest state and functions
@@ -68,6 +73,7 @@ const CaloriesCalculator = () => {
   useEffect(() => {
     fetchMeals();
     fetchTotals();
+    fetchGoals();
   }, [date]);
 
   const handleUnauthorized = (error) => {
@@ -102,6 +108,20 @@ const CaloriesCalculator = () => {
       setLoading(false);
     } catch (error) {
       handleUnauthorized(error);
+    }
+  };
+
+  const fetchGoals = async () => {
+    try {
+      const response = await axios.get(`/user/${getUserId()}/getGoal`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      console.log('Goals fetched:', response.data); // Add this line to check the response
+      setGoals(response.data);
+    } catch (error) {
+      console.error('Error fetching goals:', error);
     }
   };
 
@@ -156,6 +176,13 @@ const CaloriesCalculator = () => {
     return <div className={styles.loader}>Loading...</div>;
   }
 
+  const remaining = {
+    calories: goals.calories - totals.calories,
+    protein: goals.protein - totals.proteins,
+    carbs: goals.carbs - totals.carbs,
+    fat: goals.fat - totals.fats
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.profileIcon} onClick={() => navigate('/user-profile')}>
@@ -165,6 +192,15 @@ const CaloriesCalculator = () => {
       <div className={styles.date}>{date}</div>
       <MealList meals={meals} />
       <Totals totals={totals} />
+      <div className={styles.goals}>
+        <h2>Current vs Goals</h2>
+        <div>
+          <p><b>Calories:</b> {totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})</p>
+          <p><b>Proteins: </b>{totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})</p>
+          <p><b>Carbs:</b> {totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})</p>
+          <p><b>Fats: </b>{totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})</p>
+        </div>
+      </div>
       <div className={styles.addMealForm}>
         <h2>Add New Meal</h2>
         <Autosuggest
@@ -277,7 +313,7 @@ const MealList = ({ meals }) => {
 
           return (
             <li key={meal.product.id}>
-              {meal.product.name} - {meal.quantity} g - {totalKcal.toFixed(1)} kcal - {totalProtein.toFixed(1)} g protein
+              <b>{meal.product.name}</b> - {meal.quantity} g - {totalKcal.toFixed(1)} kcal - {totalProtein.toFixed(1)} g protein
                - {totalCarbs.toFixed(1)} g carbs - {totalFats.toFixed(1)} g fats
             </li>
           );
@@ -291,10 +327,10 @@ const Totals = ({ totals }) => {
   return (
     <div className={styles.totals}>
       <h2>Total:</h2>
-      <p>Calories: <span>{totals.calories.toFixed(2)}</span>kcal</p>
-      <p>Proteins: <span>{totals.proteins.toFixed(2)}</span>g</p>
-      <p>Carbs: <span>{totals.carbs.toFixed(2)}</span>g</p>
-      <p>Fats: <span>{totals.fats.toFixed(2)}</span>g</p>
+      <p><b>Calories:</b> <span>{totals.calories.toFixed(0)}</span> kcal</p>
+      <p><b>Proteins:</b> <span>{totals.proteins.toFixed(2)}</span> g</p>
+      <p><b>Carbs:</b> <span>{totals.carbs.toFixed(2)}</span> g</p>
+      <p><b>Fats:</b> <span>{totals.fats.toFixed(2)}</span> g</p>
     </div>
   );
 };
