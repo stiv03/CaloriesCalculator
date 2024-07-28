@@ -1,6 +1,9 @@
 package com.stoyandev.caloriecalculator.service;
 
 import com.stoyandev.caloriecalculator.dto.UserDTO;
+import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
+
+import java.util.List;
 
 public interface UserService {
     UserDTO createUser(UserDTO userDTO);
@@ -13,4 +16,6 @@ public interface UserService {
 
     void deleteByUserID(long id);
     public UserDTO getUserById(Long id);
+
+    public List<WeightRecordDTO> getWeightRecords(Long userId);
 }

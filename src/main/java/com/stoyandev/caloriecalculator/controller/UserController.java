@@ -1,15 +1,14 @@
 package com.stoyandev.caloriecalculator.controller;
 
-import com.stoyandev.caloriecalculator.dto.UpdateUserAgeRequestDTO;
-import com.stoyandev.caloriecalculator.dto.UpdateUserHeightRequestDTO;
-import com.stoyandev.caloriecalculator.dto.UpdateUserWeightRequestDTO;
-import com.stoyandev.caloriecalculator.dto.UserDTO;
+import com.stoyandev.caloriecalculator.dto.*;
 import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -54,5 +53,11 @@ public class UserController {
     public ResponseEntity<Void> deleteByUserID(@PathVariable Long id) {
         userService.deleteByUserID(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{userId}/weightRecords")
+    public ResponseEntity<List<WeightRecordDTO>> getWeightRecords(@PathVariable Long userId) {
+        List<WeightRecordDTO> weightRecords = userService.getWeightRecords(userId);
+        return ResponseEntity.ok(weightRecords);
     }
 }

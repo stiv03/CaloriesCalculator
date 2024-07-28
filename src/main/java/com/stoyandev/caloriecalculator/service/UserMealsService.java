@@ -1,6 +1,7 @@
 package com.stoyandev.caloriecalculator.service;
 
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
+import com.stoyandev.caloriecalculator.dto.GoalDTO;
 import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 import com.stoyandev.caloriecalculator.entity.Goal;
 
@@ -28,7 +29,7 @@ public interface UserMealsService {
 
     List<DailyMacrosDTO> fetchAllMacros(Long userId);
     Goal setUserGoal(Long userId, Goal goal);
-    Goal getUserGoal(Long userId);
+    GoalDTO getUserGoal(Long userId);
 }
 
 

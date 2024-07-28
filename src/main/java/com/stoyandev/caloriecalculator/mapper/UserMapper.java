@@ -1,6 +1,8 @@
 package com.stoyandev.caloriecalculator.mapper;
 
+import com.stoyandev.caloriecalculator.dto.GoalDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
+import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.entity.Users;
 
 public class UserMapper {
@@ -29,5 +31,9 @@ public class UserMapper {
         user.setPassword(userDTO.getPassword());
         user.setUserType(userDTO.getUserType());
         return user;
+    }
+
+    public static GoalDTO mapGoalToDTO(final Goal goal) {
+        return new GoalDTO(goal.getCalories(), goal.getProtein(), goal.getCarbs(), goal.getFat());
     }
 }

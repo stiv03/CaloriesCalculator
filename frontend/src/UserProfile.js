@@ -11,14 +11,17 @@ const UserProfile = () => {
     height: ''
   });
   const [newWeight, setNewWeight] = useState('');
-  const [allMacros, setAllMacros] = useState([]); // State to store all macros data
-  const [showMacros, setShowMacros] = useState(false); // State to track visibility
+  const [allMacros, setAllMacros] = useState([]);
+  const [weightRecords, setWeightRecords] = useState([]);
+  const [showMacros, setShowMacros] = useState(false);
+  const [showWeightRecords, setShowWeightRecords] = useState(false);
   const [goals, setGoals] = useState({
     calories: "",
     protein: "",
     carbs: "",
     fat: ""
   });
+  const [status, setStatus] = useState(''); // New state for storing status
 
   useEffect(() => {
     const userId = getUserId();
@@ -49,7 +52,6 @@ const UserProfile = () => {
     })
     .then(response => {
       console.log('Macros data fetched successfully:', response.data);
-      // Sort macros by date in descending order
       const sortedMacros = response.data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setAllMacros(sortedMacros);
     })
@@ -65,12 +67,44 @@ const UserProfile = () => {
     })
     .then(response => {
       console.log('Goals data fetched successfully:', response.data);
-      setGoals(response.data);
     })
     .catch(error => {
       console.error('Error fetching goals data:', error.response || error.message);
     });
+
+    // Fetch weight records
+    fetchWeightRecords();
+
+    // Fetch status data
+    axios.get(`/user/${userId}/status`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Status data fetched successfully:', response.data);
+      setStatus(response.data.status); // Assuming the response has a 'status' field
+    })
+    .catch(error => {
+      console.error('Error fetching status data:', error.response || error.message);
+    });
   }, []);
+
+  const fetchWeightRecords = () => {
+    const userId = getUserId();
+    axios.get(`/${userId}/weightRecords`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Weight records fetched successfully:', response.data);
+      setWeightRecords(response.data.reverse()); // Reverse the order here
+    })
+    .catch(error => {
+      console.error('Error fetching weight records:', error.response || error.message);
+    });
+  };
 
   const handleWeightChange = (event) => {
     setNewWeight(event.target.value);
@@ -96,6 +130,7 @@ const UserProfile = () => {
       console.log('Weight updated successfully:', response.data);
       setUser(response.data);
       alert('Weight updated successfully!');
+      fetchWeightRecords(); // Re-fetch weight records to update the list
     })
     .catch(error => {
       console.error('Error updating weight:', error.response || error.message);
@@ -127,18 +162,50 @@ const UserProfile = () => {
     });
   };
 
+  const handleStatusChange = (event) => {
+    const newStatus = event.target.value;
+    setStatus(newStatus);
+    const userId = getUserId();
+    axios.post(`/user/${userId}/status`, { status: newStatus }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      console.log('Status updated successfully:', response.data);
+    })
+    .catch(error => {
+      console.error('Error updating status:', error.response || error.message);
+    });
+  };
+
   const toggleShowMacros = () => {
     setShowMacros(!showMacros);
   };
 
+  const toggleShowWeightRecords = () => {
+    setShowWeightRecords(!showWeightRecords);
+  };
+
   return (
     <div className="profile-container">
-      <h1>Profile of |{user.name}|</h1>
+      <h1>Profile of {user.name}</h1>
       <div className="profile-details">
         <p><strong>Age:</strong> {user.age}</p>
         <p><strong>Current Weight:</strong> {user.weight} kg</p>
         <p><strong>Height:</strong> {user.height} cm</p>
       </div>
+      <div className="status">
+              <h2>Current Status</h2>
+              <select value={status} onChange={handleStatusChange}>
+                <option value="">Select your status</option>
+                <option value="bulking">Bulking</option>
+                <option value="cutting">Cutting</option>
+                <option value="maintaining">Maintaining</option>
+              </select>
+              {status && <p>You are currently {status}.</p>}
+            </div>
       <div className="update-weight">
         <h2>Update Weight</h2>
         <input
@@ -185,6 +252,24 @@ const UserProfile = () => {
           min="1"
         />
         <button onClick={handleGoalSubmit}>Set Goals</button>
+      </div>
+
+      <div className="weight-records">
+        <button onClick={toggleShowWeightRecords}>
+          {showWeightRecords ? 'Hide Weight Records' : 'Show Weight Records'}
+        </button>
+        {showWeightRecords && (
+          <div>
+            <h2>Weight Records</h2>
+            <ul>
+              {weightRecords.map((record, index) => (
+                <li key={index}>
+                  {record.date}: {record.weight} kg
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       <div className="all-macros">
         <button onClick={toggleShowMacros}>

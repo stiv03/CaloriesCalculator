@@ -5,6 +5,10 @@ import { getUserId, getToken } from './utils/auth';
 import Autosuggest from 'react-autosuggest';
 import { useNavigate } from 'react-router-dom';
 
+
+
+
+
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
   const [meals, setMeals] = useState([]);
@@ -200,6 +204,7 @@ const CaloriesCalculator = () => {
           <p><b>Carbs:</b> {totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})</p>
           <p><b>Fats: </b>{totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})</p>
         </div>
+
       </div>
       <div className={styles.addMealForm}>
         <h2>Add New Meal</h2>

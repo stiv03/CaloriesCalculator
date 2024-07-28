@@ -98,7 +98,6 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/setGoal")
-    @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Goal> setUserGoal(@PathVariable Long userId, @RequestBody Goal goal) {
         Goal savedGoal = userMealsService.setUserGoal(userId, goal);
         return ResponseEntity.ok(savedGoal);
@@ -106,8 +105,8 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/user/{userId}/getGoal")
-    public ResponseEntity<Goal> getUserGoal(@PathVariable Long userId) {
-        Goal goal = userMealsService.getUserGoal(userId);
+    public ResponseEntity<GoalDTO> getUserGoal(@PathVariable Long userId) {
+        GoalDTO goal = userMealsService.getUserGoal(userId);
         return ResponseEntity.ok(goal);
     }
 
