@@ -1,4 +1,8 @@
 
+body.no-scroll {
+  overflow: hidden;
+}
+
 .container {
   background: #fff;
   padding: 4rem;
@@ -8,7 +12,7 @@
   max-width: 300px;
   max-height: 700px;
   text-align: center;
- overflow-x: hidden;
+
 }
 
 .container h1 {

@@ -29,7 +29,7 @@ public class Product {
     @Column(name = "calories in 100 grams", length = 10, nullable = false)
     private double caloriesPer100Grams;
 
-    @Column(name = "grams of protein in 100 grams", length = 10, nullable = false)
+    @Column(name = "protein_per_100g", length = 10, nullable = false)
     private double proteinPer100Grams;
 
     @Column(name = "fats_per_100g", length = 10, nullable = false)

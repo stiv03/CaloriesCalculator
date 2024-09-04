@@ -6,6 +6,7 @@
   border-radius: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   overflow-y: auto;
+   position: relative;
 
 }
 
@@ -23,9 +24,19 @@ font-size: 1.3em;
 .foodList {
   background: #f7f7f7;
   text-align: left;
-  margin: 50px;
-  padding: 20px;
+
+    position: relative;
+    padding: 20px;
+    padding-top: 50px; /* Ensure there's space for the button */
+
+
+    display: flex;
+    flex-direction: column;
+
+
+  padding: 10px;
   border-radius: 8px;
+   border: 2px solid #ddd;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
 }
@@ -39,27 +50,69 @@ font-size: 1.3em;
   color: #4CAF50;
 }
 
-.totals {
-margin-top: -35px;
+/*.totals {
+margin-top: 20px;
   background: #d0f7d6;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
+  border: 2px solid #a4dbad;
   justify-content: space-between;
   font-size: 1.05em;
 }
+*/
+
+
+
+.totalsContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Ensure even spacing between boxes */
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 20px; /* Add some margin at the top if needed */
+  background: #b5f7bf;
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid #a4dbad;
+}
+
+
+.totalBox {
+  background:  #dbffe1;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 7px 6px rgba(0, 0, 0.20, 0.23);
+
+  text-align: center;
+  min-width: 120px;
+
+}
+
+.totalBox p {
+  margin: 5px 0;
+}
+
+
+
+
 .profileIcon {
-  position: center;
-  top: 20px;
-  right: 20px;
+  position: absolute;
+  top: 30px;
+  right: 30px;
   cursor: pointer;
 }
 
 .profileIcon img {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
+}
+
+.profileIcon:hover {
+  transform: scale(1.08);
 }
 
 .addProductButton {
@@ -93,34 +146,49 @@ margin-top: -35px;
   align-self: flex-start;
 }
 
-.totals h2 {
-  font-size: 25px;
-  margin-bottom: 10px;
-  color: #4CAF50;
-  flex-basis: 20%;
-  text-align: center;
 
-}
-
-.totals:hover {
-  transform: scale(1.02);
-}
 
 
 .addMealForm {
+  margin-top: 15px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+
+
+
+
+
+
+
 }
 
 .addMealForm input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+margin-top: 5px;
+  width: 80%; /* Make the input take 80% of the width of its container */
+  padding: 8px; /* Add some padding for better readability */
+  font-size: 10px; /* Increase the font size for better readability */
+  border: 1px solid #ccc; /* Add a border */
+  border-radius: 5px; /* Add rounded corners */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  margin-bottom: 10px; /* Add space between the input and the suggestions */
+}
+
+.largeInput {
+  width: 80%; /* Make the input take the full width of its container */
+
+  padding: 2px; /* Add some padding for better readability */
+  font-size: 16px; /* Increase the font size for better readability */
+  border: 1px solid #ccc; /* Add a border */
+  border-radius: 5px; /* Add rounded corners */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  margin-bottom: 10px; /* Add space between the input and the suggestions */
 }
 
 .addButton {
  margin-bottom: 10px;
+  margin-left: 10%;
+  margin-right: 10%;
+ width: 80%;
   padding: 10px 20px;
   background: #28a745;
   color: #fff;
@@ -132,11 +200,15 @@ margin-top: -35px;
   background: #218838;
 }
 
+
+
+
 .goals {
   margin-top: 15px;
   background: #ffda91;
     padding: 1px;
     border-radius: 8px;
+      border: 2px solid #deb96f;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-size: 1.0em;
 
@@ -146,6 +218,170 @@ margin-top: -35px;
   margin-bottom: 10px;
   margin-top: 10px;
 }
+
+
+
+.goals {
+  text-align: center;
+}
+
+.goalBox {
+  margin: 10px;
+  padding: 5px;
+
+
+  border-radius: 10px;
+  background-color: #ffe7b8;
+}
+
+.goalBox label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.goalBox progress {
+  width: 100%;
+  height: 30px;
+  margin-bottom: 10px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #ffffff; /* Background color of the progress bar */
+  border-radius: 50px  50px; /* Rounded corners for the progress bar */
+
+}
+
+progress::-webkit-progress-value {
+  background-color: #82c9f5; /* Color of the progress bar's value */
+  border-radius: 50px  50px; /* Rounded corners for the filled part */
+  border: 8px solid #c4e2f5;
+}
+
+progress::-moz-progress-bar {
+  background-color: #82c9f5; /* Color of the progress bar's value for Firefox */
+  border-radius: 50px 0 0 50px; /* Rounded corners for the progress bar */
+}
+
+.progress::-webkit-progress-value:hover {
+  transform: scale(1.02);
+}
+
+
+
+.mealTable {
+ width: 100%;
+   border-collapse: separate; /* Use separate borders to allow rounding */
+   border-spacing: 0; /* Remove space between cells */
+
+   border-radius: 8px; /* Rounded edges for the entire table */
+   overflow: hidden; /* Ensure rounded edges are applied */
+}
+
+.mealTable th, .mealTable td {
+  border: 0.3px solid #ddd;
+  padding: 2px;
+}
+
+.mealTable th {
+  background-color: #b5f7bf;
+  text-align: center;
+}
+
+.mealTable td {
+  text-align: center;
+  background-color: #f5fff7;
+}
+
+
+.addMealButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 50px; /* Set width for the circular button */
+  height: 50px; /* Set height for the circular button */
+  background-color: #00cc66;
+  color: white;
+  border: none;
+  border-radius: 50%; /* Make the button circular */
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px; /* Ensure the plus sign is centered */
+}
+
+
+
+
+
+
+
+.addMealButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 50px; /* Set width for the circular button */
+  height: 50px; /* Set height for the circular button */
+  background-color: #00cc66;
+  color: white;
+  border: none;
+  border-radius: 50%; /* Make the button circular */
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px; /* Ensure the plus sign is centered */
+}
+
+.addMealButton:hover {
+  background-color: #00994d;
+}
+
+.suggestionContainer {
+  position: relative;
+   max-width: 100%;
+
+}
+
+.suggestionsList {
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  list-style-type: none;
+  padding: 0;
+  margin: 4px 0 0 0;
+}
+
+.suggestion {
+  background: #f2f2f2;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 5px;
+  cursor: pointer;
+  align-items: center;
+ width: calc(33.333% - 10px); /* Adjust width based on the desired layout */
+  box-sizing: border-box;
+}
+
+.suggestionBlock {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.suggestion:hover {
+  background: #e6e6e6;
+}
+
+
+
 
 
 

@@ -42,8 +42,9 @@
   width: 80%;
   padding: 10px;
   margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+   border: 1px solid #ccc;
+   border-radius: 8px;
+
   font-size: 16px;
 }
 
@@ -93,7 +94,7 @@
    width: 80%;
    padding: 10px;
    margin-bottom: 10px;
-   border: px solid #e8af1e;
+   border: 1px solid #ccc;
    border-radius: 8px;
    font-size: 16px;
 
@@ -105,11 +106,12 @@
  }
 
  .weight-records li {
-   background: #f9f9f9;
+   background: #dcfae3;
    padding: 10px;
    margin-bottom: 5px;
    border-radius: 5px;
  }
+
  button + button {
    margin-left: 10px; /* Add space between buttons */
  }
@@ -147,12 +149,7 @@
   color: #333;
   font-weight: bold;
 }
-.set-goals{
-background-color:#ffda91;
-border-radius: 20px;
-padding: 10px;
 
-}
 
 
 

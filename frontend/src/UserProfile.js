@@ -75,19 +75,6 @@ const UserProfile = () => {
     // Fetch weight records
     fetchWeightRecords();
 
-    // Fetch status data
-    axios.get(`/user/${userId}/status`, {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
-    })
-    .then(response => {
-      console.log('Status data fetched successfully:', response.data);
-      setStatus(response.data.status); // Assuming the response has a 'status' field
-    })
-    .catch(error => {
-      console.error('Error fetching status data:', error.response || error.message);
-    });
   }, []);
 
   const fetchWeightRecords = () => {
@@ -162,23 +149,7 @@ const UserProfile = () => {
     });
   };
 
-  const handleStatusChange = (event) => {
-    const newStatus = event.target.value;
-    setStatus(newStatus);
-    const userId = getUserId();
-    axios.post(`/user/${userId}/status`, { status: newStatus }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`
-      }
-    })
-    .then(response => {
-      console.log('Status updated successfully:', response.data);
-    })
-    .catch(error => {
-      console.error('Error updating status:', error.response || error.message);
-    });
-  };
+
 
   const toggleShowMacros = () => {
     setShowMacros(!showMacros);
@@ -196,16 +167,7 @@ const UserProfile = () => {
         <p><strong>Current Weight:</strong> {user.weight} kg</p>
         <p><strong>Height:</strong> {user.height} cm</p>
       </div>
-      <div className="status">
-              <h2>Current Status</h2>
-              <select value={status} onChange={handleStatusChange}>
-                <option value="">Select your status</option>
-                <option value="bulking">Bulking</option>
-                <option value="cutting">Cutting</option>
-                <option value="maintaining">Maintaining</option>
-              </select>
-              {status && <p>You are currently {status}.</p>}
-            </div>
+
       <div className="update-weight">
         <h2>Update Weight</h2>
         <input

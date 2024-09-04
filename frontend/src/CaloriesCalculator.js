@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from './axiosConfig';
 import styles from './CaloriesCalculator.module.css';
 import { getUserId, getToken } from './utils/auth';
 import Autosuggest from 'react-autosuggest';
 import { useNavigate } from 'react-router-dom';
-
-
-
-
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -36,6 +32,8 @@ const CaloriesCalculator = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const [showAddMealForm, setShowAddMealForm] = useState(false); // State to control add meal form visibility
+
   const fetchProductSuggestions = async (query) => {
     try {
       const response = await axios.get(`products/search`, { params: { query } });
@@ -56,7 +54,7 @@ const CaloriesCalculator = () => {
   const getSuggestionValue = (suggestion) => suggestion.name;
 
   const renderSuggestion = (suggestion) => (
-    <div>{suggestion.name}</div>
+    <div className={styles.suggestionBlock}>{suggestion.name}</div>
   );
 
   const onChange = (event, { newValue }) => {
@@ -72,6 +70,13 @@ const CaloriesCalculator = () => {
     placeholder: 'Type a product name',
     value: query,
     onChange: onChange,
+    className: styles.largeInput, // Apply the new class
+  };
+
+  const theme = {
+    container: styles.suggestionContainer,
+    suggestionsList: styles.suggestionsList,
+    suggestion: styles.suggestion,
   };
 
   useEffect(() => {
@@ -137,6 +142,7 @@ const CaloriesCalculator = () => {
       setNewMeal({ productId: '', grams: '' }); // Clear the form
       setSelectedProduct(null); // Clear the selected product
       setQuery(''); // Clear the query
+      setShowAddMealForm(false); // Hide the add meal form
       fetchMeals(); // Refresh the meal list
       fetchTotals(); // Refresh the totals
       setLoading(false);
@@ -176,6 +182,16 @@ const CaloriesCalculator = () => {
 
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
+  const addMealFormRef = useRef(null); // Create a ref for the add meal form
+
+  const scrollToForm = () => {
+    addMealFormRef.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const toggleAddMealForm = () => {
+    setShowAddMealForm((prev) => !prev);
+  };
+
   if (loading) {
     return <div className={styles.loader}>Loading...</div>;
   }
@@ -193,42 +209,64 @@ const CaloriesCalculator = () => {
         <img src="../profile-icon.png" alt="Profile" />
       </div>
       <h1>Calories Calculator</h1>
+
       <div className={styles.date}>{date}</div>
-      <MealList meals={meals} />
+      <MealList meals={meals} onAddMealClick={toggleAddMealForm} />
       <Totals totals={totals} />
+
       <div className={styles.goals}>
         <h2>Current vs Goals</h2>
-        <div>
-          <p><b>Calories:</b> {totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})</p>
-          <p><b>Proteins: </b>{totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})</p>
-          <p><b>Carbs:</b> {totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})</p>
-          <p><b>Fats: </b>{totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})</p>
+        <div className={styles.goalBox}>
+          <label>Calories:</label>
+          <progress value={totals.calories} max={goals.calories}></progress>
+          <span>{totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})</span>
         </div>
+        <div className={styles.goalBox}>
+          <label>Proteins:</label>
+          <progress value={totals.proteins} max={goals.protein}></progress>
+          <span>{totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})</span>
+        </div>
+        <div className={styles.goalBox}>
+          <label>Carbs:</label>
+          <progress value={totals.carbs} max={goals.carbs}></progress>
+          <span>{totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})</span>
+        </div>
+        <div className={styles.goalBox}>
+          <label>Fats:</label>
+          <progress value={totals.fats} max={goals.fat}></progress>
+          <span>{totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})</span>
+        </div>
+      </div>
 
-      </div>
-      <div className={styles.addMealForm}>
-        <h2>Add New Meal</h2>
-        <Autosuggest
-          suggestions={suggestions}
-          onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-          onSuggestionsClearRequested={onSuggestionsClearRequested}
-          getSuggestionValue={getSuggestionValue}
-          renderSuggestion={renderSuggestion}
-          inputProps={inputProps}
-          onSuggestionSelected={onSuggestionSelected}
-        />
-        <input
-          type="number"
-          name="grams"
-          value={newMeal.grams}
-          onChange={handleInputChange}
-          placeholder="Grams"
-          required
-        />
-        <button className={styles.addButton} onClick={handleAddFood} disabled={loading || !selectedProduct || !newMeal.grams}>
-          {loading ? 'Adding...' : 'Add Meal'}
-        </button>
-      </div>
+      {showAddMealForm && (
+        <div className={styles.addMealForm} ref={addMealFormRef}>
+          <h2>Add New Meal</h2>
+     <div className={styles.addMealFormInputs}>
+            <Autosuggest
+              suggestions={suggestions}
+              onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+              onSuggestionsClearRequested={onSuggestionsClearRequested}
+              getSuggestionValue={getSuggestionValue}
+              renderSuggestion={renderSuggestion}
+              inputProps={inputProps}
+              onSuggestionSelected={onSuggestionSelected}
+              theme={theme} // Pass the custom theme to Autosuggest
+            />
+            <input
+              type="number"
+              name="grams"
+              value={newMeal.grams}
+              onChange={handleInputChange}
+              placeholder="Grams"
+              required
+            />
+          </div>
+          <button className={styles.addButton} onClick={handleAddFood} disabled={loading || !selectedProduct || !newMeal.grams}>
+            {loading ? 'Adding...' : 'Add Meal'}
+          </button>
+        </div>
+      )}
+
       <button className={`${styles.addButton} ${styles.addProductButton}`} onClick={() => setShowProductForm(!showProductForm)}>
         {showProductForm ? 'Cancel' : 'Add New Product'}
       </button>
@@ -302,28 +340,45 @@ const CaloriesCalculator = () => {
   );
 };
 
-const MealList = ({ meals }) => {
+const MealList = ({ meals, onAddMealClick }) => {
   console.log('Meals in MealList:', meals); // Add this line to log the meals data
 
   return (
     <div className={styles.foodList}>
       <h2>Food Eaten Today</h2>
-      <ol>
-        {meals.map((meal) => {
-          console.log('Meal:', meal); // Log each meal
-          const totalKcal = (meal.quantity / 100) * meal.product.caloriesPer100Grams;
-          const totalProtein = (meal.quantity / 100) * meal.product.proteinPer100Grams;
-          const totalCarbs = (meal.quantity / 100) * meal.product.carbsPer100Grams;
-          const totalFats = (meal.quantity / 100) * meal.product.fatPer100Grams;
+      <table className={styles.mealTable}>
+        <thead>
+          <tr>
+            <th>Food</th>
+            <th>Grams</th>
+            <th>Kcal</th>
+            <th>Protein (g)</th>
+            <th>Carbs (g)</th>
+            <th>Fats (g)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {meals.map((meal) => {
+            console.log('Meal:', meal); // Log each meal
+            const totalKcal = (meal.quantity / 100) * meal.product.caloriesPer100Grams;
+            const totalProtein = (meal.quantity / 100) * meal.product.proteinPer100Grams;
+            const totalCarbs = (meal.quantity / 100) * meal.product.carbsPer100Grams;
+            const totalFats = (meal.quantity / 100) * meal.product.fatPer100Grams;
 
-          return (
-            <li key={meal.product.id}>
-              <b>{meal.product.name}</b> - {meal.quantity} g - {totalKcal.toFixed(1)} kcal - {totalProtein.toFixed(1)} g protein
-               - {totalCarbs.toFixed(1)} g carbs - {totalFats.toFixed(1)} g fats
-            </li>
-          );
-        })}
-      </ol>
+            return (
+              <tr key={meal.product.id}>
+                <td>{meal.product.name}</td>
+                <td>{meal.quantity}</td>
+                <td>{totalKcal.toFixed(1)}</td>
+                <td>{totalProtein.toFixed(1)}</td>
+                <td>{totalCarbs.toFixed(1)}</td>
+                <td>{totalFats.toFixed(1)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <button className={styles.addMealButton} onClick={onAddMealClick}>+</button>
     </div>
   );
 };
@@ -331,11 +386,24 @@ const MealList = ({ meals }) => {
 const Totals = ({ totals }) => {
   return (
     <div className={styles.totals}>
-      <h2>Total:</h2>
-      <p><b>Calories:</b> <span>{totals.calories.toFixed(0)}</span> kcal</p>
-      <p><b>Proteins:</b> <span>{totals.proteins.toFixed(2)}</span> g</p>
-      <p><b>Carbs:</b> <span>{totals.carbs.toFixed(2)}</span> g</p>
-      <p><b>Fats:</b> <span>{totals.fats.toFixed(2)}</span> g</p>
+      <div className={styles.totalsContainer}>
+        <div className={styles.totalBox}>
+          <p><b>Calories:</b></p>
+          <p>{totals.calories.toFixed(0)} kcal</p>
+        </div>
+        <div className={styles.totalBox}>
+          <p><b>Proteins:</b></p>
+          <p>{totals.proteins.toFixed(2)} g</p>
+        </div>
+        <div className={styles.totalBox}>
+          <p><b>Carbs:</b></p>
+          <p>{totals.carbs.toFixed(2)} g</p>
+        </div>
+        <div className={styles.totalBox}>
+          <p><b>Fats:</b></p>
+          <p>{totals.fats.toFixed(2)} g</p>
+        </div>
+      </div>
     </div>
   );
 };

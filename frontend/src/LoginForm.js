@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './LoginForm.css'; // Create a separate CSS file for styling
 import { setToken, setUserId } from './utils/auth'; // Import the setToken utility
@@ -12,7 +12,17 @@ const LoginForm = () => {
 
   const [error, setError] = useState(''); // State to store any error messages
   const [successMessage, setSuccessMessage] = useState(''); // State to store the success message
+  const [isLoading, setIsLoading] = useState(false); // State to manage loading state
   const navigate = useNavigate(); // Initialize useNavigate
+
+  useEffect(() => {
+    // Add the 'no-scroll' class to the body when the component mounts
+    document.body.classList.add('no-scroll');
+    // Remove the 'no-scroll' class from the body when the component unmounts
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,10 +31,11 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const response = await axios.post('/auth/login', formData);
       setToken(response.data.token); // Store the token in localStorage
-      setUserId(response.data.userId) // Store the userId in localStorage
+      setUserId(response.data.userId); // Store the userId in localStorage
       console.log('Login successful:', response.data);
       setSuccessMessage('Login successful!'); // Set the success message
       setError(''); // Clear any previous error messages
@@ -41,6 +52,8 @@ const LoginForm = () => {
         setError('An error occurred. Please try again.');
       }
       setSuccessMessage(''); // Clear any previous success messages
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,7 +83,9 @@ const LoginForm = () => {
             required
           />
         </div>
-        <button type="submit">Login</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Logging in...' : 'Login'}
+        </button>
         {successMessage && <p className="success">{successMessage}</p>}
         {error && <p className="error">{error}</p>}
       </form>

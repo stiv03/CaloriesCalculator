@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig'; // Use the configured axios instance
 import './RegistrationForm.css';
 import { setToken, setUserId } from './utils/auth'; // Import the setToken utility
@@ -17,6 +17,15 @@ const RegistrationForm = () => {
   const [error, setError] = useState(''); // State to store any error messages
   const [successMessage, setSuccessMessage] = useState(''); // State to store the success message
 
+  useEffect(() => {
+    // Add the 'no-scroll' class to the body when the component mounts
+    document.body.classList.add('no-scroll');
+    // Remove the 'no-scroll' class from the body when the component unmounts
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -27,7 +36,7 @@ const RegistrationForm = () => {
     try {
       const response = await axios.post('/auth/register', formData);
       setToken(response.data.token); // Store the token in localStorage
-      setUserId(response.data.userId) // Store the userId in localStorage
+      setUserId(response.data.userId); // Store the userId in localStorage
       console.log('Registration successful:', response.data);
       setSuccessMessage('Registration successful!'); // Set the success message
       setError(''); // Clear any previous error messages
