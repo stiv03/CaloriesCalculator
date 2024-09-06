@@ -1,12 +1,16 @@
 package com.stoyandev.caloriecalculator.service.ServiceImpl;
 
+import com.stoyandev.caloriecalculator.dto.MeasurementsRecordDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
+import com.stoyandev.caloriecalculator.entity.MeasurementsRecord;
 import com.stoyandev.caloriecalculator.entity.Users;
 import com.stoyandev.caloriecalculator.entity.WeightRecord;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
+import com.stoyandev.caloriecalculator.mapper.MeasurementsRecordMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.mapper.WeightRecordMapper;
+import com.stoyandev.caloriecalculator.repository.MeasurementsRecordRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.repository.WeightRecordRepository;
 import com.stoyandev.caloriecalculator.service.UserService;
@@ -24,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final WeightRecordRepository weightRecordRepository;
+   private MeasurementsRecordRepository measurementsRecordRepository;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
@@ -92,5 +97,33 @@ public class UserServiceImpl implements UserService {
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
         return user.getWeightRecords().stream().map(WeightRecordMapper::toDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public MeasurementsRecord addMeasurement(Long userId, double shoulder, double chest, double biceps, double waist, double hips, double thigh, double calf) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        MeasurementsRecord record = MeasurementsRecord.builder()
+                .user(user)
+                .shoulder(shoulder)
+                .chest(chest)
+                .biceps(biceps)
+                .waist(waist)
+                .hips(hips)
+                .thigh(thigh)
+                .calf(calf)
+                .date(LocalDate.now())
+                .build();
+
+        return measurementsRecordRepository.save(record);
+    }
+    @Override
+    public List<MeasurementsRecordDTO> getMeasurementsByUser(Long userId) {
+        return measurementsRecordRepository.findByUserId(userId).stream().map(MeasurementsRecordMapper::toDTO).toList();
+    }
+
+    @Override
+    public MeasurementsRecordDTO getLatestMeasurement(Long userId) {
+        return measurementsRecordRepository.findTopByUserIdOrderByDateDescIdDesc(userId);
     }
 }

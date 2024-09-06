@@ -23,6 +23,20 @@ const UserProfile = () => {
   });
   const [status, setStatus] = useState(''); // New state for storing status
 
+  // New state for measurements (add new logic)
+  const [newMeasurements, setNewMeasurements] = useState({
+    shoulder: '',
+    chest: '',
+    biceps: '',
+    waist: '',
+    hips: '',
+    thigh: '',
+    calf: ''
+  });
+  const [measurementRecords, setMeasurementRecords] = useState([]);
+  const [latestMeasurement, setLatestMeasurement] = useState(null);
+  const [showMeasurementRecords, setShowMeasurementRecords] = useState(false);
+
   useEffect(() => {
     const userId = getUserId();
     if (!userId) {
@@ -75,6 +89,9 @@ const UserProfile = () => {
     // Fetch weight records
     fetchWeightRecords();
 
+    // Fetch measurement records and latest measurement (new logic)
+    fetchAllMeasurements(userId);
+    fetchLatestMeasurement(userId);
   }, []);
 
   const fetchWeightRecords = () => {
@@ -90,6 +107,72 @@ const UserProfile = () => {
     })
     .catch(error => {
       console.error('Error fetching weight records:', error.response || error.message);
+    });
+  };
+
+  // New logic: Fetch all measurement records
+  const fetchAllMeasurements = (userId) => {
+    axios.get(`/user/measurements/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      setMeasurementRecords(response.data.reverse());
+    })
+    .catch(error => {
+      console.error('Error fetching measurement records:', error.response || error.message);
+    });
+  };
+
+  // New logic: Fetch the latest measurement
+  const fetchLatestMeasurement = (userId) => {
+    axios.get(`/user/latestMeasurement/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then(response => {
+      setLatestMeasurement(response.data);
+    })
+    .catch(error => {
+      console.error('Error fetching latest measurement:', error.response || error.message);
+    });
+  };
+
+  // New logic: Handle input change for measurements
+  const handleMeasurementChange = (event) => {
+    const { name, value } = event.target;
+    setNewMeasurements({
+      ...newMeasurements,
+      [name]: value
+    });
+  };
+
+  // New logic: Handle adding a new measurement record
+  const handleAddMeasurement = () => {
+    const userId = getUserId();
+    axios.post(`/add/${userId}/measurements`, {
+      shoulder: parseFloat(newMeasurements.shoulder),
+      chest: parseFloat(newMeasurements.chest),
+      biceps: parseFloat(newMeasurements.biceps),
+      waist: parseFloat(newMeasurements.waist),
+      hips: parseFloat(newMeasurements.hips),
+      thigh: parseFloat(newMeasurements.thigh),
+      calf: parseFloat(newMeasurements.calf)
+    }, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      alert('Measurement added successfully!');
+      fetchAllMeasurements(userId); // Re-fetch measurement records to update the list
+      fetchLatestMeasurement(userId); // Update the latest measurement
+    })
+    .catch(error => {
+      console.error('Error adding measurement:', error.response || error.message);
     });
   };
 
@@ -149,14 +232,16 @@ const UserProfile = () => {
     });
   };
 
-
-
   const toggleShowMacros = () => {
     setShowMacros(!showMacros);
   };
 
   const toggleShowWeightRecords = () => {
     setShowWeightRecords(!showWeightRecords);
+  };
+
+  const toggleShowMeasurementRecords = () => {
+    setShowMeasurementRecords(!showMeasurementRecords);
   };
 
   return (
@@ -216,6 +301,99 @@ const UserProfile = () => {
         <button onClick={handleGoalSubmit}>Set Goals</button>
       </div>
 
+      {/* New section: Update Measurements */}
+      <div className="update-measurements">
+        <h2>Add Measurements</h2>
+        <input
+          type="number"
+          name="shoulder"
+          value={newMeasurements.shoulder}
+          onChange={handleMeasurementChange}
+          placeholder="Shoulder (cm)"
+        />
+        <input
+          type="number"
+          name="chest"
+          value={newMeasurements.chest}
+          onChange={handleMeasurementChange}
+          placeholder="Chest (cm)"
+        />
+        <input
+          type="number"
+          name="biceps"
+          value={newMeasurements.biceps}
+          onChange={handleMeasurementChange}
+          placeholder="Biceps (cm)"
+        />
+        <input
+          type="number"
+          name="waist"
+          value={newMeasurements.waist}
+          onChange={handleMeasurementChange}
+          placeholder="Waist (cm)"
+        />
+        <input
+          type="number"
+          name="hips"
+          value={newMeasurements.hips}
+          onChange={handleMeasurementChange}
+          placeholder="Hips (cm)"
+        />
+        <input
+          type="number"
+          name="thigh"
+          value={newMeasurements.thigh}
+          onChange={handleMeasurementChange}
+          placeholder="Thigh (cm)"
+        />
+        <input
+          type="number"
+          name="calf"
+          value={newMeasurements.calf}
+          onChange={handleMeasurementChange}
+          placeholder="Calf (cm)"
+        />
+        <button onClick={handleAddMeasurement}>Add Measurement</button>
+      </div>
+
+      {/* New section: Display Latest Measurement */}
+      <div className="latest-measurement">
+        <h2>Latest Measurement</h2>
+        {latestMeasurement ? (
+          <div>
+            <p><strong>Shoulder:</strong> {latestMeasurement.shoulder} cm</p>
+            <p><strong>Chest:</strong> {latestMeasurement.chest} cm</p>
+            <p><strong>Biceps:</strong> {latestMeasurement.biceps} cm</p>
+            <p><strong>Waist:</strong> {latestMeasurement.waist} cm</p>
+            <p><strong>Hips:</strong> {latestMeasurement.hips} cm</p>
+            <p><strong>Thigh:</strong> {latestMeasurement.thigh} cm</p>
+            <p><strong>Calf:</strong> {latestMeasurement.calf} cm</p>
+          </div>
+        ) : (
+          <p>No latest measurement available.</p>
+        )}
+      </div>
+
+      {/* New section: Display All Measurements */}
+      <div className="measurement-records">
+        <button onClick={toggleShowMeasurementRecords}>
+          {showMeasurementRecords ? 'Hide Measurement Records' : 'Show Measurement Records'}
+        </button>
+        {showMeasurementRecords && (
+          <div>
+            <h2>All Measurement Records</h2>
+            <ul>
+              {measurementRecords.map((record, index) => (
+                <li key={index}>
+                  {record.date}: Shoulder - {record.shoulder} cm, Chest - {record.chest} cm, Biceps - {record.biceps} cm, Waist - {record.waist} cm, Hips - {record.hips} cm,
+                  Thigh - {record.thigh} cm, Calf - {record.calf} cm
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       <div className="weight-records">
         <button onClick={toggleShowWeightRecords}>
           {showWeightRecords ? 'Hide Weight Records' : 'Show Weight Records'}
@@ -233,6 +411,7 @@ const UserProfile = () => {
           </div>
         )}
       </div>
+
       <div className="all-macros">
         <button onClick={toggleShowMacros}>
           {showMacros ? 'Hide Macros' : 'Show Macros'}

@@ -1,6 +1,9 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
+import com.stoyandev.caloriecalculator.entity.MeasurementsRecord;
+import com.stoyandev.caloriecalculator.entity.Users;
+import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -59,5 +62,30 @@ public class UserController {
     public ResponseEntity<List<WeightRecordDTO>> getWeightRecords(@PathVariable Long userId) {
         List<WeightRecordDTO> weightRecords = userService.getWeightRecords(userId);
         return ResponseEntity.ok(weightRecords);
+    }
+
+    @PostMapping("/add/{userId}/measurements")
+    public ResponseEntity<MeasurementsRecord> addMeasurementRecord(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserMeasurementsRequestDTO measurements) {
+
+
+        MeasurementsRecord record = userService.addMeasurement(userId, measurements.shoulder(),
+                                measurements.chest(), measurements.biceps(), measurements.waist(),
+                                measurements.hips(), measurements.thigh(), measurements.calf());
+
+        return ResponseEntity.ok(record);
+    }
+
+    @GetMapping("/user/measurements/{userId}")
+    public ResponseEntity<List<MeasurementsRecordDTO>> getAllMeasurements(@PathVariable Long userId) {
+        List<MeasurementsRecordDTO> records = userService.getMeasurementsByUser(userId);
+        return ResponseEntity.ok(records);
+    }
+
+    @GetMapping("/user/latestMeasurement/{userId}")
+    public ResponseEntity<MeasurementsRecordDTO> getLatestMeasurement(@PathVariable Long userId) {
+        MeasurementsRecordDTO record = userService.getLatestMeasurement(userId);
+        return ResponseEntity.ok(record);
     }
 }
