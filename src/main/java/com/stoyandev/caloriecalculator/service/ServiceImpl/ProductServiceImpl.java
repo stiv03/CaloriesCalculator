@@ -15,7 +15,7 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-
+//todo: dependancy injection(find all types: field, constructor, function)
     public ProductServiceImpl(final ProductRepository productRepository) {
         this.productRepository = productRepository;
     }

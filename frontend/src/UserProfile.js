@@ -37,6 +37,10 @@ const UserProfile = () => {
   const [latestMeasurement, setLatestMeasurement] = useState(null);
   const [showMeasurementRecords, setShowMeasurementRecords] = useState(false);
 
+  // State for toggling Add Measurements and Set Goals visibility
+  const [showMeasurementsForm, setShowMeasurementsForm] = useState(false); // Hidden by default
+  const [showGoalsForm, setShowGoalsForm] = useState(false); // Hidden by default
+
   useEffect(() => {
     const userId = getUserId();
     if (!userId) {
@@ -244,13 +248,32 @@ const UserProfile = () => {
     setShowMeasurementRecords(!showMeasurementRecords);
   };
 
+  const toggleShowMeasurementsForm = () => {
+    setShowMeasurementsForm(!showMeasurementsForm);
+  };
+
+  const toggleShowGoalsForm = () => {
+    setShowGoalsForm(!showGoalsForm);
+  };
+
   return (
     <div className="profile-container">
       <h1>Profile of {user.name}</h1>
       <div className="profile-details">
-        <p><strong>Age:</strong> {user.age}</p>
-        <p><strong>Current Weight:</strong> {user.weight} kg</p>
-        <p><strong>Height:</strong> {user.height} cm</p>
+        <div className="detail-card">
+          <span className="icon">🎂</span>
+          <p><strong>Age:</strong> {user.age} years</p>
+        </div>
+
+        <div className="detail-card">
+          <span className="icon">⚖️</span>
+          <p><strong>Weight:</strong> {user.weight} kg</p>
+        </div>
+
+        <div className="detail-card">
+          <span className="icon">📏</span>
+          <p><strong>Height:</strong> {user.height} cm</p>
+        </div>
       </div>
 
       <div className="update-weight">
@@ -264,115 +287,166 @@ const UserProfile = () => {
         />
         <button onClick={handleWeightUpdate}>Update Weight</button>
       </div>
-      <div className="set-goals">
-        <h2>Set Goals: </h2>
-        <input
-          type="number"
-          name="calories"
-          value={goals.calories}
-          onChange={handleGoalChange}
-          placeholder="Calories"
-          min="1"
-        />
-        <input
-          type="number"
-          name="protein"
-          value={goals.protein}
-          onChange={handleGoalChange}
-          placeholder="Protein"
-          min="1"
-        />
-        <input
-          type="number"
-          name="carbs"
-          value={goals.carbs}
-          onChange={handleGoalChange}
-          placeholder="Carbs"
-          min="1"
-        />
-        <input
-          type="number"
-          name="fat"
-          value={goals.fat}
-          onChange={handleGoalChange}
-          placeholder="Fat"
-          min="1"
-        />
-        <button onClick={handleGoalSubmit}>Set Goals</button>
+
+      {/* Buttons for toggling Set Goals and Add Measurements, horizontally */}
+      <div className="button-row">
+        <button onClick={toggleShowGoalsForm}>
+          {showGoalsForm ? 'Hide Set Goals' : 'Show Set Goals'}
+        </button>
+
+        <button onClick={toggleShowMeasurementsForm}>
+          {showMeasurementsForm ? 'Hide Add Measurements' : 'Show Add Measurements'}
+        </button>
       </div>
 
-      {/* New section: Update Measurements */}
-      <div className="update-measurements">
-        <h2>Add Measurements</h2>
-        <input
-          type="number"
-          name="shoulder"
-          value={newMeasurements.shoulder}
-          onChange={handleMeasurementChange}
-          placeholder="Shoulder (cm)"
-        />
-        <input
-          type="number"
-          name="chest"
-          value={newMeasurements.chest}
-          onChange={handleMeasurementChange}
-          placeholder="Chest (cm)"
-        />
-        <input
-          type="number"
-          name="biceps"
-          value={newMeasurements.biceps}
-          onChange={handleMeasurementChange}
-          placeholder="Biceps (cm)"
-        />
-        <input
-          type="number"
-          name="waist"
-          value={newMeasurements.waist}
-          onChange={handleMeasurementChange}
-          placeholder="Waist (cm)"
-        />
-        <input
-          type="number"
-          name="hips"
-          value={newMeasurements.hips}
-          onChange={handleMeasurementChange}
-          placeholder="Hips (cm)"
-        />
-        <input
-          type="number"
-          name="thigh"
-          value={newMeasurements.thigh}
-          onChange={handleMeasurementChange}
-          placeholder="Thigh (cm)"
-        />
-        <input
-          type="number"
-          name="calf"
-          value={newMeasurements.calf}
-          onChange={handleMeasurementChange}
-          placeholder="Calf (cm)"
-        />
-        <button onClick={handleAddMeasurement}>Add Measurement</button>
-      </div>
+      {showGoalsForm && (
+        <div className="set-goals">
+          <h2>Set Goals: </h2>
+          <input
+            type="number"
+            name="calories"
+            value={goals.calories}
+            onChange={handleGoalChange}
+            placeholder="Calories"
+            min="1"
+          />
+          <input
+            type="number"
+            name="protein"
+            value={goals.protein}
+            onChange={handleGoalChange}
+            placeholder="Protein"
+            min="1"
+          />
+          <input
+            type="number"
+            name="carbs"
+            value={goals.carbs}
+            onChange={handleGoalChange}
+            placeholder="Carbs"
+            min="1"
+          />
+          <input
+            type="number"
+            name="fat"
+            value={goals.fat}
+            onChange={handleGoalChange}
+            placeholder="Fat"
+            min="1"
+          />
+          <button onClick={handleGoalSubmit}>Set Goals</button>
+        </div>
+      )}
+
+      {showMeasurementsForm && (
+        <div className="update-measurements">
+          <h2>Add Measurements</h2>
+          <input
+            type="number"
+            name="shoulder"
+            value={newMeasurements.shoulder}
+            onChange={handleMeasurementChange}
+            placeholder="Shoulder (cm)"
+            min="1"
+          />
+          <input
+            type="number"
+            name="chest"
+            value={newMeasurements.chest}
+            onChange={handleMeasurementChange}
+            placeholder="Chest (cm)"
+            min="1"
+          />
+          <input
+            type="number"
+            name="biceps"
+            value={newMeasurements.biceps}
+            onChange={handleMeasurementChange}
+            placeholder="Biceps (cm)"
+            min="1"
+          />
+          <input
+            type="number"
+            name="waist"
+            value={newMeasurements.waist}
+            onChange={handleMeasurementChange}
+            placeholder="Waist (cm)"
+            min="1"
+          />
+          <input
+            type="number"
+            name="hips"
+            value={newMeasurements.hips}
+            onChange={handleMeasurementChange}
+            placeholder="Hips (cm)"
+            min="1"
+          />
+          <input
+            type="number"
+            name="thigh"
+            value={newMeasurements.thigh}
+            onChange={handleMeasurementChange}
+            placeholder="Thigh (cm)"
+          />
+          <input
+            type="number"
+            name="calf"
+            value={newMeasurements.calf}
+            onChange={handleMeasurementChange}
+            placeholder="Calf (cm)"
+            min="1"
+          />
+          <button onClick={handleAddMeasurement}>Add Measurement</button>
+        </div>
+      )}
 
       {/* New section: Display Latest Measurement */}
-      <div className="latest-measurement">
-        <h2>Latest Measurement</h2>
-        {latestMeasurement ? (
-          <div>
-            <p><strong>Shoulder:</strong> {latestMeasurement.shoulder} cm</p>
-            <p><strong>Chest:</strong> {latestMeasurement.chest} cm</p>
-            <p><strong>Biceps:</strong> {latestMeasurement.biceps} cm</p>
-            <p><strong>Waist:</strong> {latestMeasurement.waist} cm</p>
-            <p><strong>Hips:</strong> {latestMeasurement.hips} cm</p>
-            <p><strong>Thigh:</strong> {latestMeasurement.thigh} cm</p>
-            <p><strong>Calf:</strong> {latestMeasurement.calf} cm</p>
-          </div>
-        ) : (
-          <p>No latest measurement available.</p>
-        )}
-      </div>
+     <div className="measurement-body">
+       <h2>
+         Latest Measurement
+         {latestMeasurement && (
+           <span> on {new Date(latestMeasurement.date).toLocaleDateString()}</span>
+         )}
+       </h2>
+       {latestMeasurement ? (
+         <div className="body-container">
+           <img src="/body-image.png" alt="Body" className="body-image" />
+
+           {/* Labels on the left side */}
+           <div className="measurement-label shoulder left">
+             <p><strong>Shoulders:</strong> {latestMeasurement.shoulder} cm</p>
+           </div>
+
+           <div className="measurement-label biceps left">
+             <p><strong>Biceps:</strong> {latestMeasurement.biceps} cm</p>
+           </div>
+
+           <div className="measurement-label waist left">
+             <p><strong>Waist:</strong> {latestMeasurement.waist} cm</p>
+           </div>
+
+           {/* Labels on the right side */}
+           <div className="measurement-label chest right">
+             <p><strong>Chest:</strong> {latestMeasurement.chest} cm</p>
+           </div>
+
+           <div className="measurement-label hips right">
+             <p><strong>Hips:</strong> {latestMeasurement.hips} cm</p>
+           </div>
+
+           <div className="measurement-label thigh right">
+             <p><strong>Thighs:</strong> {latestMeasurement.thigh} cm</p>
+           </div>
+
+           <div className="measurement-label calf right">
+             <p><strong>Calfs:</strong> {latestMeasurement.calf} cm</p>
+           </div>
+         </div>
+       ) : (
+         <p>No latest measurement available.</p>
+       )}
+     </div>
+
 
       {/* New section: Display All Measurements */}
       <div className="measurement-records">
@@ -382,14 +456,34 @@ const UserProfile = () => {
         {showMeasurementRecords && (
           <div>
             <h2>All Measurement Records</h2>
-            <ul>
-              {measurementRecords.map((record, index) => (
-                <li key={index}>
-                  {record.date}: Shoulder - {record.shoulder} cm, Chest - {record.chest} cm, Biceps - {record.biceps} cm, Waist - {record.waist} cm, Hips - {record.hips} cm,
-                  Thigh - {record.thigh} cm, Calf - {record.calf} cm
-                </li>
-              ))}
-            </ul>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Shoulder</th>
+                  <th>Chest</th>
+                  <th>Biceps</th>
+                  <th>Waist</th>
+                  <th>Hips</th>
+                  <th>Thigh</th>
+                  <th>Calf</th>
+                </tr>
+              </thead>
+              <tbody>
+                {measurementRecords.map((record, index) => (
+                  <tr key={index}>
+                    <td>{new Date(record.date).toLocaleDateString()}</td>
+                    <td>{record.shoulder} cm</td>
+                    <td>{record.chest} cm</td>
+                    <td>{record.biceps} cm</td>
+                    <td>{record.waist} cm</td>
+                    <td>{record.hips} cm</td>
+                    <td>{record.thigh} cm</td>
+                    <td>{record.calf} cm</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

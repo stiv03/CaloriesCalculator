@@ -11,14 +11,6 @@ import java.util.List;
 public interface UserMealsService {
     List<UserMealsDTO> findAllUserMealsRelForSpecificDay(Long userId, LocalDate date);
 
-    double calculateTotalCaloriesForDay(Long id, LocalDate date);
-
-    double calculateTotalProteinForDay(Long id, LocalDate date);
-
-    double calculateTotalCarbsForDay(Long id, LocalDate date);
-
-    double calculateTotalFatsForDay(Long id, LocalDate date);
-
     DailyMacrosDTO calculateDailyMacros(Long id, LocalDate date);
 
     void addMealForUser(Long userId, Long productId, Integer grams);
@@ -28,7 +20,9 @@ public interface UserMealsService {
     void deleteByUserMealID(long id);
 
     List<DailyMacrosDTO> fetchAllMacros(Long userId);
-    Goal setUserGoal(Long userId, Goal goal);
+
+    GoalDTO setUserGoal(Long userId, GoalDTO goal);
+
     GoalDTO getUserGoal(Long userId);
 }
 

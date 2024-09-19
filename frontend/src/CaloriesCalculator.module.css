@@ -164,7 +164,7 @@ margin-top: 20px;
 
 .addMealForm input {
 margin-top: 5px;
-  width: 80%; /* Make the input take 80% of the width of its container */
+  width: 100%; /* Make the input take 80% of the width of its container */
   padding: 8px; /* Add some padding for better readability */
   font-size: 10px; /* Increase the font size for better readability */
   border: 1px solid #ccc; /* Add a border */
@@ -173,16 +173,7 @@ margin-top: 5px;
   margin-bottom: 10px; /* Add space between the input and the suggestions */
 }
 
-.largeInput {
-  width: 80%; /* Make the input take the full width of its container */
 
-  padding: 2px; /* Add some padding for better readability */
-  font-size: 16px; /* Increase the font size for better readability */
-  border: 1px solid #ccc; /* Add a border */
-  border-radius: 5px; /* Add rounded corners */
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  margin-bottom: 10px; /* Add space between the input and the suggestions */
-}
 
 .addButton {
  margin-bottom: 10px;
@@ -364,21 +355,44 @@ progress::-moz-progress-bar {
   border-radius: 5px;
   padding: 5px;
   cursor: pointer;
+
   align-items: center;
  width: calc(33.333% - 10px); /* Adjust width based on the desired layout */
   box-sizing: border-box;
 }
 
 .suggestionBlock {
-  display: flex;
+  display: wrap;
   justify-content: center;
   align-items: center;
+
   height: 100%;
 }
 
 .suggestion:hover {
   background: #e6e6e6;
 }
+
+
+
+
+
+.productDetails {
+  margin-top: 5px;
+  font-size: 12px;
+
+
+}
+
+.deleteButton {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+
 
 
 

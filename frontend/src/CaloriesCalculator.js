@@ -27,12 +27,11 @@ const CaloriesCalculator = () => {
     fat: 0
   });
 
-  // Autosuggest state and functions
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-  const [showAddMealForm, setShowAddMealForm] = useState(false); // State to control add meal form visibility
+  const [showAddMealForm, setShowAddMealForm] = useState(false);
+  const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
 
   const fetchProductSuggestions = async (query) => {
     try {
@@ -53,9 +52,27 @@ const CaloriesCalculator = () => {
 
   const getSuggestionValue = (suggestion) => suggestion.name;
 
-  const renderSuggestion = (suggestion) => (
-    <div className={styles.suggestionBlock}>{suggestion.name}</div>
-  );
+  const renderSuggestion = (suggestion) => {
+    const isHovered = hoveredSuggestion === suggestion.productId;
+
+    return (
+      <div
+        className={styles.suggestionBlock}
+        onMouseEnter={() => setHoveredSuggestion(suggestion.productId)}
+        onMouseLeave={() => setHoveredSuggestion(null)}
+      >
+        <div>{suggestion.name}</div>
+        {isHovered && (
+          <div className={styles.productDetails}>
+            <div>Calories: {suggestion.caloriesPer100Grams} kcal</div>
+            <div>Protein: {suggestion.proteinPer100Grams} g</div>
+            <div>Carbs: {suggestion.carbsPer100Grams} g</div>
+            <div>Fats: {suggestion.fatPer100Grams} g</div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const onChange = (event, { newValue }) => {
     setQuery(newValue);
@@ -70,7 +87,7 @@ const CaloriesCalculator = () => {
     placeholder: 'Type a product name',
     value: query,
     onChange: onChange,
-    className: styles.largeInput, // Apply the new class
+    className: styles.largeInput,
   };
 
   const theme = {
@@ -87,7 +104,7 @@ const CaloriesCalculator = () => {
 
   const handleUnauthorized = (error) => {
     if (error.response && error.response.status === 401) {
-      window.location.href = '/login'; // Redirect to login page
+      window.location.href = '/login';
     } else {
       console.error('Error:', error);
       setLoading(false);
@@ -97,7 +114,6 @@ const CaloriesCalculator = () => {
   const fetchMeals = async () => {
     try {
       const response = await axios.get(`meals/date/${getUserId()}`, { params: { date } });
-      console.log('Meals fetched:', response.data); // Add this line to check the response
       setMeals(response.data);
     } catch (error) {
       handleUnauthorized(error);
@@ -127,7 +143,6 @@ const CaloriesCalculator = () => {
           'Authorization': `Bearer ${getToken()}`
         }
       });
-      console.log('Goals fetched:', response.data); // Add this line to check the response
       setGoals(response.data);
     } catch (error) {
       console.error('Error fetching goals:', error);
@@ -136,20 +151,34 @@ const CaloriesCalculator = () => {
 
   const handleAddFood = async () => {
     try {
-      console.log('Adding meal:', newMeal);
       const response = await axios.post(`/meals/${getUserId()}`, newMeal);
-      console.log('Meal added successfully:', response.data);
-      setNewMeal({ productId: '', grams: '' }); // Clear the form
-      setSelectedProduct(null); // Clear the selected product
-      setQuery(''); // Clear the query
-      setShowAddMealForm(false); // Hide the add meal form
-      fetchMeals(); // Refresh the meal list
-      fetchTotals(); // Refresh the totals
+      setNewMeal({ productId: '', grams: '' });
+      setSelectedProduct(null);
+      setQuery('');
+      setShowAddMealForm(false);
+      fetchMeals();
+      fetchTotals();
       setLoading(false);
     } catch (error) {
       console.error('Error adding meal:', error);
     }
   };
+
+const handleDeleteMeal = async (mealId) => {
+  console.log("Deleting meal with ID:", mealId);  // Add this for debugging
+  try {
+    await axios.delete(`/meals/delete/meal/${mealId}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
+    fetchMeals(); // Refresh the meal list after deletion
+    fetchTotals(); // Update the totals after deletion
+  } catch (error) {
+    console.error('Error deleting meal:', error);
+  }
+};
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -163,9 +192,7 @@ const CaloriesCalculator = () => {
 
   const handleAddProduct = async () => {
     try {
-      console.log('Adding product:', newProduct);
       const response = await axios.post('/new/product', newProduct);
-      console.log('Product added successfully:', response.data);
       setNewProduct({
         name: '',
         productType: '',
@@ -174,19 +201,22 @@ const CaloriesCalculator = () => {
         fatPer100Grams: '',
         carbsPer100Grams: '',
       });
-      setShowProductForm(false); // Hide the product form
+      setShowProductForm(false);
     } catch (error) {
       console.error('Error adding product:', error);
     }
   };
 
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const navigate = useNavigate();
 
-  const addMealFormRef = useRef(null); // Create a ref for the add meal form
+  const addMealFormRef = useRef(null);
 
-  const scrollToForm = () => {
-    addMealFormRef.current.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Scroll to form after it is shown
+  useEffect(() => {
+    if (showAddMealForm && addMealFormRef.current) {
+      addMealFormRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [showAddMealForm]);
 
   const toggleAddMealForm = () => {
     setShowAddMealForm((prev) => !prev);
@@ -211,7 +241,7 @@ const CaloriesCalculator = () => {
       <h1>Calories Calculator</h1>
 
       <div className={styles.date}>{date}</div>
-      <MealList meals={meals} onAddMealClick={toggleAddMealForm} />
+      <MealList meals={meals} onAddMealClick={toggleAddMealForm} onDeleteMeal={handleDeleteMeal} />
       <Totals totals={totals} />
 
       <div className={styles.goals}>
@@ -241,7 +271,7 @@ const CaloriesCalculator = () => {
       {showAddMealForm && (
         <div className={styles.addMealForm} ref={addMealFormRef}>
           <h2>Add New Meal</h2>
-     <div className={styles.addMealFormInputs}>
+          <div className={styles.addMealFormInputs}>
             <Autosuggest
               suggestions={suggestions}
               onSuggestionsFetchRequested={onSuggestionsFetchRequested}
@@ -250,7 +280,7 @@ const CaloriesCalculator = () => {
               renderSuggestion={renderSuggestion}
               inputProps={inputProps}
               onSuggestionSelected={onSuggestionSelected}
-              theme={theme} // Pass the custom theme to Autosuggest
+              theme={theme}
             />
             <input
               type="number"
@@ -264,85 +294,86 @@ const CaloriesCalculator = () => {
           <button className={styles.addButton} onClick={handleAddFood} disabled={loading || !selectedProduct || !newMeal.grams}>
             {loading ? 'Adding...' : 'Add Meal'}
           </button>
-        </div>
-      )}
 
-      <button className={`${styles.addButton} ${styles.addProductButton}`} onClick={() => setShowProductForm(!showProductForm)}>
-        {showProductForm ? 'Cancel' : 'Add New Product'}
-      </button>
-      {showProductForm && (
-        <div className={styles.addProductForm}>
-          <h2>Add New Product</h2>
-          <input
-            type="text"
-            name="name"
-            value={newProduct.name}
-            onChange={handleProductInputChange}
-            placeholder="Product Name"
-            required
-          />
-          <select
-            name="productType"
-            value={newProduct.productType}
-            onChange={handleProductInputChange}
-            placeholder="Product Type"
-            required
+          <button
+            className={`${styles.addButton} ${styles.addProductButton}`}
+            onClick={() => setShowProductForm(!showProductForm)}
           >
-            <option value="" disabled>Select Product Type</option>
-            <option value="MEAT">Meat</option>
-            <option value="FRUITS">Fruits</option>
-            <option value="VEGETABLES">Vegetables</option>
-            <option value="DAIRY">Dairy</option>
-            <option value="LEGUMES">Legumes</option>
-            <option value="CEREALS">Cereals</option>
-            <option value="TUBERS">Tubers</option>
-          </select>
-          <input
-            type="number"
-            name="caloriesPer100Grams"
-            value={newProduct.caloriesPer100Grams}
-            onChange={handleProductInputChange}
-            placeholder="Calories per 100 Grams"
-            min="1"
-            required
-          />
-          <input
-            type="number"
-            name="proteinPer100Grams"
-            value={newProduct.proteinPer100Grams}
-            onChange={handleProductInputChange}
-            placeholder="Protein per 100 Grams"
-            min="1"
-            required
-          />
-          <input
-            type="number"
-            name="fatPer100Grams"
-            value={newProduct.fatPer100Grams}
-            onChange={handleProductInputChange}
-            placeholder="Fat per 100 Grams"
-            min="1"
-            required
-          />
-          <input
-            type="number"
-            name="carbsPer100Grams"
-            value={newProduct.carbsPer100Grams}
-            onChange={handleProductInputChange}
-            placeholder="Carbs per 100 Grams"
-            min="1"
-            required
-          />
-          <button className={styles.addButton} onClick={handleAddProduct}>Add Product</button>
+            {showProductForm ? 'Cancel' : 'Add New Product'}
+          </button>
+
+          {showProductForm && (
+            <div className={styles.addProductForm}>
+              <h2>Add New Product</h2>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={handleProductInputChange}
+                placeholder="Product Name"
+                required
+              />
+              <select
+                name="productType"
+                value={newProduct.productType}
+                onChange={handleProductInputChange}
+                required
+              >
+                <option value="" disabled>Select Product Type</option>
+                <option value="MEAT">Meat</option>
+                <option value="FRUITS">Fruits</option>
+                <option value="VEGETABLES">Vegetables</option>
+                <option value="DAIRY">Dairy</option>
+                <option value="LEGUMES">Legumes</option>
+                <option value="CEREALS">Cereals</option>
+                <option value="TUBERS">Tubers</option>
+              </select>
+              <input
+                type="number"
+                name="caloriesPer100Grams"
+                value={newProduct.caloriesPer100Grams}
+                onChange={handleProductInputChange}
+                placeholder="Calories per 100 Grams"
+                min="1"
+                required
+              />
+              <input
+                type="number"
+                name="proteinPer100Grams"
+                value={newProduct.proteinPer100Grams}
+                onChange={handleProductInputChange}
+                placeholder="Protein per 100 Grams"
+                min="1"
+                required
+              />
+              <input
+                type="number"
+                name="fatPer100Grams"
+                value={newProduct.fatPer100Grams}
+                onChange={handleProductInputChange}
+                placeholder="Fat per 100 Grams"
+                min="1"
+                required
+              />
+              <input
+                type="number"
+                name="carbsPer100Grams"
+                value={newProduct.carbsPer100Grams}
+                onChange={handleProductInputChange}
+                placeholder="Carbs per 100 Grams"
+                min="1"
+                required
+              />
+              <button className={styles.addButton} onClick={handleAddProduct}>Add Product</button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-const MealList = ({ meals, onAddMealClick }) => {
-  console.log('Meals in MealList:', meals); // Add this line to log the meals data
-
+const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
   return (
     <div className={styles.foodList}>
       <h2>Food Eaten Today</h2>
@@ -355,11 +386,11 @@ const MealList = ({ meals, onAddMealClick }) => {
             <th>Protein (g)</th>
             <th>Carbs (g)</th>
             <th>Fats (g)</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {meals.map((meal) => {
-            console.log('Meal:', meal); // Log each meal
             const totalKcal = (meal.quantity / 100) * meal.product.caloriesPer100Grams;
             const totalProtein = (meal.quantity / 100) * meal.product.proteinPer100Grams;
             const totalCarbs = (meal.quantity / 100) * meal.product.carbsPer100Grams;
@@ -373,6 +404,11 @@ const MealList = ({ meals, onAddMealClick }) => {
                 <td>{totalProtein.toFixed(1)}</td>
                 <td>{totalCarbs.toFixed(1)}</td>
                 <td>{totalFats.toFixed(1)}</td>
+                <td>
+                  <button onClick={() => onDeleteMeal(meal.id)} className={styles.deleteButton}>
+                    Delete
+                  </button>
+                </td>
               </tr>
             );
           })}

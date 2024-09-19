@@ -37,34 +37,7 @@ public class UserMealsController {
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/meals/{userId}/calories")
-    @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public double calculateTotalCaloriesForDay(@PathVariable Long userId, @RequestParam String date) {
-        return userMealsService.calculateTotalCaloriesForDay(userId, LocalDate.parse(date, FORMATTER));
-    }
 
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/meals/{userId}/protein")
-    @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public double calculateTotalProteinForDay(@PathVariable Long userId, @RequestParam String date) {
-        return userMealsService.calculateTotalProteinForDay(userId, LocalDate.parse(date, FORMATTER));
-    }
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/meals/{userId}/carbs")
-    @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public double calculateTotalCarbsForDay(@PathVariable Long userId, @RequestParam String date) {
-        return userMealsService.calculateTotalCarbsForDay(userId, LocalDate.parse(date, FORMATTER));
-    }
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/meals/{userId}/fats")
-    @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    //todo: save userId in the jwt claims/subject instead.
-    public double calculateTotalFatsForDay(@PathVariable Long userId, @RequestParam String date) {
-        return userMealsService.calculateTotalFatsForDay(userId, LocalDate.parse(date, FORMATTER));
-    }
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/totalMacros")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
@@ -98,8 +71,8 @@ public class UserMealsController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/setGoal")
-    public ResponseEntity<Goal> setUserGoal(@PathVariable Long userId, @RequestBody Goal goal) {
-        Goal savedGoal = userMealsService.setUserGoal(userId, goal);
+    public ResponseEntity<GoalDTO> setUserGoal(@PathVariable Long userId, @RequestBody GoalDTO goal) {
+        GoalDTO savedGoal = userMealsService.setUserGoal(userId, goal);
         return ResponseEntity.ok(savedGoal);
     }
 

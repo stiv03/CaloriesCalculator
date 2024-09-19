@@ -6,6 +6,7 @@ import com.stoyandev.caloriecalculator.dto.UserMealsDTO;
 import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.entity.UserMeals;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
+import com.stoyandev.caloriecalculator.mapper.GoalMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMealsMapper;
 import com.stoyandev.caloriecalculator.repository.GoalRepository;
@@ -61,50 +62,6 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public double calculateTotalCaloriesForDay(final Long userId, LocalDate date) {
-        List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
-
-        double totalCalories = 0;
-        for (var userProduct : usersProduct) {
-            totalCalories += userProduct.getProduct().getCaloriesPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
-        }
-        return totalCalories;
-    }
-
-    @Override
-    public double calculateTotalProteinForDay(final Long userId, LocalDate date) {
-        List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
-
-        double totalProtein = 0;
-        for (var userProduct : usersProduct) {
-            totalProtein += userProduct.getProduct().getProteinPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
-        }
-        return totalProtein;
-    }
-
-    @Override
-    public double calculateTotalCarbsForDay(final Long userId, LocalDate date) {
-        List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
-
-        double totalCarbs = 0;
-        for (var userProduct : usersProduct) {
-            totalCarbs += userProduct.getProduct().getCarbsPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
-        }
-        return totalCarbs;
-    }
-
-    @Override
-    public double calculateTotalFatsForDay(final Long userId, LocalDate date) {
-        List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
-
-        double totalFats = 0;
-        for (var userProduct : usersProduct) {
-            totalFats += userProduct.getProduct().getFatPer100Grams() * (userProduct.getQuantity() / HUNDRED_GRAMS_DENOMINATOR);
-        }
-        return totalFats;
-    }
-
-    @Override
     public DailyMacrosDTO calculateDailyMacros(Long userId, LocalDate date) {
         List<UserMealsDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
         double totalCalories = 0;
@@ -128,8 +85,6 @@ public class UserMealsServiceImpl implements UserMealsService {
         final var userMeal = usersMealsRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found" + id));
-        // Validate authentication of user:
-        SecurityContextHolder.getContext().getAuthentication();
 
         userMeal.setQuantity(newQuantity);
         var savedUserMeal = usersMealsRepository.save(userMeal);
@@ -152,32 +107,33 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    //todo: make goal function param a dto please!
-    public Goal setUserGoal(Long userId, Goal goal) {
+    public GoalDTO setUserGoal(Long userId, GoalDTO goal) {
         final var updatedGoal = goalRepository.findByUserId(userId);
         if(updatedGoal.isPresent()) {
-            updatedGoal.get().setFat(goal.getFat());
-            updatedGoal.get().setProtein(goal.getProtein());
-            updatedGoal.get().setCarbs(goal.getCarbs());
-            updatedGoal.get().setCalories(goal.getCalories());
-            return goalRepository.save(updatedGoal.get());
+            updatedGoal.get().setFat(goal.fat());
+            updatedGoal.get().setProtein(goal.protein());
+            updatedGoal.get().setCarbs(goal.carbs());
+            updatedGoal.get().setCalories(goal.calories());
+           var savedGoal = goalRepository.save(updatedGoal.get());
+            return GoalMapper.mapToDTo(savedGoal);
         }
 
         final var newGoal = new Goal();
         final var user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found"));
         newGoal.setUser(user);
-        newGoal.setFat(goal.getFat());
-        newGoal.setCarbs(goal.getCarbs());
-        newGoal.setProtein(goal.getProtein());
-        newGoal.setCalories(goal.getCalories());
+        newGoal.setFat(goal.fat());
+        newGoal.setCarbs(goal.carbs());
+        newGoal.setProtein(goal.protein());
+        newGoal.setCalories(goal.calories());
+        var savedGoal2 = goalRepository.save(newGoal);
 
-        return goalRepository.save(newGoal);
+        return GoalMapper.mapToDTo(savedGoal2);
     }
 
     @Override
     public GoalDTO getUserGoal(Long userId) {
-        final var goalfucker = goalRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
-        return UserMapper.mapGoalToDTO(goalfucker);
+        final var goal = goalRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+        return UserMapper.mapGoalToDTO(goal);
     }
 
 }
