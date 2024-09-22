@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserMealsDTO {
+    private Long mealId;
     private Product product;
     private double quantity;
     private LocalDateTime consumedAt;

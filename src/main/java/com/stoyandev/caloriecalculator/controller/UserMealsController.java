@@ -55,9 +55,9 @@ public class UserMealsController {
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @DeleteMapping("/meals/delete/meal/{id}")
-    public ResponseEntity<Void> deleteByUserMealID(@PathVariable Long id) {
-        userMealsService.deleteByUserMealID(id);
+    @DeleteMapping("/meals/delete/meal/{mealId}")
+    public ResponseEntity<Void> deleteByUserMealID(@PathVariable Long mealId) {
+        userMealsService.deleteByUserMealID(mealId);
         return ResponseEntity.ok().build();
     }
 

@@ -287,24 +287,6 @@ progress::-moz-progress-bar {
 }
 
 
-.addMealButton {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 50px; /* Set width for the circular button */
-  height: 50px; /* Set height for the circular button */
-  background-color: #00cc66;
-  color: white;
-  border: none;
-  border-radius: 50%; /* Make the button circular */
-  cursor: pointer;
-  transition: background 0.3s ease;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px; /* Ensure the plus sign is centered */
-}
-
 
 
 
@@ -314,7 +296,7 @@ progress::-moz-progress-bar {
 .addMealButton {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right:70px;
   width: 50px; /* Set width for the circular button */
   height: 50px; /* Set height for the circular button */
   background-color: #00cc66;
@@ -388,10 +370,40 @@ progress::-moz-progress-bar {
   background-color: red;
   color: white;
   border: none;
-  padding: 5px 10px;
+  padding: 5px 5px;
   cursor: pointer;
 }
 
+
+.addDeleteButtonWrapper {
+  display: flex;
+  justify-content: flex-end; /* Align the buttons to the right */
+  margin-top: 10px;
+}
+
+.toggleDeleteButton {
+  background-color: red;
+  color: white;
+   position: absolute;
+   cursor: pointer;
+     border: none;
+      display: flex;
+       justify-content: center;
+       align-items: center;
+         top: 10px;
+  padding: 8px 16px;
+  width: 50px; /* Set width for the circular button */
+  height: 50px;
+  border-radius: 50%;
+  font-size: 24px;
+}
+
+.toggleDeleteButton:hover {
+  background-color: #871426;
+}
+.deleteButton:hover {
+  background-color: #871426;
+}
 
 
 

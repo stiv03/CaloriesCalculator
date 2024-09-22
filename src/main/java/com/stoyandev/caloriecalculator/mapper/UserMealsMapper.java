@@ -10,6 +10,7 @@ public class UserMealsMapper {
 
     public static UserMealsDTO mapToUserProductDTO(UserMeals userMeals) {
         return new UserMealsDTO(
+                userMeals.getId(),
                 userMeals.getProduct(),
                 userMeals.getQuantity(),
                 userMeals.getConsumedAt()

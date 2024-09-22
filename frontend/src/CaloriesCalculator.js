@@ -164,21 +164,20 @@ const CaloriesCalculator = () => {
     }
   };
 
-const handleDeleteMeal = async (mealId) => {
-  console.log("Deleting meal with ID:", mealId);  // Add this for debugging
-  try {
-    await axios.delete(`/meals/delete/meal/${mealId}`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`
-      }
-    });
-    fetchMeals(); // Refresh the meal list after deletion
-    fetchTotals(); // Update the totals after deletion
-  } catch (error) {
-    console.error('Error deleting meal:', error);
-  }
-};
-
+  const handleDeleteMeal = async (mealId) => {
+    console.log("Meal ID to delete:", mealId);  // Add logging for debugging
+    try {
+      await axios.delete(`/meals/delete/meal/${mealId}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+      fetchMeals(); // Refresh the meal list after deletion
+      fetchTotals(); // Update the totals after deletion
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -374,6 +373,14 @@ const handleDeleteMeal = async (mealId) => {
 };
 
 const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
+  // Add a state to control the visibility of the delete buttons
+  const [showDelete, setShowDelete] = useState(false);
+
+  // Toggle function to show/hide the delete buttons
+  const toggleDeleteColumn = () => {
+    setShowDelete((prev) => !prev);
+  };
+
   return (
     <div className={styles.foodList}>
       <h2>Food Eaten Today</h2>
@@ -386,7 +393,7 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
             <th>Protein (g)</th>
             <th>Carbs (g)</th>
             <th>Fats (g)</th>
-            <th>Actions</th>
+            {showDelete && <th>Actions</th>} {/* Show 'Actions' header only if delete buttons are visible */}
           </tr>
         </thead>
         <tbody>
@@ -404,20 +411,30 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
                 <td>{totalProtein.toFixed(1)}</td>
                 <td>{totalCarbs.toFixed(1)}</td>
                 <td>{totalFats.toFixed(1)}</td>
-                <td>
-                  <button onClick={() => onDeleteMeal(meal.id)} className={styles.deleteButton}>
-                    Delete
-                  </button>
-                </td>
+                {showDelete && (
+                  <td>
+                    <button onClick={() => onDeleteMeal(meal.mealId)} className={styles.deleteButton}>
+                      -
+                    </button>
+                  </td>
+                )}
               </tr>
             );
           })}
         </tbody>
       </table>
-      <button className={styles.addMealButton} onClick={onAddMealClick}>+</button>
+
+      {/* Button to toggle the delete column */}
+      <div className={styles.addDeleteButtonWrapper}>
+        <button className={styles.toggleDeleteButton} onClick={toggleDeleteColumn}>
+          {showDelete ? '-' : '-'} {/* Show '-' when delete buttons are visible, 'Delete' otherwise */}
+        </button>
+        <button className={styles.addMealButton} onClick={onAddMealClick}>+</button>
+      </div>
     </div>
   );
 };
+
 
 const Totals = ({ totals }) => {
   return (
