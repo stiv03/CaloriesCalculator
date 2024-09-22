@@ -414,7 +414,7 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
                 {showDelete && (
                   <td>
                     <button onClick={() => onDeleteMeal(meal.mealId)} className={styles.deleteButton}>
-                      -
+                      Delete
                     </button>
                   </td>
                 )}

@@ -24,16 +24,11 @@ font-size: 1.3em;
 .foodList {
   background: #f7f7f7;
   text-align: left;
-
     position: relative;
     padding: 20px;
     padding-top: 50px; /* Ensure there's space for the button */
-
-
-    display: flex;
-    flex-direction: column;
-
-
+  display: flex;
+  flex-direction: column;
   padding: 10px;
   border-radius: 8px;
    border: 2px solid #ddd;
@@ -50,21 +45,6 @@ font-size: 1.3em;
   color: #4CAF50;
 }
 
-/*.totals {
-margin-top: 20px;
-  background: #d0f7d6;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  display: flex;
-  border: 2px solid #a4dbad;
-  justify-content: space-between;
-  font-size: 1.05em;
-}
-*/
-
-
-
 .totalsContainer {
   display: flex;
   align-items: center;
@@ -79,24 +59,18 @@ margin-top: 20px;
   border: 2px solid #a4dbad;
 }
 
-
 .totalBox {
   background:  #dbffe1;
   padding: 10px;
   border-radius: 12px;
   box-shadow: 0 7px 6px rgba(0, 0, 0.20, 0.23);
-
   text-align: center;
   min-width: 120px;
-
 }
 
 .totalBox p {
   margin: 5px 0;
 }
-
-
-
 
 .profileIcon {
   position: absolute;
@@ -138,8 +112,8 @@ margin-top: 20px;
 .addProductForm select {
   margin-bottom: 10px;
   padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .addProductForm button {
@@ -163,7 +137,7 @@ margin-top: 20px;
 }
 
 .addMealForm input {
-margin-top: 5px;
+ margin-top: 5px;
   width: 100%; /* Make the input take 80% of the width of its container */
   padding: 8px; /* Add some padding for better readability */
   font-size: 10px; /* Increase the font size for better readability */
@@ -179,7 +153,7 @@ margin-top: 5px;
  margin-bottom: 10px;
   margin-left: 10%;
   margin-right: 10%;
- width: 80%;
+  width: 80%;
   padding: 10px 20px;
   background: #28a745;
   color: #fff;
@@ -197,11 +171,11 @@ margin-top: 5px;
 .goals {
   margin-top: 15px;
   background: #ffda91;
-    padding: 1px;
-    border-radius: 8px;
-      border: 2px solid #deb96f;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-size: 1.0em;
+  padding: 1px;
+  border-radius: 8px;
+  border: 2px solid #deb96f;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-size: 1.0em;
 
 }
 
@@ -356,14 +330,9 @@ progress::-moz-progress-bar {
 }
 
 
-
-
-
 .productDetails {
   margin-top: 5px;
   font-size: 12px;
-
-
 }
 
 .deleteButton {
@@ -374,7 +343,6 @@ progress::-moz-progress-bar {
   cursor: pointer;
 }
 
-
 .addDeleteButtonWrapper {
   display: flex;
   justify-content: flex-end; /* Align the buttons to the right */
@@ -384,13 +352,13 @@ progress::-moz-progress-bar {
 .toggleDeleteButton {
   background-color: red;
   color: white;
-   position: absolute;
-   cursor: pointer;
-     border: none;
-      display: flex;
-       justify-content: center;
-       align-items: center;
-         top: 10px;
+  position: absolute;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 10px;
   padding: 8px 16px;
   width: 50px; /* Set width for the circular button */
   height: 50px;
