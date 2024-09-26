@@ -165,7 +165,6 @@ const CaloriesCalculator = () => {
   };
 
   const handleDeleteMeal = async (mealId) => {
-    console.log("Meal ID to delete:", mealId);  // Add logging for debugging
     try {
       await axios.delete(`/meals/delete/meal/${mealId}`, {
         headers: {
@@ -178,6 +177,22 @@ const CaloriesCalculator = () => {
       console.error('Error deleting meal:', error);
     }
   };
+
+  const handleQuantityChange = async (mealId, newQuantity) => {
+    const userId = getUserId(); // Make sure userId is available
+    try {
+      const response = await axios.put(`/meals/upgrade/quantity/${userId}/meal/${mealId}`, { newQuantity }, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      fetchMeals(); // Refresh meals list after update
+      fetchTotals(); // Update the totals after quantity change
+    } catch (error) {
+      console.error('Error updating meal quantity:', error);
+    }
+  };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -240,7 +255,7 @@ const CaloriesCalculator = () => {
       <h1>Calories Calculator</h1>
 
       <div className={styles.date}>{date}</div>
-      <MealList meals={meals} onAddMealClick={toggleAddMealForm} onDeleteMeal={handleDeleteMeal} />
+      <MealList meals={meals} onAddMealClick={toggleAddMealForm} onDeleteMeal={handleDeleteMeal} onUpdateQuantity={handleQuantityChange} />
       <Totals totals={totals} />
 
       <div className={styles.goals}>
@@ -372,14 +387,18 @@ const CaloriesCalculator = () => {
   );
 };
 
-const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
-  // Add a state to control the visibility of the delete buttons
+const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => {
+  // Add states to control the visibility of the delete and edit quantity buttons
   const [showDelete, setShowDelete] = useState(false);
+  const [showEditQuantity, setShowEditQuantity] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  // Toggle function to show/hide the delete buttons
-  const toggleDeleteColumn = () => {
-    setShowDelete((prev) => !prev);
-  };
+  // Toggle function to show/hide the delete and edit quantity columns
+  const toggleDeleteColumn = () => setShowDelete((prev) => !prev);
+  const toggleEditQuantityColumn = () => setShowEditQuantity((prev) => !prev);
+
+  // Toggle dropdown visibility
+  const toggleDropdown = () => setDropdownVisible((prev) => !prev);
 
   return (
     <div className={styles.foodList}>
@@ -394,6 +413,7 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
             <th>Carbs (g)</th>
             <th>Fats (g)</th>
             {showDelete && <th>Actions</th>} {/* Show 'Actions' header only if delete buttons are visible */}
+            {showEditQuantity && <th>Edit Quantity</th>} {/* Show 'Edit Quantity' header only if edit quantity buttons are visible */}
           </tr>
         </thead>
         <tbody>
@@ -418,22 +438,43 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal }) => {
                     </button>
                   </td>
                 )}
+                {showEditQuantity && (
+                  <td>
+                    <input
+                      type="number"
+                      value={meal.quantity}
+                      onChange={(e) => onUpdateQuantity(meal.mealId, e.target.value)}
+                      className={styles.quantityInput}
+                    />
+                  </td>
+                )}
               </tr>
             );
           })}
         </tbody>
       </table>
 
-      {/* Button to toggle the delete column */}
+      {/* Button to show dropdown with options to toggle delete and edit columns */}
       <div className={styles.addDeleteButtonWrapper}>
-        <button className={styles.toggleDeleteButton} onClick={toggleDeleteColumn}>
-          {showDelete ? '-' : '-'} {/* Show '-' when delete buttons are visible, 'Delete' otherwise */}
+        <button className={styles.toggleDropdownButton} onClick={toggleDropdown}>
+          {dropdownVisible ? '⋮' : '⋮'} {/* Button for toggling dropdown */}
         </button>
+        {dropdownVisible && (
+          <div className={styles.dropdownContent}>
+            <button className={styles.toggleDeleteButton} onClick={toggleDeleteColumn}>
+              {showDelete ? 'Hide' : 'Delete'}
+            </button>
+            <button className={styles.toggleEditButton} onClick={toggleEditQuantityColumn}>
+              {showEditQuantity ? 'Hide' : 'Edit'}
+            </button>
+          </div>
+        )}
         <button className={styles.addMealButton} onClick={onAddMealClick}>+</button>
       </div>
     </div>
   );
 };
+
 
 
 const Totals = ({ totals }) => {

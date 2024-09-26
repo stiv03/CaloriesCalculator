@@ -13,9 +13,7 @@ import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
-
     private final ProductRepository productRepository;
-//todo: dependancy injection(find all types: field, constructor, function)
     public ProductServiceImpl(final ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
@@ -46,7 +44,6 @@ public class ProductServiceImpl implements ProductService {
         for (var product : allProducts) {
             if (type.equals(product.getProductType())) {
                 filteredProduct.add(ProductMapper.mapToProductDTO(product));
-
             }
         }
         return filteredProduct;
@@ -55,6 +52,5 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDTO> searchProducts(String query) {
         return productRepository.findByNameContainingIgnoreCase(query).stream().map(ProductMapper::mapToProductDTO).toList();
     }
-
 
 }

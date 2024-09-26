@@ -47,10 +47,10 @@ public class UserMealsController {
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @PutMapping("/meals/upgrade/quantity/{id}")
-    // todo: parse the user ID in the method, for verification
-    public ResponseEntity<UserMealsDTO> updateMealQuantity(@PathVariable Long id, @RequestBody UpdateMealQuantityDTO newQuantity) {
-        var updatedUserMeal = userMealsService.updateMealQuantity(id, newQuantity.newQuantity());
+    @PutMapping("/meals/upgrade/quantity/{userId}/meal/{mealId}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<UserMealsDTO> updateMealQuantity(@PathVariable Long mealId, @PathVariable Long userId, @RequestBody UpdateMealQuantityDTO newQuantity) {
+        var updatedUserMeal = userMealsService.updateMealQuantity(mealId, newQuantity.newQuantity());
         return ResponseEntity.ok(updatedUserMeal);
     }
 
