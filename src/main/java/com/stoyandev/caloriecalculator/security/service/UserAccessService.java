@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserAccessService {
 
-   private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public boolean hasAccess(final Long userId) {
         final var currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        final var authenticatedUser = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found"));
+        final var authenticatedUser = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return currentUsername.equals(authenticatedUser.getUsername());
     }
 }

@@ -3,7 +3,7 @@ package com.stoyandev.caloriecalculator.mapper;
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
 import com.stoyandev.caloriecalculator.entity.Product;
 
-public class ProductMapper {
+public final class ProductMapper {
 
     private ProductMapper() {
     }
@@ -22,12 +22,12 @@ public class ProductMapper {
 
     public static Product mapToProduct(ProductDTO productDTO) {
         var product = new Product();
-        product.setName(productDTO.getName());
-        product.setProductType(productDTO.getProductType());
-        product.setCaloriesPer100Grams(productDTO.getCaloriesPer100Grams());
-        product.setProteinPer100Grams(productDTO.getProteinPer100Grams());
-        product.setFatPer100Grams(productDTO.getFatPer100Grams());
-        product.setCarbsPer100Grams(productDTO.getCarbsPer100Grams());
+        product.setName(productDTO.name());
+        product.setProductType(productDTO.productType());
+        product.setCaloriesPer100Grams(productDTO.caloriesPer100Grams());
+        product.setProteinPer100Grams(productDTO.proteinPer100Grams());
+        product.setFatPer100Grams(productDTO.fatPer100Grams());
+        product.setCarbsPer100Grams(productDTO.carbsPer100Grams());
         return product;
     }
 }

@@ -1,9 +1,6 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
-import com.stoyandev.caloriecalculator.entity.MeasurementsRecord;
-import com.stoyandev.caloriecalculator.entity.Users;
-import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,14 +20,15 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping("/new/user")
     public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        var savedUSer = userService.createUser(userDTO);
-        return new ResponseEntity<>(savedUSer, HttpStatus.CREATED);
+        var savedUser = userService.createUser(userDTO);
+        return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
 
     }
+
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/user/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        UserDTO user = userService.getUserById(id);
+        var user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 
@@ -39,6 +37,7 @@ public class UserController {
         var updatedUser = userService.updateAge(id, userAgeRequestDTO.newAge());
         return ResponseEntity.ok(updatedUser);
     }
+
     @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/update/weight/{id}")
     public ResponseEntity<UserDTO> updateWeight(@PathVariable Long id, @RequestBody UpdateUserWeightRequestDTO userWeightRequestDTO) {
@@ -65,16 +64,13 @@ public class UserController {
     }
 
     @PostMapping("/add/{userId}/measurements")
-    public ResponseEntity<MeasurementsRecord> addMeasurementRecord(
+    public ResponseEntity<MeasurementsRecordDTO> addMeasurementRecord(
             @PathVariable Long userId,
             @RequestBody UpdateUserMeasurementsRequestDTO measurements) {
 
+        var measurementsRecord = userService.addMeasurement(userId, measurements);
 
-        MeasurementsRecord record = userService.addMeasurement(userId, measurements.shoulder(),
-                                measurements.chest(), measurements.biceps(), measurements.waist(),
-                                measurements.hips(), measurements.thigh(), measurements.calf());
-
-        return ResponseEntity.ok(record);
+        return ResponseEntity.ok(measurementsRecord);
     }
 
     @GetMapping("/user/measurements/{userId}")
@@ -85,7 +81,7 @@ public class UserController {
 
     @GetMapping("/user/latestMeasurement/{userId}")
     public ResponseEntity<MeasurementsRecordDTO> getLatestMeasurement(@PathVariable Long userId) {
-        MeasurementsRecordDTO record = userService.getLatestMeasurement(userId);
-        return ResponseEntity.ok(record);
+        var measurementsRecord = userService.getLatestMeasurement(userId);
+        return ResponseEntity.ok(measurementsRecord);
     }
 }

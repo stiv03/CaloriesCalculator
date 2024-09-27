@@ -5,7 +5,7 @@ import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.entity.Users;
 
-public class UserMapper {
+public final class UserMapper {
     private UserMapper() {
     }
 
@@ -23,13 +23,13 @@ public class UserMapper {
 
     public static Users mapToUser(UserDTO userDTO) {
         var user = new Users();
-        user.setName(userDTO.getName());
-        user.setAge(user.getAge());
-        user.setHeight(userDTO.getHeight());
-        user.setWeight(userDTO.getWeight());
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
-        user.setUserType(userDTO.getUserType());
+        user.setName(userDTO.name());
+        user.setAge(userDTO.age());
+        user.setHeight(userDTO.height());
+        user.setWeight(userDTO.weight());
+        user.setUsername(userDTO.username());
+        user.setPassword(userDTO.password());
+        user.setUserType(userDTO.userType());
         return user;
     }
 

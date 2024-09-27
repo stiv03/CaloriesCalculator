@@ -1,13 +1,11 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
-import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,7 +22,7 @@ public class UserMealsController {
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/meals/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequest mealRequest) {
+    public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequestDTO mealRequest) {
         userMealsService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -32,7 +30,7 @@ public class UserMealsController {
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/date/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public ResponseEntity<List<UserMealsDTO>> displayProductsForUserForDay(@PathVariable Long userId, @RequestParam String date) {
+    public ResponseEntity<List<MealResponseDTO>> displayProductsForUserForDay(@PathVariable Long userId, @RequestParam String date) {
         var products = userMealsService.findAllUserMealsRelForSpecificDay(userId, LocalDate.parse(date, FORMATTER));
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
@@ -49,7 +47,7 @@ public class UserMealsController {
     @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/meals/upgrade/quantity/{userId}/meal/{mealId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
-    public ResponseEntity<UserMealsDTO> updateMealQuantity(@PathVariable Long mealId, @PathVariable Long userId, @RequestBody UpdateMealQuantityDTO newQuantity) {
+    public ResponseEntity<MealResponseDTO> updateMealQuantity(@PathVariable Long mealId, @PathVariable Long userId, @RequestBody UpdateMealQuantityDTO newQuantity) {
         var updatedUserMeal = userMealsService.updateMealQuantity(mealId, newQuantity.newQuantity());
         return ResponseEntity.ok(updatedUserMeal);
     }
@@ -82,5 +80,4 @@ public class UserMealsController {
         GoalDTO goal = userMealsService.getUserGoal(userId);
         return ResponseEntity.ok(goal);
     }
-
 }

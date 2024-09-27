@@ -8,6 +8,4 @@ public enum ProductType {
     LEGUMES,
     CEREALS,
     TUBERS
-
-    //todo move this out of this folder.
 }

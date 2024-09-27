@@ -6,17 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserDTO {
+public record UserDTO (String name,
+                       int age,
+                       double weight,
+                       int height,
+                       String username,
+                       String password,
+                       UserType userType){
 
-    private String name;
-    private int age;
-    private double weight;
-    private int height;
-    private String username;
-    private String password;
-    private UserType userType;
 }

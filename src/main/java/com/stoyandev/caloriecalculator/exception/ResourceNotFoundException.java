@@ -5,5 +5,4 @@ public class ResourceNotFoundException extends RuntimeException {
         super(message);
     }
 
-    //todo probably add more if feasible
 }

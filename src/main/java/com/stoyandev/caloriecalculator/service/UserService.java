@@ -1,10 +1,9 @@
 package com.stoyandev.caloriecalculator.service;
 
 import com.stoyandev.caloriecalculator.dto.MeasurementsRecordDTO;
+import com.stoyandev.caloriecalculator.dto.UpdateUserMeasurementsRequestDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
-import com.stoyandev.caloriecalculator.entity.MeasurementsRecord;
-import com.stoyandev.caloriecalculator.entity.Users;
 
 import java.util.List;
 
@@ -18,13 +17,12 @@ public interface UserService {
     UserDTO updateHeight(long id, int newHeight);
 
     void deleteByUserID(long id);
-    public UserDTO getUserById(Long id);
 
-    public List<WeightRecordDTO> getWeightRecords(Long userId);
+    UserDTO getUserById(Long id);
 
+    List<WeightRecordDTO> getWeightRecords(Long userId);
 
-
-    MeasurementsRecord addMeasurement(Long userId, double shoulder, double chest, double biceps, double waist, double hips, double thigh, double calf);
+    MeasurementsRecordDTO addMeasurement(Long userId, UpdateUserMeasurementsRequestDTO dto);
 
     List<MeasurementsRecordDTO> getMeasurementsByUser(Long userId);
 

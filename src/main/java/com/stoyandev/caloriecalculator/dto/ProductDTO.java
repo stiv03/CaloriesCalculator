@@ -6,17 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class ProductDTO {
 
-    private String name;
-    private Long productId;
-    private ProductType productType;
-    private double caloriesPer100Grams;
-    private double proteinPer100Grams;
-    private double fatPer100Grams;
-    private double carbsPer100Grams;
+public record ProductDTO (String name,
+                          Long productId,
+                          ProductType productType,
+                          double caloriesPer100Grams,
+                          double proteinPer100Grams,
+                          double fatPer100Grams,
+                          double carbsPer100Grams){
 }
