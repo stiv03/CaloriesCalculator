@@ -29,13 +29,6 @@ public class UserServiceImpl implements UserService {
     private final WeightRecordRepository weightRecordRepository;
     private MeasurementsRecordRepository measurementsRecordRepository;
 
-    @Override
-    public UserDTO createUser(UserDTO userDTO) {
-        var user = UserMapper.mapToUser(userDTO);
-        var savedUser = userRepository.save(user);
-        return UserMapper.mapToUserDTO(savedUser);
-    }
-
     public UserDTO getUserById(final Long id) {
         final var user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Not found"));
         return UserMapper.mapToUserDTO(user);
@@ -53,7 +46,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO updateWeight(final long id, final double newWeight) {
-        final var user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        final var user = userRepository
+                .findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
 
         var weightRecord = new WeightRecord();
         weightRecord.setUser(user);
@@ -94,7 +89,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public MeasurementsRecordDTO addMeasurement(final Long userId, UpdateUserMeasurementsRequestDTO requestDTO) {
-        final var user = userRepository.findById(userId)
+        final var user = userRepository
+                .findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         var measurementsRecord = MeasurementsRecord.builder()
                 .user(user)
@@ -114,7 +110,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<MeasurementsRecordDTO> getMeasurementsByUser(final Long userId) {
-        return measurementsRecordRepository.findByUserId(userId).stream().map(MeasurementsRecordMapper::toDTO).toList();
+        return measurementsRecordRepository
+                .findByUserId(userId).stream().map(MeasurementsRecordMapper::toDTO).toList();
     }
 
     @Override

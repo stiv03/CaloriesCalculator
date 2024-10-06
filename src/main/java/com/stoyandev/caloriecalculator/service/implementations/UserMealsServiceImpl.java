@@ -37,7 +37,9 @@ public class UserMealsServiceImpl implements UserMealsService {
     public void addMealForUser(final Long userId, Long productId, Integer grams) {
         var newMeal = new UserMeals();
 
-        var user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User Not found"));
+        var user = userRepository
+                .findById(userId).
+                orElseThrow(() -> new ResourceNotFoundException("User Not found"));
         var product = productRepository.findById(productId);
         newMeal.setQuantity(grams);
         newMeal.setUser(user);
@@ -60,15 +62,15 @@ public class UserMealsServiceImpl implements UserMealsService {
 
     @Override
     public DailyMacrosDTO calculateDailyMacros(Long userId, LocalDate date) {
-        List<MealResponseDTO> usersProduct = findAllUserMealsRelForSpecificDay(userId, date);
+        List<MealResponseDTO> allMealsForDay = findAllUserMealsRelForSpecificDay(userId, date);
         double totalCalories = 0;
         double totalProtein = 0;
         double totalCarbs = 0;
         double totalFats = 0;
 
-        for (final var userProduct : usersProduct) {
-            final var product = userProduct.product();
-            double quantity = userProduct.quantity();
+        for (final var meal : allMealsForDay) {
+            var product = meal.product();
+            double quantity = meal.quantity();
             totalCalories += product.getCaloriesPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
             totalProtein += product.getProteinPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
             totalCarbs += product.getCarbsPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
@@ -96,7 +98,8 @@ public class UserMealsServiceImpl implements UserMealsService {
 
     @Override
     public List<DailyMacrosDTO> fetchAllMacros(Long userId) {
-        return usersMealsRepository.findAllByUserId(userId).stream()
+        return usersMealsRepository.
+                findAllByUserId(userId).stream()
                 .collect(Collectors.groupingBy(meal -> meal.getConsumedAt().toLocalDate()))
                 .keySet().stream()
                 .map(date -> calculateDailyMacros(userId, date))

@@ -1,14 +1,11 @@
 package com.stoyandev.caloriecalculator.service.implementations;
 
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
-import com.stoyandev.caloriecalculator.entity.Product;
-import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import com.stoyandev.caloriecalculator.mapper.ProductMapper;
 import com.stoyandev.caloriecalculator.repository.ProductRepository;
 import com.stoyandev.caloriecalculator.service.ProductService;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

@@ -8,7 +8,6 @@ import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
 import java.util.List;
 
 public interface UserService {
-    UserDTO createUser(UserDTO userDTO);
 
     UserDTO updateAge(long id, int newAge);
 
