@@ -27,5 +27,4 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDTO> searchProducts(String query) {
         return productRepository.findByNameContainingIgnoreCase(query).stream().map(ProductMapper::mapToProductDTO).toList();
     }
-
 }

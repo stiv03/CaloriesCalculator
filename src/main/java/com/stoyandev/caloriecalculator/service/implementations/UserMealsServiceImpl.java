@@ -80,7 +80,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public MealResponseDTO updateMealQuantity(long id, double newQuantity) {
+    public MealResponseDTO updateMealQuantity(final long id, double newQuantity) {
         final var userMeal = usersMealsRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal not found" + id));
@@ -91,7 +91,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public void deleteByUserMealID(long id) {
+    public void deleteByUserMealID(final long id) {
         usersMealsRepository.deleteByUserMealsID(id);
     }
 
@@ -107,7 +107,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public GoalDTO setUserGoal(Long userId, GoalDTO goal) {
+    public GoalDTO setUserGoal(final Long userId, GoalDTO goal) {
         final var updatedGoal = goalRepository.findByUserId(userId);
         if (updatedGoal.isPresent()) {
             updatedGoal.get().setFat(goal.fat());
@@ -131,7 +131,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     }
 
     @Override
-    public GoalDTO getUserGoal(Long userId) {
+    public GoalDTO getUserGoal(final Long userId) {
         final var goal = goalRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
         return UserMapper.mapGoalToDTO(goal);
     }

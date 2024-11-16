@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import { getUserId, getToken } from './utils/auth';
 import './UserProfile.css';
+//import { Line } from 'react-chartjs-2';
 
 const UserProfile = () => {
   const [user, setUser] = useState({

@@ -388,16 +388,20 @@ const CaloriesCalculator = () => {
 };
 
 const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => {
-  // Add states to control the visibility of the delete and edit quantity buttons
   const [showDelete, setShowDelete] = useState(false);
   const [showEditQuantity, setShowEditQuantity] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  // Toggle function to show/hide the delete and edit quantity columns
-  const toggleDeleteColumn = () => setShowDelete((prev) => !prev);
-  const toggleEditQuantityColumn = () => setShowEditQuantity((prev) => !prev);
+  const toggleDeleteColumn = () => {
+    setShowDelete((prev) => !prev);
+    setDropdownVisible(false);
+  };
 
-  // Toggle dropdown visibility
+  const toggleEditQuantityColumn = () => {
+    setShowEditQuantity((prev) => !prev);
+    setDropdownVisible(false);
+  };
+
   const toggleDropdown = () => setDropdownVisible((prev) => !prev);
 
   return (
@@ -412,8 +416,8 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => 
             <th>Protein (g)</th>
             <th>Carbs (g)</th>
             <th>Fats (g)</th>
-            {showDelete && <th>Actions</th>} {/* Show 'Actions' header only if delete buttons are visible */}
-            {showEditQuantity && <th>Edit Quantity</th>} {/* Show 'Edit Quantity' header only if edit quantity buttons are visible */}
+            {showDelete && <th>Actions</th>}
+            {showEditQuantity && <th>Edit Quantity</th>}
           </tr>
         </thead>
         <tbody>
@@ -454,10 +458,9 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => 
         </tbody>
       </table>
 
-      {/* Button to show dropdown with options to toggle delete and edit columns */}
       <div className={styles.addDeleteButtonWrapper}>
         <button className={styles.toggleDropdownButton} onClick={toggleDropdown}>
-          {dropdownVisible ? '⋮' : '⋮'} {/* Button for toggling dropdown */}
+          {dropdownVisible ? '⋮' : '⋮'}
         </button>
         {dropdownVisible && (
           <div className={styles.dropdownContent}>
@@ -474,8 +477,6 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => 
     </div>
   );
 };
-
-
 
 const Totals = ({ totals }) => {
   return (
