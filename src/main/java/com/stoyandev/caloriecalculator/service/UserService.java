@@ -4,6 +4,8 @@ import com.stoyandev.caloriecalculator.dto.MeasurementsRecordDTO;
 import com.stoyandev.caloriecalculator.dto.UpdateUserMeasurementsRequestDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
+import com.stoyandev.caloriecalculator.entity.enums.Activity;
+import com.stoyandev.caloriecalculator.entity.enums.Status;
 
 import java.util.List;
 
@@ -14,6 +16,9 @@ public interface UserService {
     UserDTO updateWeight(long id, double newWeight);
 
     UserDTO updateHeight(long id, int newHeight);
+
+    UserDTO updateStatus (final Long userId, Status status);
+    UserDTO updateActivity (final Long userId, Activity activity);
 
     void deleteByUserID(long id);
 

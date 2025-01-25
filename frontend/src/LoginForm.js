@@ -3,6 +3,9 @@ import axios from './axiosConfig'; // Use the configured axios instance
 import './LoginForm.css'; // Create a separate CSS file for styling
 import { setToken, setUserId } from './utils/auth'; // Import the setToken utility
 import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+
+
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -18,9 +21,11 @@ const LoginForm = () => {
   useEffect(() => {
     // Add the 'no-scroll' class to the body when the component mounts
     document.body.classList.add('no-scroll');
+    document.body.classList.add('login-page');
     // Remove the 'no-scroll' class from the body when the component unmounts
     return () => {
       document.body.classList.remove('no-scroll');
+      document.body.classList.remove('login-page');
     };
   }, []);
 
@@ -62,24 +67,26 @@ const LoginForm = () => {
       <h1>Login</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+
           <input
             type="text"
             id="username"
             name="username"
             value={formData.username}
             onChange={handleChange}
+            placeholder="Username"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+
           <input
             type="password"
             id="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
+             placeholder="Password"
             required
           />
         </div>
@@ -89,6 +96,10 @@ const LoginForm = () => {
         {successMessage && <p className="success">{successMessage}</p>}
         {error && <p className="error">{error}</p>}
       </form>
+       <p>
+              Don&apos;t have account ? <Link to="/register">Register here</Link>
+            </p>
+
     </div>
   );
 };

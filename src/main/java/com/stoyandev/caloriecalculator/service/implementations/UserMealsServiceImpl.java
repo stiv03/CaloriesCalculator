@@ -106,34 +106,4 @@ public class UserMealsServiceImpl implements UserMealsService {
                 .toList();
     }
 
-    @Override
-    public GoalDTO setUserGoal(final Long userId, GoalDTO goal) {
-        final var updatedGoal = goalRepository.findByUserId(userId);
-        if (updatedGoal.isPresent()) {
-            updatedGoal.get().setFat(goal.fat());
-            updatedGoal.get().setProtein(goal.protein());
-            updatedGoal.get().setCarbs(goal.carbs());
-            updatedGoal.get().setCalories(goal.calories());
-            var savedGoal = goalRepository.save(updatedGoal.get());
-            return GoalMapper.mapToDTo(savedGoal);
-        }
-
-        final var newGoal = new Goal();
-        final var user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        newGoal.setUser(user);
-        newGoal.setFat(goal.fat());
-        newGoal.setCarbs(goal.carbs());
-        newGoal.setProtein(goal.protein());
-        newGoal.setCalories(goal.calories());
-        var savedGoal2 = goalRepository.save(newGoal);
-
-        return GoalMapper.mapToDTo(savedGoal2);
-    }
-
-    @Override
-    public GoalDTO getUserGoal(final Long userId) {
-        final var goal = goalRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
-        return UserMapper.mapGoalToDTO(goal);
-    }
-
 }

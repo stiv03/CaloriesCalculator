@@ -1,6 +1,8 @@
 package com.stoyandev.caloriecalculator.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.stoyandev.caloriecalculator.entity.enums.Activity;
+import com.stoyandev.caloriecalculator.entity.enums.Status;
 import com.stoyandev.caloriecalculator.entity.enums.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -54,11 +56,21 @@ public class Users implements UserDetails {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_type", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'CUSTOMER'")
+    @Column(name = "user_type", nullable = false)
     private UserType userType;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_activity", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'NORMAL'")
+    private Activity activity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_status", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'MAINTAINING'")
+    private Status status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WeightRecord> weightRecords = new ArrayList<>();
+
 
     @JsonIgnore
     @Override

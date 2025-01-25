@@ -5,7 +5,10 @@ import com.stoyandev.caloriecalculator.dto.UpdateUserMeasurementsRequestDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.dto.WeightRecordDTO;
 import com.stoyandev.caloriecalculator.entity.MeasurementsRecord;
+import com.stoyandev.caloriecalculator.entity.Users;
 import com.stoyandev.caloriecalculator.entity.WeightRecord;
+import com.stoyandev.caloriecalculator.entity.enums.Activity;
+import com.stoyandev.caloriecalculator.entity.enums.Status;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.MeasurementsRecordMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
@@ -14,6 +17,7 @@ import com.stoyandev.caloriecalculator.repository.MeasurementsRecordRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.repository.WeightRecordRepository;
 import com.stoyandev.caloriecalculator.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -73,6 +77,25 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapToUserDTO(savedUser);
     }
 
+
+
+    @Override
+    public UserDTO updateStatus (final Long userId, Status status){
+        final Users user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setStatus(status);
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
+    @Override
+    public UserDTO updateActivity (final Long userId, Activity activity){
+        final var user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActivity(activity);
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
+
     @Override
     public void deleteByUserID(long id) {
         userRepository.deleteByUserID(id);
@@ -118,4 +141,6 @@ public class UserServiceImpl implements UserService {
     public MeasurementsRecordDTO getLatestMeasurement(final Long userId) {
         return measurementsRecordRepository.findTopByUserIdOrderByDateDescIdDesc(userId);
     }
+
+
 }

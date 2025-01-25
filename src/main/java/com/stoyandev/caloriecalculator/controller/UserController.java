@@ -1,6 +1,8 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
+import com.stoyandev.caloriecalculator.entity.enums.Activity;
+import com.stoyandev.caloriecalculator.entity.enums.Status;
 import com.stoyandev.caloriecalculator.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,20 @@ public class UserController {
     @PutMapping("/update/height/{id}")
     public ResponseEntity<UserDTO> updateHeight(@PathVariable Long id, @RequestBody UpdateUserHeightRequestDTO userHeightRequestDTO) {
         var updatedUser = userService.updateHeight(id, userHeightRequestDTO.newHeight());
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/update/status/{id}")
+    public ResponseEntity<UserDTO> updateStatus(@PathVariable Long id, @RequestBody int statusCode) {
+        Status status = Status.fromCode(statusCode);
+        var updatedUser = userService.updateStatus(id, status);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/update/activity/{id}")
+    public ResponseEntity<UserDTO> updateActivity(@PathVariable Long id, @RequestBody int activityCode) {
+        Activity activity = Activity.fromCode(activityCode);
+        var updatedUser = userService.updateActivity(id, activity);
         return ResponseEntity.ok(updatedUser);
     }
 

@@ -97,9 +97,13 @@ const CaloriesCalculator = () => {
   };
 
   useEffect(() => {
+
     fetchMeals();
     fetchTotals();
     fetchGoals();
+
+
+
   }, [date]);
 
   const handleUnauthorized = (error) => {
@@ -227,9 +231,13 @@ const CaloriesCalculator = () => {
 
   // Scroll to form after it is shown
   useEffect(() => {
+   document.body.classList.add('calculator-page');
     if (showAddMealForm && addMealFormRef.current) {
       addMealFormRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+     return () => {
+         document.body.classList.remove('calculator-page');
+       };
   }, [showAddMealForm]);
 
   const toggleAddMealForm = () => {

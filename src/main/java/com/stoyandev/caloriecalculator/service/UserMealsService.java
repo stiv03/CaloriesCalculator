@@ -20,9 +20,6 @@ public interface UserMealsService {
 
     List<DailyMacrosDTO> fetchAllMacros(Long userId);
 
-    GoalDTO setUserGoal(Long userId, GoalDTO goal);
-
-    GoalDTO getUserGoal(Long userId);
 }
 
 

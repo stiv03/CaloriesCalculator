@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import { getUserId, getToken } from './utils/auth';
 import './UserProfile.css';
-//import { Line } from 'react-chartjs-2';
+
+
+
+
 
 const UserProfile = () => {
   const [user, setUser] = useState({
@@ -22,9 +25,8 @@ const UserProfile = () => {
     carbs: "",
     fat: ""
   });
-  const [status, setStatus] = useState(''); // New state for storing status
+  const [status, setStatus] = useState('');
 
-  // New state for measurements (add new logic)
   const [newMeasurements, setNewMeasurements] = useState({
     shoulder: '',
     chest: '',
@@ -43,6 +45,7 @@ const UserProfile = () => {
   const [showGoalsForm, setShowGoalsForm] = useState(false); // Hidden by default
 
   useEffect(() => {
+  document.body.classList.add('profile-page');
     const userId = getUserId();
     if (!userId) {
       console.error('No user ID found');
@@ -97,7 +100,11 @@ const UserProfile = () => {
     // Fetch measurement records and latest measurement (new logic)
     fetchAllMeasurements(userId);
     fetchLatestMeasurement(userId);
-  }, []);
+    return () => {
+        document.body.classList.remove('profile-page');
+         };
+  },
+   []);
 
   const fetchWeightRecords = () => {
     const userId = getUserId();

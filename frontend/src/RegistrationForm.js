@@ -20,9 +20,11 @@ const RegistrationForm = () => {
   useEffect(() => {
     // Add the 'no-scroll' class to the body when the component mounts
     document.body.classList.add('no-scroll');
+    document.body.classList.add('login-page');
     // Remove the 'no-scroll' class from the body when the component unmounts
     return () => {
       document.body.classList.remove('no-scroll');
+      document.body.classList.remove('login-page');
     };
   }, []);
 
@@ -60,18 +62,19 @@ const RegistrationForm = () => {
       <h1>Register</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="name">Name</label>
+
           <input
             type="text"
             id="name"
             name="name"
             value={formData.name}
             onChange={handleChange}
+            placeholder="Name"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="age">Age</label>
+
           <input
             type="number"
             id="age"
@@ -79,11 +82,12 @@ const RegistrationForm = () => {
             value={formData.age}
             onChange={handleChange}
             min="1"
+            placeholder="Age"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="weight">Weight</label>
+
           <input
             type="number"
             step="0.1"
@@ -92,11 +96,12 @@ const RegistrationForm = () => {
             value={formData.weight}
             onChange={handleChange}
             min="1"
+            placeholder="Weight"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="height">Height</label>
+
           <input
             type="number"
             id="height"
@@ -104,28 +109,30 @@ const RegistrationForm = () => {
             value={formData.height}
             onChange={handleChange}
             min="1"
+            placeholder="Height"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+
           <input
             type="text"
             id="username"
             name="username"
             value={formData.username}
             onChange={handleChange}
+            placeholder="Username"
             required
           />
         </div>
         <div className="form-group">
-          <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
+            placeholder="Password"
             required
           />
         </div>
