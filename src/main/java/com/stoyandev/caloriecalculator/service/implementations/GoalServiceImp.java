@@ -87,14 +87,14 @@ public class GoalServiceImp {
         double calories = activityBMR(userId, user.getActivity()) + statusCalorie(user.getStatus());
         double protein = 2.2 * user.getWeight();
         double fat =  (0.20 * calories) / 9;
-        double carbs = (calories - (protein + fat)) / 4;
+        fat = Math.round(fat * 100.0) / 100.0;
+        double carbs = (calories - ((protein * 4) + (fat * 9 )))/ 4;
+        carbs = Math.round(carbs * 100.0) / 100.0;
 
         GoalDTO goalDTO = new GoalDTO((int)calories,protein,carbs,fat);
 
         return setUserGoal(userId,goalDTO);
     }
-
-
 
 }
 

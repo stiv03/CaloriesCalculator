@@ -28,6 +28,7 @@ public class GoalController {
         return ResponseEntity.ok(goal);
     }
 
+//to-do: ADD IT TO FRONTEND
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/autoSetGoal")
     public ResponseEntity<GoalDTO> autoUserGoal(@PathVariable Long userId) {

@@ -17,6 +17,7 @@ public final class UserMapper {
                 user.getHeight(),
                 user.getUsername(),
                 user.getPassword(),
+                user.getStatus(),
                 user.getUserType()
         );
     }

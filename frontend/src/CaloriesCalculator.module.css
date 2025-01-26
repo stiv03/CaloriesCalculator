@@ -6,36 +6,66 @@
   max-width: 700px;
   margin: 20px auto;
   padding: 20px;
-  background: #fff;
   border-radius: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   overflow-y: auto;
    position: relative;
+   background: transparent; /* Remove background color */
+   z-index: 1; /* Ensure content is above the background */
+
+
 
 }
 
+.container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);/* Semi-transparent white */
+  backdrop-filter: blur(30px); /* Add blur effect */
+  -webkit-backdrop-filter: blur(30px); /* For Safari */
+  z-index: -1; /* Place behind the content */
+  border-radius: 30px; /* Match the container's border-radius */
+}
+
 h1, h2 {
-  color: #333;
+ font-family: 'Plus Jakarta Sans', sans-serif; /* Приложи шрифта */
+     font-weight: 700;
+ margin-top: 10px;
+  color: #fff !important;
   text-align: center;
 }
 
 .date{
+color: #fff !important;
+ margin-top: -20px !important;
+
+  position: absolute;
+   top: 300px;
+   right: 30px;
+
+
 font-weight: bold;
 font-size: 1.3em;
   margin: 20px 0;
 }
 
 .foodList {
-  background: #f7f7f7;
+   background: rgba(0, 0, 0, 0.3);/* Semi-transparent white */
+    backdrop-filter: blur(30px); /* Add blur effect */
+    -webkit-backdrop-filter: blur(30px);
   text-align: left;
     position: relative;
-    padding: 20px;
+
     padding-top: 50px; /* Ensure there's space for the button */
   display: flex;
   flex-direction: column;
   padding: 10px;
-  border-radius: 8px;
-   border: 2px solid #ddd;
+  border-radius: 20px;
+
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
 }
@@ -56,15 +86,20 @@ font-size: 1.3em;
   flex-wrap: wrap;
   gap: 15px;
   margin-top: 20px; /* Add some margin at the top if needed */
-  background: #b5f7bf;
+
+   background: rgba(0, 130, 0, 0.3);/* Semi-transparent white */
+      backdrop-filter: blur(30px); /* Add blur effect */
+      -webkit-backdrop-filter: blur(30px);
   padding: 14px;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border: 2px solid #a4dbad;
 }
 
 .totalBox {
-  background:  #dbffe1;
+     background: rgba(200, 260, 200, 0.5);/* Semi-transparent white */
+        backdrop-filter: blur(30px); /* Add blur effect */
+        -webkit-backdrop-filter: blur(30px);
   padding: 10px;
   border-radius: 12px;
   box-shadow: 0 7px 6px rgba(0, 0, 0.20, 0.23);
@@ -85,6 +120,7 @@ font-size: 1.3em;
 
 .profileIcon img {
   width: 50px;
+  filter: invert(80%);
   height: 50px;
   border-radius: 50%;
 }
@@ -174,10 +210,13 @@ font-size: 1.3em;
 
 .goals {
   margin-top: 15px;
-  background: #ffda91;
+
+   background: rgba(240, 240, 140, 0.3);/* Semi-transparent white */
+        backdrop-filter: blur(30px); /* Add blur effect */
+        -webkit-backdrop-filter: blur(30px);
   padding: 1px;
-  border-radius: 8px;
-  border: 2px solid #deb96f;
+  border-radius: 20px;
+
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   font-size: 1.0em;
 
@@ -197,16 +236,21 @@ font-size: 1.3em;
 .goalBox {
   margin: 10px;
   padding: 5px;
-
-
-  border-radius: 10px;
-  background-color: #ffe7b8;
+  border-radius: 20px;
+ background: rgba(255, 231, 184, 0.8); /* 30% непрозрачност *//* Semi-transparent white */
+         backdrop-filter: blur(30px); /* Add blur effect */
+         -webkit-backdrop-filter: blur(30px);
+           font-weight: bold;
+             font-weight: 150;
+             font-size: 14px;
 }
 
 .goalBox label {
+ position: absolute;
   display: block;
-  font-weight: bold;
-  margin-bottom: 10px;
+   font-size: 16px;
+    font-weight: 700;
+  margin: 15px;
 }
 
 .goalBox progress {
@@ -218,6 +262,7 @@ font-size: 1.3em;
 }
 
 progress::-webkit-progress-bar {
+ margin-top: 10px;
   background-color: #ffffff; /* Background color of the progress bar */
   border-radius: 50px  50px; /* Rounded corners for the progress bar */
 
@@ -227,6 +272,7 @@ progress::-webkit-progress-value {
   background-color: #82c9f5; /* Color of the progress bar's value */
   border-radius: 50px  50px; /* Rounded corners for the filled part */
   border: 8px solid #c4e2f5;
+
 }
 
 progress::-moz-progress-bar {

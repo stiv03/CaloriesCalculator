@@ -12,6 +12,7 @@ const UserProfile = () => {
     name: '',
     age: '',
     weight: '',
+    status: '',
     height: ''
   });
   const [newWeight, setNewWeight] = useState('');
@@ -78,7 +79,7 @@ const UserProfile = () => {
       setAllMacros(sortedMacros);
     })
     .catch(error => {
-      console.error('Error fetching macros data:', error.response || error.message);
+       handleUnauthorized(error);
     });
 
     // Fetch goals data
@@ -91,7 +92,7 @@ const UserProfile = () => {
       console.log('Goals data fetched successfully:', response.data);
     })
     .catch(error => {
-      console.error('Error fetching goals data:', error.response || error.message);
+       handleUnauthorized(error);
     });
 
     // Fetch weight records
@@ -118,7 +119,7 @@ const UserProfile = () => {
       setWeightRecords(response.data.reverse()); // Reverse the order here
     })
     .catch(error => {
-      console.error('Error fetching weight records:', error.response || error.message);
+       handleUnauthorized(error);
     });
   };
 
@@ -133,7 +134,7 @@ const UserProfile = () => {
       setMeasurementRecords(response.data.reverse());
     })
     .catch(error => {
-      console.error('Error fetching measurement records:', error.response || error.message);
+      handleUnauthorized(error);
     });
   };
 
@@ -148,7 +149,7 @@ const UserProfile = () => {
       setLatestMeasurement(response.data);
     })
     .catch(error => {
-      console.error('Error fetching latest measurement:', error.response || error.message);
+      handleUnauthorized(error);
     });
   };
 
@@ -264,9 +265,83 @@ const UserProfile = () => {
     setShowGoalsForm(!showGoalsForm);
   };
 
+  const handleStatusUpdate = (statusCode) => {
+    const userId = getUserId();
+    if (!userId) {
+      console.error('No user ID found');
+      return;
+    }
+
+    axios.put(`/update/status/${userId}`, parseInt(statusCode), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then((response) => {
+      console.log('Status updated successfully:', response.data);
+      alert('Status updated successfully!');
+    })
+    .catch((error) => {
+      console.error('Error updating status:', error.response || error.message);
+    });
+  };
+
+  const handleActivityUpdate = (activityCode) => {
+    const userId = getUserId();
+    if (!userId) {
+      console.error('No user ID found');
+      return;
+    }
+
+    axios.put(`/update/activity/${userId}`, parseInt(activityCode), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    .then((response) => {
+      console.log('Activity updated successfully:', response.data);
+      alert('Activity updated successfully!');
+    })
+    .catch((error) => {
+      console.error('Error updating activity:', error.response || error.message);
+    });
+  };
+
+  const handleAutomaticSetGoal = () => {
+    const userId = getUserId(); // Fetch userId from your auth utility
+    if (!userId) {
+      console.error('No user ID found');
+      return;
+    }
+
+    axios.post(`/user/${userId}/autoSetGoal`, {}, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`, // Add token for authentication
+      },
+    })
+      .then(response => {
+        console.log('Goal set automatically:', response.data);
+        setGoals(response.data); // Update the goals state with the new data
+        alert('Goals set automatically!');
+      })
+      .catch(error => {
+        console.error('Error setting automatic goal:', error.response || error.message);
+      });
+  };
+  const handleUnauthorized = (error) => {
+    if (error.response && error.response.status === 401) {
+      window.location.href = '/login'; // Редирект към login страницата
+    } else {
+      console.error('Error:', error);
+    }
+  };
+
   return (
     <div className="profile-container">
       <h1>Profile of {user.name}</h1>
+      <h3>You are currently on a  {user.status ? user.status.replace('_', ' ').toLowerCase() : 'default plan'}.</h3>
       <div className="profile-details">
         <div className="detail-card">
           <span className="icon">🎂</span>
@@ -343,6 +418,51 @@ const UserProfile = () => {
             min="1"
           />
           <button onClick={handleGoalSubmit}>Set Goals</button>
+
+          {/* AUTOMATIC SET GOAL BUTTON */}
+            <button onClick={handleAutomaticSetGoal} className="automatic-set-goal-button">
+              AUTOMATIC SET GOAL
+            </button>
+
+          {/* Update Status Section */}
+          <div className="update-status">
+            <h3>Update Status</h3>
+            <select
+              onChange={(e) => handleStatusUpdate(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select Status
+              </option>
+              <option value="1">Normal Bulk</option>
+              <option value="2">Slow Bulk</option>
+              <option value="3">Fast Bulk</option>
+              <option value="4">Normal Cut</option>
+              <option value="5">Slow Cut</option>
+              <option value="6">Fast Cut</option>
+              <option value="7">Maintaining</option>
+            </select>
+          </div>
+
+          {/* Update Activity Section */}
+          <div className="update-activity">
+            <h3>Update Activity</h3>
+            <select
+              onChange={(e) => handleActivityUpdate(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select Activity Level
+              </option>
+              <option value="1">Minimal</option>
+              <option value="2">Low</option>
+              <option value="3">Normal</option>
+              <option value="4">High</option>
+              <option value="5">Very High</option>
+            </select>
+          </div>
+
+
         </div>
       )}
 

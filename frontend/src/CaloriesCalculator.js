@@ -4,6 +4,8 @@ import styles from './CaloriesCalculator.module.css';
 import { getUserId, getToken } from './utils/auth';
 import Autosuggest from 'react-autosuggest';
 import { useNavigate } from 'react-router-dom';
+import "@fontsource/plus-jakarta-sans"; // Импортиране на шрифта
+
 
 const CaloriesCalculator = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString());
@@ -262,12 +264,12 @@ const CaloriesCalculator = () => {
       </div>
       <h1>Calories Calculator</h1>
 
-      <div className={styles.date}>{date}</div>
-      <MealList meals={meals} onAddMealClick={toggleAddMealForm} onDeleteMeal={handleDeleteMeal} onUpdateQuantity={handleQuantityChange} />
+
+      <MealList meals={meals} onAddMealClick={toggleAddMealForm} onDeleteMeal={handleDeleteMeal} onUpdateQuantity={handleQuantityChange} date={date} />
       <Totals totals={totals} />
 
       <div className={styles.goals}>
-        <h2>Current vs Goals</h2>
+
         <div className={styles.goalBox}>
           <label>Calories:</label>
           <progress value={totals.calories} max={goals.calories}></progress>
@@ -394,8 +396,7 @@ const CaloriesCalculator = () => {
     </div>
   );
 };
-
-const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => {
+const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity, date }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [showEditQuantity, setShowEditQuantity] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -414,7 +415,7 @@ const MealList = ({ meals, onAddMealClick, onDeleteMeal, onUpdateQuantity }) => 
 
   return (
     <div className={styles.foodList}>
-      <h2>Food Eaten Today</h2>
+      <h2>{date}</h2>
       <table className={styles.mealTable}>
         <thead>
           <tr>
