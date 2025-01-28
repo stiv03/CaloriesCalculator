@@ -13,6 +13,7 @@ const UserProfile = () => {
     age: '',
     weight: '',
     status: '',
+    activity: '',
     height: ''
   });
   const [newWeight, setNewWeight] = useState('');
@@ -27,6 +28,9 @@ const UserProfile = () => {
     fat: ""
   });
   const [status, setStatus] = useState('');
+
+
+
 
   const [newMeasurements, setNewMeasurements] = useState({
     shoulder: '',
@@ -341,21 +345,28 @@ const UserProfile = () => {
   return (
     <div className="profile-container">
       <h1>Profile of {user.name}</h1>
-      <h3>You are currently on a  {user.status ? user.status.replace('_', ' ').toLowerCase() : 'default plan'}.</h3>
       <div className="profile-details">
         <div className="detail-card">
-          <span className="icon">🎂</span>
-          <p><strong>Age:</strong> {user.age} years</p>
+          <span className="icon">Status:</span>
+          <div className="statuscont">
+           <img src="/status.webp" alt="Description" className="status-image" />
+          <p><strong>{user.status ? user.status.replace('_', ' ').toLowerCase() : 'default plan'}</strong></p>
+           </div>
+        </div>
+
+        <div className="detail-card1">
+          <img src="/scale.png" alt="Description" className="detail-image" />
+            <div className="scale">
+             <p> <strong>{user.weight} kg </strong></p>
+            </div>
         </div>
 
         <div className="detail-card">
-          <span className="icon">⚖️</span>
-          <p><strong>Weight:</strong> {user.weight} kg</p>
-        </div>
-
-        <div className="detail-card">
-          <span className="icon">📏</span>
-          <p><strong>Height:</strong> {user.height} cm</p>
+          <span className="icon">Activity:</span>
+           <div className="active">
+          <img src="/activity.png" alt="Description" className="activity-image" />
+          <p><strong>{user.activity ? user.activity.replace('_', ' ').toLowerCase() : 'no activity selected'}</strong></p>
+         </div>
         </div>
       </div>
 

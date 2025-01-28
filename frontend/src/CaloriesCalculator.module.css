@@ -65,6 +65,7 @@ font-size: 1.3em;
   flex-direction: column;
   padding: 10px;
   border-radius: 20px;
+  margin-bottom: -10px !important;
 
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
@@ -236,7 +237,7 @@ font-size: 1.3em;
 .goalBox {
   margin: 10px;
   padding: 5px;
-  border-radius: 20px;
+  border-radius: 15px;
  background: rgba(255, 231, 184, 0.8); /* 30% непрозрачност *//* Semi-transparent white */
          backdrop-filter: blur(30px); /* Add blur effect */
          -webkit-backdrop-filter: blur(30px);
@@ -263,7 +264,7 @@ font-size: 1.3em;
 
 progress::-webkit-progress-bar {
  margin-top: 10px;
-  background-color: #ffffff; /* Background color of the progress bar */
+  background-color: #fff; /* Background color of the progress bar */
   border-radius: 50px  50px; /* Rounded corners for the progress bar */
 
 }
@@ -272,6 +273,7 @@ progress::-webkit-progress-value {
   background-color: #82c9f5; /* Color of the progress bar's value */
   border-radius: 50px  50px; /* Rounded corners for the filled part */
   border: 8px solid #c4e2f5;
+  box-shadow: 8px 0 8px rgba(0, 0, 0, 0.3);
 
 }
 
@@ -285,18 +287,30 @@ progress::-moz-progress-bar {
 }
 
 
+.overLimit::-webkit-progress-value {
+  background-color: #fc7c80; /* Червено, когато се надхвърли лимита */
+  border: 8px solid #f2bdbf;
+}
+
+.overLimit::-moz-progress-bar {
+  background-color: red; /* Червено за Firefox */
+}
+
+
 
 .mealTable {
+margin-bottom: -10px;
+
  width: 100%;
    border-collapse: separate; /* Use separate borders to allow rounding */
    border-spacing: 0; /* Remove space between cells */
-
-   border-radius: 8px; /* Rounded edges for the entire table */
+   border-radius: 12px; /* Rounded edges for the entire table */
    overflow: hidden; /* Ensure rounded edges are applied */
+
 }
 
 .mealTable th, .mealTable td {
-  border: 0.3px solid #ddd;
+
   padding: 2px;
 }
 
@@ -307,6 +321,7 @@ progress::-moz-progress-bar {
 
 .mealTable td {
   text-align: center;
+  border: 0.3px solid #6e6d6d;
   background-color: #f5fff7;
 }
 

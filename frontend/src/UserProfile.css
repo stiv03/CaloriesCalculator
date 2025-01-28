@@ -1,33 +1,44 @@
 
 body.profile-page::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/background.jpg'); /* Replace with the actual image path */
+   content: "";
+    position: fixed; /* Фиксиране към екрана */
+    top: 0;
+    left: 0;
+    width: 100vw; /* Използвай 100% от ширината на прозореца */
+    height: 100vh; /* Използвай 100% от височината на прозореца */
+  background-image: url('/pexels-victorfreitas-841130.jpg'); /* Replace with the actual image path */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-    filter: blur(10px);
   z-index: -1;
 }
 
 
-
-
 .profile-container {
   max-width: 600px;
-  margin: 50px auto;
-  background: #fff;
-  padding: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 20px;
-  width: 100%; /* Ensure the container uses full width */
-  min-width: 600px; /* Prevent it from shrinking horizontally */
-  min-height: 800px; /* Set a minimum height to prevent shrinking vertically */
-  overflow: hidden; /* Prevent hidden sections from affecting layout */
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+     position: relative;
+     background: transparent; /* Remove background color */
+     z-index: 1; /* Ensure content is above the background */
+}
+
+
+.profile-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);/* Semi-transparent white */
+  backdrop-filter: blur(30px); /* Add blur effect */
+  -webkit-backdrop-filter: blur(30px); /* For Safari */
+  z-index: -1; /* Place behind the content */
+  border-radius: 30px; /* Match the container's border-radius */
 }
 
 /* Set a consistent width for the form elements */
@@ -322,14 +333,101 @@ td {
 
 .detail-card {
 
-
+  align-items: center; /* Vertically align items */
+  justify-content: center; /* Center the content */
+  gap: 10px; /* Add space between the image and text */
   border-radius: 20px;
   padding: 10px;
-  width: 120px;
+  margin-top: 15px;
+  width: 140px;
+  height: 100px;
   text-align: center;
+  background: rgba(255, 255, 255, 0.4); /* Semi-transparent white */
+  backdrop-filter: blur(30px); /* Add blur effect */
+  -webkit-backdrop-filter: blur(30px); /* For Safari */
+  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.1);
+}
+
+.detail-card1{
+ position: relative;
+  border-radius: 20px;
+  padding: 10px;
+  width: 130px;
+  height: 130px;
+  text-align: center;
+
+  background: rgba(255, 255, 255, 0.55);/* Semi-transparent white */
+    backdrop-filter: blur(30px); /* Add blur effect */
+    -webkit-backdrop-filter: blur(30px); /* For Safari */
+
   box-shadow: 0 8px 10px rgba(0, 0, 0, 0.1);
 
+
 }
+
+.detail-image {
+  width: 110%; /* Make the image fit the card */
+  height: 110%; /* Stretch to cover the height */
+  object-fit: cover; /* Maintain aspect ratio and fill the card */
+  margin-left:-7px;
+  margin-top:-7px;
+
+  border-radius: 20px; /* Match the card's rounded corners */
+}
+
+.scale {
+  position: absolute; /* Position relative to the .detail-card1 container */
+  top: 10px; /* Adjust to position the box */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center the box relative to its width */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  width: 80px;
+  height: 30px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.75); /* Semi-transparent background */
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+
+}
+
+.activity-image {
+  width: 60px; /* Adjust the size of the image */
+  height: 60px;
+
+  object-fit: cover; /* Maintain aspect ratio */
+}
+
+.status-image{
+         width: 60px; /* Adjust the size of the image */
+         height: 60px;
+
+           margin-top:-10px;
+
+
+         object-fit: cover; /* Maintain aspect ratio */
+            }
+
+.active {
+ color: #fff;
+  display: flex; /* Enable Flexbox for text and image */
+  flex-direction: row; /* Horizontal layout */
+  align-items: center; /* Align content vertically */
+  gap: 10px; /* Space between image and text */
+
+}
+
+.statuscont{
+ color: #fff;
+  display: flex; /* Enable Flexbox for text and image */
+  flex-direction: row; /* Horizontal layout */
+  align-items: center; /* Align content vertically */
+  gap: 10px; /* Space between image and text */
+   margin-top:-10px;
+}
+
 
 
 
@@ -337,6 +435,9 @@ td {
   font-size: 2rem;
   margin-bottom: 10px;
   display: block;
+    color: #fff;
+
+
 }
 
 p {
@@ -358,6 +459,7 @@ p {
 .body-image {
   width: 400px;
   height: auto;
+    filter: invert(100%);
 }
 
 /* Shared styles for all measurement labels */

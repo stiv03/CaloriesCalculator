@@ -18,6 +18,7 @@ public final class UserMapper {
                 user.getUsername(),
                 user.getPassword(),
                 user.getStatus(),
+                user.getActivity(),
                 user.getUserType()
         );
     }

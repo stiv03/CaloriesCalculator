@@ -269,26 +269,57 @@ const CaloriesCalculator = () => {
       <Totals totals={totals} />
 
       <div className={styles.goals}>
-
         <div className={styles.goalBox}>
           <label>Calories:</label>
-          <progress value={totals.calories} max={goals.calories}></progress>
-          <span>{totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})</span>
+          <progress
+            value={totals.calories}
+            max={goals.calories}
+            className={totals.calories > goals.calories ? styles.overLimit : styles.withinLimit}
+          ></progress>
+          <span
+            style={{ color: remaining.calories < 0 ? 'red' : 'inherit' }}
+          >
+            {totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})
+          </span>
         </div>
         <div className={styles.goalBox}>
           <label>Proteins:</label>
-          <progress value={totals.proteins} max={goals.protein}></progress>
-          <span>{totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})</span>
+          <progress
+            value={totals.proteins}
+            max={goals.protein}
+            className={totals.proteins > goals.protein ? styles.overLimit : styles.withinLimit}
+          ></progress>
+          <span
+            style={{ color: remaining.protein < 0 ? 'red' : 'inherit' }}
+          >
+            {totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})
+          </span>
         </div>
         <div className={styles.goalBox}>
           <label>Carbs:</label>
-          <progress value={totals.carbs} max={goals.carbs}></progress>
-          <span>{totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})</span>
+          <progress
+            value={totals.carbs}
+            max={goals.carbs}
+            className={totals.carbs > goals.carbs ? styles.overLimit : styles.withinLimit}
+          ></progress>
+          <span
+            style={{ color: remaining.carbs < 0 ? 'red' : 'inherit' }}
+          >
+            {totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})
+          </span>
         </div>
         <div className={styles.goalBox}>
           <label>Fats:</label>
-          <progress value={totals.fats} max={goals.fat}></progress>
-          <span>{totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})</span>
+          <progress
+            value={totals.fats}
+            max={goals.fat}
+            className={totals.fats > goals.fat ? styles.overLimit : styles.withinLimit}
+          ></progress>
+          <span
+            style={{ color: remaining.fat < 0 ? 'red' : 'inherit' }}
+          >
+            {totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})
+          </span>
         </div>
       </div>
 
