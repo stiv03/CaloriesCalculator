@@ -1,0 +1,63 @@
+.weight-chart-container {
+position: relative;
+  width: 100%;
+  max-width: 550px; /* Ограничаваме ширината */
+  margin: 20px auto; /* Центриране */
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+}
+
+.chart-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+   margin-top: -5px;
+  color: #007bff!important;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 350px; /* Фиксирана височина за по-добър изглед */
+  margin-bottom: 10px;
+}
+
+.toggle-button {
+  display: block;
+  width: 200px;
+  margin: 10px auto;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.toggle-button:hover {
+  background: #0056b3;
+}
+
+.filter-container {
+  position: absolute;
+  top: 10px; /* Adjust the vertical positioning */
+  right: 10px; /* Align to the right side */
+  z-index: 10;
+  }
+
+.filter-container label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.filter-container select {
+  padding: 5px;
+  font-size: 16px;
+}
+

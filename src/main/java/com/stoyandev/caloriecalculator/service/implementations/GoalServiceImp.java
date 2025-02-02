@@ -3,6 +3,7 @@ package com.stoyandev.caloriecalculator.service.implementations;
 import com.stoyandev.caloriecalculator.dto.GoalDTO;
 import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.entity.Goal;
+import com.stoyandev.caloriecalculator.entity.Users;
 import com.stoyandev.caloriecalculator.entity.enums.Activity;
 import com.stoyandev.caloriecalculator.entity.enums.Status;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
@@ -10,8 +11,12 @@ import com.stoyandev.caloriecalculator.mapper.GoalMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.repository.GoalRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @AllArgsConstructor

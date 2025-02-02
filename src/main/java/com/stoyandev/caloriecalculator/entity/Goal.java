@@ -19,7 +19,6 @@ public class Goal {
     @Column(name = "id")
     private Long id;
 
-
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private Users user;

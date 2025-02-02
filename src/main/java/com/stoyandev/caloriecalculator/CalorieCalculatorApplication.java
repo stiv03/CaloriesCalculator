@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 public class CalorieCalculatorApplication {
 
     public static void main(String[] args) {
+        
         SpringApplication.run(CalorieCalculatorApplication.class, args);
     }
 

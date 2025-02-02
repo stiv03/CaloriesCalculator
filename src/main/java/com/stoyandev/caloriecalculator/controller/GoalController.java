@@ -5,6 +5,7 @@ import com.stoyandev.caloriecalculator.entity.enums.Activity;
 import com.stoyandev.caloriecalculator.service.implementations.GoalServiceImp;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,7 +29,6 @@ public class GoalController {
         return ResponseEntity.ok(goal);
     }
 
-//to-do: ADD IT TO FRONTEND
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/autoSetGoal")
     public ResponseEntity<GoalDTO> autoUserGoal(@PathVariable Long userId) {

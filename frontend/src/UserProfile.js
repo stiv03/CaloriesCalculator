@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from './axiosConfig';
 import { getUserId, getToken } from './utils/auth';
 import './UserProfile.css';
+import WeightChart from "./WeightChart.jsx";
+
 
 
 
@@ -96,7 +98,7 @@ const UserProfile = () => {
       console.log('Goals data fetched successfully:', response.data);
     })
     .catch(error => {
-       handleUnauthorized(error);
+        console.error('Error fetching user data:', error.response || error.message);
     });
 
     // Fetch weight records
@@ -371,16 +373,39 @@ const UserProfile = () => {
       </div>
 
       <div className="update-weight">
-        <h2>Update Weight</h2>
-        <input
-          type="number"
-          value={newWeight}
-          onChange={handleWeightChange}
-          placeholder="Enter new weight"
-          min="1"
-        />
-        <button onClick={handleWeightUpdate}>Update Weight</button>
+
+        <div className="input-button-container">
+          <input
+            type="number"
+            value={newWeight}
+            onChange={handleWeightChange}
+            placeholder="New weight"
+            min="1"
+          />
+          <button onClick={handleWeightUpdate}>Update</button>
+        </div>
       </div>
+      <WeightChart />
+
+       <div className="weight-records">
+
+               <button onClick={toggleShowWeightRecords}>
+                 {showWeightRecords ? 'Hide Weight Records' : 'Show Weight Records'}
+               </button>
+               {showWeightRecords && (
+                 <div>
+                   <h2>Weight Records</h2>
+                   <ul>
+                     {weightRecords.map((record, index) => (
+                       <li key={index}>
+                         {record.date}: {record.weight} kg
+                       </li>
+                     ))}
+                   </ul>
+                 </div>
+               )}
+             </div>
+
 
       {/* Buttons for toggling Set Goals and Add Measurements, horizontally */}
       <div className="button-row">
@@ -430,48 +455,48 @@ const UserProfile = () => {
           />
           <button onClick={handleGoalSubmit}>Set Goals</button>
 
-          {/* AUTOMATIC SET GOAL BUTTON */}
-            <button onClick={handleAutomaticSetGoal} className="automatic-set-goal-button">
-              AUTOMATIC SET GOAL
-            </button>
 
-          {/* Update Status Section */}
-          <div className="update-status">
-            <h3>Update Status</h3>
-            <select
-              onChange={(e) => handleStatusUpdate(e.target.value)}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Select Status
-              </option>
-              <option value="1">Normal Bulk</option>
-              <option value="2">Slow Bulk</option>
-              <option value="3">Fast Bulk</option>
-              <option value="4">Normal Cut</option>
-              <option value="5">Slow Cut</option>
-              <option value="6">Fast Cut</option>
-              <option value="7">Maintaining</option>
-            </select>
-          </div>
 
-          {/* Update Activity Section */}
-          <div className="update-activity">
-            <h3>Update Activity</h3>
-            <select
-              onChange={(e) => handleActivityUpdate(e.target.value)}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Select Activity Level
-              </option>
-              <option value="1">Minimal</option>
-              <option value="2">Low</option>
-              <option value="3">Normal</option>
-              <option value="4">High</option>
-              <option value="5">Very High</option>
-            </select>
-          </div>
+
+         {/* Update Status & Activity Section */}
+         <div className="update-container">
+           <div className="update-status">
+             <h3>Update Status</h3>
+             <select
+               onChange={(e) => handleStatusUpdate(e.target.value)}
+               defaultValue=""
+             >
+               <option value="" disabled>Select Status</option>
+               <option value="1">Normal Bulk</option>
+               <option value="2">Slow Bulk</option>
+               <option value="3">Fast Bulk</option>
+               <option value="4">Normal Cut</option>
+               <option value="5">Slow Cut</option>
+               <option value="6">Fast Cut</option>
+               <option value="7">Maintaining</option>
+             </select>
+           </div>
+
+           <div className="update-activity">
+             <h3>Update Activity</h3>
+             <select
+               onChange={(e) => handleActivityUpdate(e.target.value)}
+               defaultValue=""
+             >
+               <option value="" disabled>Select Activity Level</option>
+               <option value="1">Minimal</option>
+               <option value="2">Low</option>
+               <option value="3">Normal</option>
+               <option value="4">High</option>
+               <option value="5">Very High</option>
+             </select>
+           </div>
+         </div>
+
+
+           <button onClick={handleAutomaticSetGoal} className="automatic-set-goal-button">
+                        AUTOMATIC SET GOAL
+                      </button>
 
 
         </div>
@@ -627,23 +652,7 @@ const UserProfile = () => {
         )}
       </div>
 
-      <div className="weight-records">
-        <button onClick={toggleShowWeightRecords}>
-          {showWeightRecords ? 'Hide Weight Records' : 'Show Weight Records'}
-        </button>
-        {showWeightRecords && (
-          <div>
-            <h2>Weight Records</h2>
-            <ul>
-              {weightRecords.map((record, index) => (
-                <li key={index}>
-                  {record.date}: {record.weight} kg
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+
 
       <div className="all-macros">
         <button onClick={toggleShowMacros}>
