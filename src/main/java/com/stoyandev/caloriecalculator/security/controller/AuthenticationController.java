@@ -8,14 +8,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://calories.mazen.pro")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @CrossOrigin(origins = "http://localhost:3000/register")
+    @CrossOrigin(origins = "https://calories.mazen.pro/register")
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
             @RequestBody RegisterRequest request) {
@@ -23,7 +23,7 @@ public class AuthenticationController {
 
     }
 
-    @CrossOrigin(origins = "http://localhost:3000/login")
+    @CrossOrigin(origins = "https://calories.mazen.pro/login")
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody LoginRequest request) {

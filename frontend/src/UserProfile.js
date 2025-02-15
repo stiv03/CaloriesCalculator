@@ -3,6 +3,8 @@ import axios from './axiosConfig';
 import { getUserId, getToken } from './utils/auth';
 import './UserProfile.css';
 import WeightChart from "./WeightChart.jsx";
+import MeasurementChart from './MeasurementChart.jsx';
+
 
 
 
@@ -46,6 +48,9 @@ const UserProfile = () => {
   const [measurementRecords, setMeasurementRecords] = useState([]);
   const [latestMeasurement, setLatestMeasurement] = useState(null);
   const [showMeasurementRecords, setShowMeasurementRecords] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
+  const [showWeightReminder, setShowWeightReminder] = useState(false);
+
 
   // State for toggling Add Measurements and Set Goals visibility
   const [showMeasurementsForm, setShowMeasurementsForm] = useState(false); // Hidden by default
@@ -122,7 +127,11 @@ const UserProfile = () => {
     })
     .then(response => {
       console.log('Weight records fetched successfully:', response.data);
-      setWeightRecords(response.data.reverse()); // Reverse the order here
+      const records = response.data.reverse();
+      setWeightRecords(records); // Reverse the order here
+      checkWeightReminder(records[0].date);
+
+
     })
     .catch(error => {
        handleUnauthorized(error);
@@ -153,11 +162,64 @@ const UserProfile = () => {
     })
     .then(response => {
       setLatestMeasurement(response.data);
+        checkMeasurementReminder(response.data.date);
     })
     .catch(error => {
       handleUnauthorized(error);
     });
   };
+
+  const checkMeasurementReminder = (date) => {
+      if (!date) return;
+      console.log('Checking reminder for date:', date);
+
+      const lastDate = new Date(date);
+      if (isNaN(lastDate)) {
+        console.error('Invalid date:', date);
+        return;
+      }
+
+      const today = new Date();
+          today.setHours(0, 0, 0, 0); // Normalize today's date
+          lastDate.setHours(0, 0, 0, 0); // Normalize last measurement date
+
+          const diffTime = today - lastDate;
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+          console.log(`Days since last measurement: ${diffDays}`);
+
+          if (diffDays >= 7) {
+            console.log('Reminder should be shown!');
+            setShowReminder(true);
+          }
+        };
+
+        const checkWeightReminder = (date) => {
+          if (!date) return;
+          console.log('Checking weight reminder for date:', date);
+
+          const lastDate = new Date(date);
+          if (isNaN(lastDate)) {
+            console.error('Invalid date:', date);
+            return;
+          }
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          lastDate.setHours(0, 0, 0, 0);
+
+          const diffTime = today - lastDate;
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+          console.log(`Days since last weight update: ${diffDays}`);
+
+          if (diffDays >= 1) {
+            console.log('Weight update reminder should be shown!');
+            setShowWeightReminder(true);
+          }
+        };
+
+
 
   // New logic: Handle input change for measurements
   const handleMeasurementChange = (event) => {
@@ -205,6 +267,11 @@ const UserProfile = () => {
       console.error('No user ID found');
       return;
     }
+    const weightValue = parseFloat(newWeight);
+      if (isNaN(weightValue) || weightValue <= 0) {
+        alert('Please enter a valid weight before updating.');
+        return;
+      }
 
     axios.put(`/update/weight/${userId}`,
       { newWeight: parseFloat(newWeight) },
@@ -264,8 +331,9 @@ const UserProfile = () => {
   };
 
   const toggleShowMeasurementsForm = () => {
-    setShowMeasurementsForm(!showMeasurementsForm);
-  };
+           setShowMeasurementsForm(!showMeasurementsForm);
+           if (showReminder) setShowReminder(false);
+         };
 
   const toggleShowGoalsForm = () => {
     setShowGoalsForm(!showGoalsForm);
@@ -372,7 +440,7 @@ const UserProfile = () => {
         </div>
       </div>
 
-      <div className="update-weight">
+      <div className="update-weight"style={{ position: 'relative' }}>
 
         <div className="input-button-container">
           <input
@@ -382,7 +450,10 @@ const UserProfile = () => {
             placeholder="New weight"
             min="1"
           />
-          <button onClick={handleWeightUpdate}>Update</button>
+          <button onClick={handleWeightUpdate}>
+          Update
+           {showWeightReminder && <span className="reminder-dot" style={{ position: 'absolute', top: '-10px', right: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', fontSize: '20px' }}>!</span>}
+          </button>
         </div>
       </div>
       <WeightChart />
@@ -413,9 +484,12 @@ const UserProfile = () => {
           {showGoalsForm ? 'Hide Set Goals' : 'Show Set Goals'}
         </button>
 
-        <button onClick={toggleShowMeasurementsForm}>
-          {showMeasurementsForm ? 'Hide Add Measurements' : 'Show Add Measurements'}
-        </button>
+
+       <button onClick={toggleShowMeasurementsForm} className="add-measurements-btn" style={{ position: 'relative' }}>
+                {showMeasurementsForm ? 'Hide Add Measurements' : 'Show Add Measurements'}
+                {showReminder && <span className="reminder-dot" style={{ position: 'absolute', top: '-10px', right: '-10px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', fontSize: '20px' }}>!</span>}
+                 </button>
+
       </div>
 
       {showGoalsForm && (
@@ -619,7 +693,8 @@ const UserProfile = () => {
         </button>
         {showMeasurementRecords && (
           <div>
-            <h2>All Measurement Records</h2>
+
+
             <table>
               <thead>
                 <tr>
@@ -648,6 +723,7 @@ const UserProfile = () => {
                 ))}
               </tbody>
             </table>
+              <MeasurementChart measurementRecords={measurementRecords} />
           </div>
         )}
       </div>

@@ -269,59 +269,48 @@ const CaloriesCalculator = () => {
       <Totals totals={totals} />
 
       <div className={styles.goals}>
-        <div className={styles.goalBox}>
-          <label>Calories:</label>
-          <progress
-            value={totals.calories}
-            max={goals.calories}
-            className={totals.calories > goals.calories ? styles.overLimit : styles.withinLimit}
-          ></progress>
-          <span
-            style={{ color: remaining.calories < 0 ? 'red' : 'inherit' }}
-          >
-            {totals.calories.toFixed(0)} / {goals.calories} (Remaining: {remaining.calories.toFixed(2)})
-          </span>
-        </div>
-        <div className={styles.goalBox}>
-          <label>Proteins:</label>
-          <progress
-            value={totals.proteins}
-            max={goals.protein}
-            className={totals.proteins > goals.protein ? styles.overLimit : styles.withinLimit}
-          ></progress>
-          <span
-            style={{ color: remaining.protein < 0 ? 'red' : 'inherit' }}
-          >
-            {totals.proteins.toFixed(2)} / {goals.protein} (Remaining: {remaining.protein.toFixed(2)})
-          </span>
-        </div>
-        <div className={styles.goalBox}>
-          <label>Carbs:</label>
-          <progress
-            value={totals.carbs}
-            max={goals.carbs}
-            className={totals.carbs > goals.carbs ? styles.overLimit : styles.withinLimit}
-          ></progress>
-          <span
-            style={{ color: remaining.carbs < 0 ? 'red' : 'inherit' }}
-          >
-            {totals.carbs.toFixed(2)} / {goals.carbs} (Remaining: {remaining.carbs.toFixed(2)})
-          </span>
-        </div>
-        <div className={styles.goalBox}>
-          <label>Fats:</label>
-          <progress
-            value={totals.fats}
-            max={goals.fat}
-            className={totals.fats > goals.fat ? styles.overLimit : styles.withinLimit}
-          ></progress>
-          <span
-            style={{ color: remaining.fat < 0 ? 'red' : 'inherit' }}
-          >
-            {totals.fats.toFixed(2)} / {goals.fat} (Remaining: {remaining.fat.toFixed(2)})
-          </span>
-        </div>
+        {[
+          { label: "Calories", total: totals.calories, goal: goals.calories, remaining: remaining.calories },
+          { label: "Proteins", total: totals.proteins, goal: goals.protein, remaining: remaining.protein },
+          { label: "Carbs", total: totals.carbs, goal: goals.carbs, remaining: remaining.carbs },
+          { label: "Fats", total: totals.fats, goal: goals.fat, remaining: remaining.fat }
+        ].map((item, index) => {
+          // Изчисляване на процента спрямо целта
+          const percentage = (item.total / item.goal) * 100;
+
+          // Определяне на клас за прогрес-бара
+          let progressClass;
+          if (percentage > 105) {
+            progressClass = styles.overLimit; // Червено над 110%
+          } else if (percentage > 100) {
+            progressClass = styles.nearLimit; // Зелено от 100% до 110%
+          } else {
+            progressClass = styles.withinLimit; // Нормално (синьо)
+          }
+
+          // Определяне на цвят за текста
+          let textColor;
+          if (percentage > 105) {
+            textColor = "red"; // Червен текст над 110%
+          } else if (percentage > 100) {
+            textColor = "green"; // Зелен текст в nearLimit (100% - 110%)
+          } else {
+            textColor = "inherit"; // Нормален цвят преди 100%
+          }
+
+          return (
+            <div key={index} className={styles.goalBox}>
+              <label>{item.label}:</label>
+              <progress value={item.total} max={item.goal} className={progressClass}></progress>
+              <span style={{ color: textColor }}>
+                {item.total.toFixed(2)} / {item.goal} (Remaining: {item.remaining.toFixed(2)})
+              </span>
+            </div>
+          );
+        })}
       </div>
+
+
 
       {showAddMealForm && (
         <div className={styles.addMealForm} ref={addMealFormRef}>
