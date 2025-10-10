@@ -17,7 +17,7 @@ public class UserController {
 
     private UserService userService;
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/user/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         var user = userService.getUserById(id);
@@ -30,7 +30,7 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/update/weight/{id}")
     public ResponseEntity<UserDTO> updateWeight(@PathVariable Long id, @RequestBody UpdateUserWeightRequestDTO userWeightRequestDTO) {
         var updatedUser = userService.updateWeight(id, userWeightRequestDTO.newWeight());

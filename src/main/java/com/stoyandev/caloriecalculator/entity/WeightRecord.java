@@ -26,5 +26,4 @@ public class WeightRecord {
     private double weight;
     private LocalDate date;
 
-    // getters and setters
 }

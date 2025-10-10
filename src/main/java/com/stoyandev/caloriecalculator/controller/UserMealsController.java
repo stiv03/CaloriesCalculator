@@ -19,7 +19,7 @@ public class UserMealsController {
     private UserMealsService userMealsService;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/meals/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequestDTO mealRequest) {
@@ -27,7 +27,7 @@ public class UserMealsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/date/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<List<MealResponseDTO>> displayProductsForUserForDay(@PathVariable Long userId, @RequestParam String date) {
@@ -36,7 +36,7 @@ public class UserMealsController {
     }
 
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/totalMacros")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<DailyMacrosDTO> fetchMacrosForDate(@PathVariable Long userId, @RequestParam String date) {
@@ -44,7 +44,7 @@ public class UserMealsController {
         return ResponseEntity.ok(dailyMacros);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/meals/upgrade/quantity/{userId}/meal/{mealId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<MealResponseDTO> updateMealQuantity(@PathVariable Long mealId, @PathVariable Long userId, @RequestBody UpdateMealQuantityDTO newQuantity) {
@@ -52,14 +52,14 @@ public class UserMealsController {
         return ResponseEntity.ok(updatedUserMeal);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @DeleteMapping("/meals/delete/meal/{mealId}")
     public ResponseEntity<Void> deleteByUserMealID(@PathVariable Long mealId) {
         userMealsService.deleteByUserMealID(mealId);
         return ResponseEntity.ok().build();
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/meals/{userId}/allMacros")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<List<DailyMacrosDTO>> fetchAllMacros(@PathVariable Long userId) {

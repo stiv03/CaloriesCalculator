@@ -156,19 +156,24 @@ const CaloriesCalculator = () => {
   };
 
   const handleAddFood = async () => {
-    try {
-      const response = await axios.post(`/meals/${getUserId()}`, newMeal);
-      setNewMeal({ productId: '', grams: '' });
-      setSelectedProduct(null);
-      setQuery('');
-      setShowAddMealForm(false);
-      fetchMeals();
-      fetchTotals();
-      setLoading(false);
-    } catch (error) {
-      console.error('Error adding meal:', error);
-    }
-  };
+if (!selectedProduct || newMeal.grams <= 0) {
+    alert("Please select a valid product and enter a positive amount of grams.");
+    return;
+  }
+
+  try {
+    const response = await axios.post(`/meals/${getUserId()}`, newMeal);
+    setNewMeal({ productId: '', grams: '' });
+    setSelectedProduct(null);
+    setQuery('');
+    setShowAddMealForm(false);
+    fetchMeals();
+    fetchTotals();
+    setLoading(false);
+  } catch (error) {
+    console.error('Error adding meal:', error);
+  }
+};
 
   const handleDeleteMeal = async (mealId) => {
     try {
@@ -201,9 +206,19 @@ const CaloriesCalculator = () => {
 
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewMeal({ ...newMeal, [name]: value });
-  };
+   const { name, value } = e.target;
+
+   // Проверка дали стойността е число и не е отрицателна
+   if (name === "grams") {
+     const parsedValue = parseFloat(value);
+     if (isNaN(parsedValue) || parsedValue <= 0) {
+       alert("Grams must be a positive number.");
+       return;
+     }
+   }
+
+   setNewMeal({ ...newMeal, [name]: value });
+ };
 
   const handleProductInputChange = (e) => {
     const { name, value } = e.target;

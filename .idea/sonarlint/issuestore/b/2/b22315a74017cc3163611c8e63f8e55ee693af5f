@@ -1,0 +1,11 @@
+
+[javascript:S1481"8Remove the declaration of the unused 'setDate' variable.(É“èš8¥Éæ‚Ğ2
+Xjavascript:S1854"5Remove this useless assignment to variable "setDate".(É“èš8§Éæ‚Ğ2
+]javascript:S1481¥"9Remove the declaration of the unused 'response' variable.(ç¸€ª8¨Éæ‚Ğ2
+Zjavascript:S1854¥"6Remove this useless assignment to variable "response".(ç¸€ª8¨Éæ‚Ğ2
+]javascript:S1481Ã"9Remove the declaration of the unused 'response' variable.(³Äı­8¨Éæ‚Ğ2
+Zjavascript:S1854Ã"6Remove this useless assignment to variable "response".(³Äı­8¨Éæ‚Ğ2
+bjavascript:S1481æ"9Remove the declaration of the unused 'response' variable.(ÕÛÒßÿÿÿÿÿ8ÖŒ’Ò2
+_javascript:S1854æ"6Remove this useless assignment to variable "response".(ÕÛÒßÿÿÿÿÿ8ÖŒ’Ò2
+Bjavascript:S6479½"Do not use Array index in keys(¶Šôª8²½ò‚Ğ2
+†javascript:S3923û"]This conditional operation returns the same value whether the condition is "true" or "false".(¬Î–—ùÿÿÿÿ8ªÉæ‚Ğ2

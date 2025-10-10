@@ -31,7 +31,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final WeightRecordRepository weightRecordRepository;
-    private MeasurementsRecordRepository measurementsRecordRepository;
+    private final MeasurementsRecordRepository measurementsRecordRepository;
 
     public UserDTO getUserById(final Long id) {
         final var user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Not found"));
@@ -60,7 +60,6 @@ public class UserServiceImpl implements UserService {
         weightRecord.setDate(LocalDate.now());
         weightRecordRepository.save(weightRecord);
 
-        user.getWeightRecords().add(weightRecord);
         user.setWeight(newWeight);
         userRepository.save(user);
 
@@ -104,10 +103,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<WeightRecordDTO> getWeightRecords(final Long id) {
-        final var user = userRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
-        return user.getWeightRecords().stream().map(WeightRecordMapper::toDTO).toList();
+        return weightRecordRepository.findByUserId(id).stream().map(WeightRecordMapper::toDTO).toList();
     }
 
     @Override

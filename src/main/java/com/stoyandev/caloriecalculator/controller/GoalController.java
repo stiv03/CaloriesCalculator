@@ -15,21 +15,21 @@ public class GoalController {
 
     private GoalServiceImp goalService;
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/setGoal")
     public ResponseEntity<GoalDTO> setUserGoal(@PathVariable Long userId, @RequestBody GoalDTO goal) {
         GoalDTO savedGoal = goalService.setUserGoal(userId, goal);
         return ResponseEntity.ok(savedGoal);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/user/{userId}/getGoal")
     public ResponseEntity<GoalDTO> getUserGoal(@PathVariable Long userId) {
         GoalDTO goal = goalService.getUserGoal(userId);
         return ResponseEntity.ok(goal);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/user/{userId}/autoSetGoal")
     public ResponseEntity<GoalDTO> autoUserGoal(@PathVariable Long userId) {
         GoalDTO savedGoal = goalService.autoSetGoal(userId);

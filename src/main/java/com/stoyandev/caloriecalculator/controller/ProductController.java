@@ -28,7 +28,7 @@ public class ProductController {
         return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/products/search")
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String query) {
         List<ProductDTO> products = productService.searchProducts(query);
@@ -48,7 +48,7 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    @CrossOrigin(origins = "https://calories.mazen.pro")
+    @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/product/{id}/updateName")
     public ResponseEntity<ProductDTO> updateName(@PathVariable Long id, @RequestBody String newName) {
         var updatedProduct = productService.updateProductName(id, newName);

@@ -8,6 +8,7 @@ const RegistrationForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     age: '',
+    gender: '',
     weight: '',
     height: '',
     username: '',
@@ -87,6 +88,18 @@ const RegistrationForm = () => {
           />
         </div>
         <div className="form-group">
+
+         <input
+                    type="text"
+                    id="gender"
+                    name="gender"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Gender"
+                    required
+                  />
+                </div>
+                <div className="form-group">
 
           <input
             type="number"
