@@ -45,9 +45,8 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
       try {
         const r = await searchProducts(query.trim());
         setResults(r);
-      } catch (err) {
+      } catch (_err) {
         // Silent on search errors — user retries by typing again
-        console.error('Search failed:', err);
       } finally {
         setLoadingSearch(false);
       }
