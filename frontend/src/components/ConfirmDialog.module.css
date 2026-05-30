@@ -1,0 +1,8 @@
+.message { color: var(--color-text); font-size: 15px; }
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actions > * { flex: 1; min-width: 0; }
