@@ -1,9 +1,11 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
+import com.stoyandev.caloriecalculator.dto.UpdateUserPasswordRequestDTO;
 import com.stoyandev.caloriecalculator.entity.enums.Activity;
 import com.stoyandev.caloriecalculator.entity.enums.Status;
 import com.stoyandev.caloriecalculator.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -99,5 +101,14 @@ public class UserController {
     public ResponseEntity<MeasurementsRecordDTO> getLatestMeasurement(@PathVariable Long userId) {
         var measurementsRecord = userService.getLatestMeasurement(userId);
         return ResponseEntity.ok(measurementsRecord);
+    }
+
+    @PutMapping("/update/password/{id}")
+    @PreAuthorize("@userAccessService.hasAccess(#id)")
+    public ResponseEntity<Void> updatePassword(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserPasswordRequestDTO body) {
+        userService.updatePassword(id, body.newPassword());
+        return ResponseEntity.ok().build();
     }
 }

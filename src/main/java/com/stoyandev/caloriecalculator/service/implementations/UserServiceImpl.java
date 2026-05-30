@@ -21,6 +21,7 @@ import com.stoyandev.caloriecalculator.repository.WeightRecordRepository;
 import com.stoyandev.caloriecalculator.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final MeasurementsRecordRepository measurementsRecordRepository;
     private final MealsRepository mealsRepository;
     private final GoalRepository goalRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private final Clock clock = Clock.systemDefaultZone();
 
@@ -163,6 +165,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public MeasurementsRecordDTO getLatestMeasurement(final Long userId) {
         return measurementsRecordRepository.findTopByUserIdOrderByDateDescIdDesc(userId);
+    }
+
+    @Override
+    public void updatePassword(final Long userId, final String newPassword) {
+        final var user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
 
