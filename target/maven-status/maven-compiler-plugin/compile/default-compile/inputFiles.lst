@@ -13,6 +13,7 @@
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UpdateUserAgeRequestDTO.java
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UpdateUserHeightRequestDTO.java
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UpdateUserMeasurementsRequestDTO.java
+/Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UpdateUserPasswordRequestDTO.java
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UpdateUserWeightRequestDTO.java
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/UserDTO.java
 /Users/I760712/IdeaProjects/CaloriesCalculator/src/main/java/com/stoyandev/caloriecalculator/dto/WeightRecordDTO.java
