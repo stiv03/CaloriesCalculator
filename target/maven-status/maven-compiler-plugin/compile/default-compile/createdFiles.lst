@@ -1,6 +1,7 @@
 com/stoyandev/caloriecalculator/service/ProductService.class
 com/stoyandev/caloriecalculator/security/controller/AuthenticationController.class
 com/stoyandev/caloriecalculator/dto/UpdateUserWeightRequestDTO.class
+com/stoyandev/caloriecalculator/exception/GlobalExceptionHandler.class
 com/stoyandev/caloriecalculator/dto/MealRequestDTO.class
 com/stoyandev/caloriecalculator/dto/UserDTO.class
 com/stoyandev/caloriecalculator/dto/UpdateUserHeightRequestDTO.class
