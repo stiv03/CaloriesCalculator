@@ -1,0 +1,52 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+}
+
+.arrow {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 24px;
+  border-radius: var(--radius-pill);
+}
+.arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+.arrow:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
+
+.dateBtn {
+  flex: 1;
+  position: relative;
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+}
+.dateBtn:hover { background: var(--color-surface-2); }
+
+.date { font-size: 16px; font-weight: 600; color: var(--color-text); }
+.todayLabel { font-size: 11px; color: var(--color-text-muted); }
+
+.hiddenInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pill {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
