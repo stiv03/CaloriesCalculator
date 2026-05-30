@@ -49,7 +49,7 @@ public class GoalServiceImp {
 
     public GoalDTO getUserGoal(final Long userId) {
         final var goal = goalRepository.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
-        return UserMapper.mapGoalToDTO(goal);
+        return GoalMapper.mapToDTo(goal);
     }
 
 

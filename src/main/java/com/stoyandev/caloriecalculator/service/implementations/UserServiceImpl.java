@@ -13,6 +13,8 @@ import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.MeasurementsRecordMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.mapper.WeightRecordMapper;
+import com.stoyandev.caloriecalculator.repository.GoalRepository;
+import com.stoyandev.caloriecalculator.repository.MealsRepository;
 import com.stoyandev.caloriecalculator.repository.MeasurementsRecordRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
 import com.stoyandev.caloriecalculator.repository.WeightRecordRepository;
@@ -33,6 +35,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final WeightRecordRepository weightRecordRepository;
     private final MeasurementsRecordRepository measurementsRecordRepository;
+    private final MealsRepository mealsRepository;
+    private final GoalRepository goalRepository;
 
     private final Clock clock = Clock.systemDefaultZone();
 
@@ -105,8 +109,21 @@ public class UserServiceImpl implements UserService {
     }
 
 
+    /**
+     * Deletes a user and every row that references them. The schema has no
+     * ON DELETE CASCADE, so we delete dependants explicitly here. Order matters
+     * only for FK integrity — children before parent.
+     */
     @Override
+    @Transactional
     public void deleteByUserID(long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found: " + id);
+        }
+        mealsRepository.deleteAllByUserId(id);
+        weightRecordRepository.deleteAllByUserId(id);
+        measurementsRecordRepository.deleteAllByUserId(id);
+        goalRepository.deleteByUserId(id);
         userRepository.deleteByUserID(id);
     }
 
@@ -120,7 +137,7 @@ public class UserServiceImpl implements UserService {
     public MeasurementsRecordDTO addMeasurement(final Long userId, UpdateUserMeasurementsRequestDTO requestDTO) {
         final var user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         var measurementsRecord = MeasurementsRecord.builder()
                 .user(user)
                 .shoulder(requestDTO.shoulder())

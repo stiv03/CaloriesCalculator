@@ -1,15 +1,10 @@
 package com.stoyandev.caloriecalculator.service.implementations;
 
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
-import com.stoyandev.caloriecalculator.dto.GoalDTO;
 import com.stoyandev.caloriecalculator.dto.MealResponseDTO;
-import com.stoyandev.caloriecalculator.entity.Goal;
 import com.stoyandev.caloriecalculator.entity.UserMeals;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
-import com.stoyandev.caloriecalculator.mapper.GoalMapper;
-import com.stoyandev.caloriecalculator.mapper.UserMapper;
 import com.stoyandev.caloriecalculator.mapper.UserMealsMapper;
-import com.stoyandev.caloriecalculator.repository.GoalRepository;
 import com.stoyandev.caloriecalculator.repository.MealsRepository;
 import com.stoyandev.caloriecalculator.repository.ProductRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
@@ -19,8 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +27,6 @@ public class UserMealsServiceImpl implements UserMealsService {
     private final MealsRepository usersMealsRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final GoalRepository goalRepository;
 
     @Override
     public void addMealForUser(final Long userId, Long productId, Integer grams) {
@@ -50,33 +45,18 @@ public class UserMealsServiceImpl implements UserMealsService {
 
     @Override
     public List<MealResponseDTO> findAllUserMealsRelForSpecificDay(final Long userId, LocalDate date) {
-        var allMealsEaten = usersMealsRepository.findAllByUserId(userId);
-        List<MealResponseDTO> mealsEatenForGivenDay = new ArrayList<>();
-        for (var meal : allMealsEaten) {
-            if (date.equals(meal.getConsumedAt().toLocalDate())) {
-                mealsEatenForGivenDay.add(UserMealsMapper.mapToUserProductDTO(meal));
-            }
-        }
-        return mealsEatenForGivenDay;
+        return usersMealsRepository
+                .findAllByUserIdAndConsumedAtRange(userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay())
+                .stream()
+                .map(UserMealsMapper::mapToUserProductDTO)
+                .toList();
     }
 
     @Override
     public DailyMacrosDTO calculateDailyMacros(Long userId, LocalDate date) {
-        List<MealResponseDTO> allMealsForDay = findAllUserMealsRelForSpecificDay(userId, date);
-        double totalCalories = 0;
-        double totalProtein = 0;
-        double totalCarbs = 0;
-        double totalFats = 0;
-
-        for (final var meal : allMealsForDay) {
-            var product = meal.product();
-            double quantity = meal.quantity();
-            totalCalories += product.getCaloriesPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
-            totalProtein += product.getProteinPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
-            totalCarbs += product.getCarbsPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
-            totalFats += product.getFatPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
-        }
-        return new DailyMacrosDTO(date.toString(), (int) totalCalories, totalProtein, totalFats, totalCarbs);
+        var meals = usersMealsRepository
+                .findAllByUserIdAndConsumedAtRange(userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
+        return aggregate(date, meals);
     }
 
     @Override
@@ -98,12 +78,37 @@ public class UserMealsServiceImpl implements UserMealsService {
 
     @Override
     public List<DailyMacrosDTO> fetchAllMacros(Long userId) {
-        return usersMealsRepository.
-                findAllByUserId(userId).stream()
-                .collect(Collectors.groupingBy(meal -> meal.getConsumedAt().toLocalDate()))
-                .keySet().stream()
-                .map(date -> calculateDailyMacros(userId, date))
+        // Single repo call, fold each day's meals into a DailyMacrosDTO once.
+        // TreeMap keeps the result ordered by date ascending.
+        Map<LocalDate, List<UserMeals>> mealsByDate = usersMealsRepository.findAllByUserId(userId).stream()
+                .collect(Collectors.groupingBy(
+                        m -> m.getConsumedAt().toLocalDate(),
+                        TreeMap::new,
+                        Collectors.toList()));
+
+        return mealsByDate.entrySet().stream()
+                .map(e -> aggregate(e.getKey(), e.getValue()))
                 .toList();
     }
 
+    /**
+     * Sums macros for a list of meals into a per-day DTO. Calories cast to int
+     * preserves the legacy contract of {@link DailyMacrosDTO#calories()}.
+     */
+    private DailyMacrosDTO aggregate(LocalDate date, List<UserMeals> meals) {
+        double totalCalories = 0;
+        double totalProtein = 0;
+        double totalCarbs = 0;
+        double totalFats = 0;
+
+        for (final var meal : meals) {
+            var product = meal.getProduct();
+            double quantity = meal.getQuantity();
+            totalCalories += product.getCaloriesPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalProtein += product.getProteinPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalCarbs += product.getCarbsPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+            totalFats += product.getFatPer100Grams() * quantity / HUNDRED_GRAMS_DENOMINATOR;
+        }
+        return new DailyMacrosDTO(date.toString(), (int) totalCalories, totalProtein, totalFats, totalCarbs);
+    }
 }
