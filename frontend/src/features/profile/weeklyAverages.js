@@ -14,7 +14,6 @@ const formatWeekRange = (start, end) => {
   const sDay = pad(start.getDate());
   const sMonth = pad(start.getMonth() + 1);
   const eDay = pad(end.getDate());
-  const eMonth = pad(end.getMonth() + 1);
   return `${sDay}-${eDay}.${sMonth}.${start.getFullYear()}`;
 };
 
