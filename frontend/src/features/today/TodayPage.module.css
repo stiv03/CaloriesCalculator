@@ -1,0 +1,36 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-6);
+}
+
+.header { padding: var(--space-3) 0; }
+
+.macroSection { margin-bottom: var(--space-5); }
+
+.mealsSection { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.h2 { margin-bottom: var(--space-3); }
+
+.muted { color: var(--color-text-muted); font-size: 14px; padding: var(--space-3) 0; }
+
+.fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + var(--space-4));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  border: 0;
+  font-size: 28px;
+  font-weight: 300;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-tab-bar);
+}
+.fab:hover { background: var(--color-accent-hover); }
+
+@media (min-width: 768px) {
+  .fab { bottom: var(--space-5); }
+}
