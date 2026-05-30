@@ -225,7 +225,7 @@ Asrc/main/java/com/stoyandev/caloriecalculator/entity/Workout.java,8/8/88275629
 Lsrc/main/java/com/stoyandev/caloriecalculator/entity/enums/ExerciseType.java,a/8/a8218ba053178a592d9c0d83e985089effda810f
 t
 Dsrc/main/java/com/stoyandev/caloriecalculator/entity/DaySummary.java,3/3/33517d47bdc1936aee7f91318221e82cc743fdc0
-u
-Esrc/main/java/com/stoyandev/caloriecalculator/entity/WorkOutPlan.java,0/5/052bf5795942b0441952e514c04176f278b49c15
 r
 Bsrc/main/java/com/stoyandev/caloriecalculator/entity/Exercise.java,e/3/e328af283bbe6be50b02f3809e34f80fa073b756
+u
+Esrc/main/java/com/stoyandev/caloriecalculator/entity/ExerciseSet.java,f/6/f6bc1cf2f150e7523c829b82f29d70c7eef7029e

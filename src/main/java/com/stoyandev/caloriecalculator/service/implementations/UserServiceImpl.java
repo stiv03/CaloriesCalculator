@@ -21,6 +21,7 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -32,6 +33,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final WeightRecordRepository weightRecordRepository;
     private final MeasurementsRecordRepository measurementsRecordRepository;
+
+    private final Clock clock = Clock.systemDefaultZone();
 
     public UserDTO getUserById(final Long id) {
         final var user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Not found"));
@@ -48,16 +51,23 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapToUserDTO(savedUser);
     }
 
-    @Override
+    @Transactional
     public UserDTO updateWeight(final long id, final double newWeight) {
-        final var user = userRepository
-                .findById(id).
-                orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        final var user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found " + id));
 
-        var weightRecord = new WeightRecord();
-        weightRecord.setUser(user);
+        final var today = LocalDate.now(clock);
+
+        final var weightRecord = weightRecordRepository
+                .findByUserIdAndDate(id, today)
+                .orElseGet(() -> {
+                    var wr = new WeightRecord();
+                    wr.setUser(user);
+                    wr.setDate(today);
+                    return wr;
+                });
+
         weightRecord.setWeight(newWeight);
-        weightRecord.setDate(LocalDate.now());
         weightRecordRepository.save(weightRecord);
 
         user.setWeight(newWeight);

@@ -761,6 +761,126 @@ select {
   padding-right: 15px;
 }
 
+/* Weekly Averages Card */
+.weekly-averages-card {
+  --wa-bg: rgba(255, 255, 255, 0.7);
+  --wa-border: rgba(0, 0, 0, 0.06);
+  --wa-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --wa-text: #0f172a;         /* slate-900 */
+  --wa-sub: #475569;          /* slate-600 */
+  --wa-up: #089981;           /* green-ish */
+  --wa-down: #f23645;         /* red-ish */
+  --wa-flat: #64748b;         /* slate-500 */
+
+  backdrop-filter: blur(8px);
+  background: var(--wa-bg);
+  border: 1px solid var(--wa-border);
+  border-radius: 16px;
+  box-shadow: var(--wa-shadow);
+  color: var(--wa-text);
+  padding: 16px 18px;
+  margin: 16px 0 8px;
+}
+
+/* Dark mode friendly */
+@media (prefers-color-scheme: dark) {
+  .weekly-averages-card {
+    --wa-bg: rgba(15, 23, 42, 0.55);   /* slate-900 with alpha */
+    --wa-border: rgba(255, 255, 255, 0.08);
+    --wa-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --wa-text: #e5e7eb;   /* gray-200 */
+    --wa-sub: #94a3b8;    /* slate-400 */
+    --wa-flat: #a3a3a3;
+  }
+}
+
+
+
+.wa-header {
+  position: relative;          /* allow absolute positioning inside */
+  display: flex;
+  align-items: center;
+  justify-content: center;     /* center the title */
+  margin-bottom: 0px;
+}
+
+
+
+.wa-delta {
+  position: absolute;
+  top: 50%;
+  left:0;
+    margin-top: -8px;
+  margin-left: -8px;
+
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.06);
+  color: var(--wa-flat);
+  line-height: 1;
+
+  user-select: none;
+}
+.wa-delta.up   { color: #fff; background: var(--wa-up); }
+.wa-delta.down { color: #fff; background: var(--wa-down); }
+.wa-delta.flat { color: var(--wa-flat); }
+
+.wa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.wa-divider {
+  height: 100%;
+  width: 1.4px;
+  background: var(--wa-border);
+  align-self: stretch;
+  opacity: 1;
+}
+
+.wa-metric {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 4px;
+}
+
+.wa-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wa-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.wa-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wa-range {
+  font-size: 12px;
+  color: var(--wa-sub);
+}
+
+/* Micro interaction */
+.weekly-averages-card:hover .wa-delta {
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .wa-grid {
+    grid-template-columns: 1fr;
+  }
+  .wa-divider { display: none; }
+  .wa-value { font-size: 20px; }
+}
+
+
 
 
 

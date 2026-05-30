@@ -33,6 +33,9 @@ const UserProfile = () => {
   });
   const [status, setStatus] = useState('');
 
+  const [weeklyAvg, setWeeklyAvg] = useState({ thisWeek: null, lastWeek: null, diff: null });
+
+
 
 
 
@@ -56,6 +59,12 @@ const UserProfile = () => {
   const [showMeasurementsForm, setShowMeasurementsForm] = useState(false); // Hidden by default
   const [showGoalsForm, setShowGoalsForm] = useState(false); // Hidden by default
 
+
+useEffect(() => {
+  setWeeklyAvg(computeWeeklyAverages(weightRecords));
+}, [weightRecords]);
+
+
   useEffect(() => {
   document.body.classList.add('profile-page');
     const userId = getUserId();
@@ -63,6 +72,7 @@ const UserProfile = () => {
       console.error('No user ID found');
       return;
     }
+
 
     // Fetch user data
     axios.get(`/user/${userId}`, {
@@ -411,6 +421,91 @@ const UserProfile = () => {
       console.error('Error:', error);
     }
   };
+  const trendClass =
+    weeklyAvg.diff == null ? "flat" :
+    weeklyAvg.diff > 0 ? "up" : weeklyAvg.diff < 0 ? "down" : "flat";
+
+const computeWeeklyAverages = (records) => {
+
+
+  if (!records || records.length === 0) return { thisWeek: null, lastWeek: null, diff: null };
+
+  const toMidnight = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+  const startOfISOWeek = (d) => {
+    const x = toMidnight(d);
+    const day = x.getDay() || 7; // Sun=0 -> 7
+    x.setDate(x.getDate() - (day - 1)); // Monday
+    return x;
+  };
+
+  const formatWeekRange = (start, end) => {
+    const pad = (n) => n.toString().padStart(2, "0");
+    const sDay = pad(start.getDate());
+    const sMonth = pad(start.getMonth() + 1);
+    const eDay = pad(end.getDate());
+    const eMonth = pad(end.getMonth() + 1);
+    const year = start.getFullYear();
+    return `${sDay}-${eDay}.${sMonth}.${year}`;
+  };
+
+  // Parse all records first
+  const parseDateStrict = (s) => {
+    if (s == null) return null;
+    if (s instanceof Date && !isNaN(s)) return toMidnight(s);
+    if (typeof s === 'number' || (/^\d{10,13}$/.test(String(s)))) {
+      const n = Number(s); const d = new Date(n < 1e12 ? n * 1000 : n);
+      return isNaN(d) ? null : toMidnight(d);
+    }
+    if (typeof s !== 'string') return null;
+    const str = s.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return toMidnight(new Date(`${str}T00:00:00`));
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/.test(str)) return toMidnight(new Date(str.replace(' ', 'T')));
+    let m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str);
+    if (m) { const [, dd, mm, yyyy] = m; return toMidnight(new Date(`${yyyy}-${mm}-${dd}T00:00:00`)); }
+    m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str);
+    if (m) { const [, dd, mm, yyyy] = m; return toMidnight(new Date(`${yyyy}-${mm}-${dd}T00:00:00`)); }
+    const d = new Date(str.replace(' ', 'T'));
+    return isNaN(d) ? null : toMidnight(d);
+  };
+
+  const parsed = [];
+  for (const r of records) {
+    const d = parseDateStrict(r?.date);
+    const w = parseFloat(r?.weight);
+    if (d && !isNaN(w)) parsed.push({ d, w });
+  }
+  if (!parsed.length) return { thisWeek: null, lastWeek: null, diff: null };
+
+  // Anchor to the most recent record date (NOT today)
+  const latestDate = new Date(Math.max(...parsed.map(p => +p.d)));
+  const startThis = startOfISOWeek(latestDate);
+  const endThis = new Date(startThis); endThis.setDate(startThis.getDate() + 7);
+  const startLast = new Date(startThis); startLast.setDate(startThis.getDate() - 7);
+  const endLast = new Date(startThis);
+
+  const thisWeek = [];
+  const lastWeek = [];
+  for (const p of parsed) {
+    if (p.d >= startThis && p.d < endThis) thisWeek.push(p.w);
+    else if (p.d >= startLast && p.d < endLast) lastWeek.push(p.w);
+  }
+
+  const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const aThis = avg(thisWeek);
+  const aLast = avg(lastWeek);
+  const diff = (aThis != null && aLast != null) ? (aThis - aLast) : null;
+
+  return {
+     thisWeek: aThis,
+     lastWeek: aLast,
+     diff,
+     rangeThis: formatWeekRange(startThis, new Date(endThis.getTime() - 1)), // subtract 1 day from end
+     rangeLast: formatWeekRange(startLast, new Date(endLast.getTime() - 1))
+   };
+};
+
+
+
 
   return (
     <div className="profile-container">
@@ -456,6 +551,39 @@ const UserProfile = () => {
           </button>
         </div>
       </div>
+
+   <div className="weekly-averages-card">
+     <div className="wa-header">
+
+       <span className={`wa-delta ${trendClass}`}>
+         {weeklyAvg.diff == null ? "—" :
+           `${weeklyAvg.diff > 0 ? "▲" : weeklyAvg.diff < 0 ? "▼" : "—"} ${Math.abs(weeklyAvg.diff).toFixed(2)} kg`}
+       </span>
+     </div>
+
+     <div className="wa-grid">
+       <div className="wa-metric">
+         <div className="wa-label">This week</div>
+         <div className="wa-value">
+           {weeklyAvg.thisWeek != null ? `${weeklyAvg.thisWeek.toFixed(2)} kg` : "n/a"}
+         </div>
+         <div className="wa-range">{weeklyAvg.rangeThis || "–"}</div>
+       </div>
+
+       <div className="wa-divider" />
+
+       <div className="wa-metric">
+         <div className="wa-label">Last week</div>
+         <div className="wa-value">
+           {weeklyAvg.lastWeek != null ? `${weeklyAvg.lastWeek.toFixed(2)} kg` : "n/a"}
+         </div>
+         <div className="wa-range">{weeklyAvg.rangeLast || "–"}</div>
+       </div>
+     </div>
+   </div>
+
+
+
       <WeightChart />
 
        <div className="weight-records">
