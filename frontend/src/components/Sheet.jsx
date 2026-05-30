@@ -10,7 +10,11 @@ import styles from './Sheet.module.css';
 export default function Sheet({ isOpen, onClose, title, children, footer }) {
   useEffect(() => {
     if (!isOpen) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKey);
