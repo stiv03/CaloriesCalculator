@@ -31,6 +31,7 @@ public class AuthenticationService {
         var user = Users.builder()
                 .name(request.getName())
                 .age(request.getAge())
+                .genderType(request.getGender())
                 .weight(request.getWeight())
                 .height(request.getHeight())
                 .username(request.getUsername())

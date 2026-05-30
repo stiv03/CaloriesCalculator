@@ -31,4 +31,6 @@ public interface UserService {
     List<MeasurementsRecordDTO> getMeasurementsByUser(Long userId);
 
     MeasurementsRecordDTO getLatestMeasurement(Long userId);
+
+    void updatePassword(Long userId, String newPassword);
 }
