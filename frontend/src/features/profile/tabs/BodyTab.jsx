@@ -1,6 +1,7 @@
 // frontend/src/features/profile/tabs/BodyTab.jsx
 import React from 'react';
 import MeasurementChart from '../MeasurementChart';
+import { formatHumanDate } from '../../today/dateFormat';
 import styles from './BodyTab.module.css';
 
 const PARTS = ['shoulder', 'chest', 'biceps', 'waist', 'hips', 'thigh', 'calf'];
@@ -13,7 +14,7 @@ export default function BodyTab({ measurements, latestMeasurement }) {
           Latest measurement
           {latestMeasurement?.date && (
             <span className={styles.muted}>
-              {' '}— {new Date(latestMeasurement.date).toLocaleDateString()}
+              {' '}— {formatHumanDate(new Date(latestMeasurement.date))}
             </span>
           )}
         </h3>
@@ -50,7 +51,7 @@ export default function BodyTab({ measurements, latestMeasurement }) {
               <tbody>
                 {measurements.map((r, i) => (
                   <tr key={`${r.date}-${i}`}>
-                    <td>{new Date(r.date).toLocaleDateString()}</td>
+                    <td>{formatHumanDate(new Date(r.date))}</td>
                     {PARTS.map((p) => (<td key={p}>{r[p]}</td>))}
                   </tr>
                 ))}
