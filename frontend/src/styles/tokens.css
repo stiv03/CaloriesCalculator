@@ -1,0 +1,101 @@
+/* frontend/src/styles/tokens.css
+   Design tokens — light theme on :root, dark via prefers-color-scheme.
+   Components must reference colors and spacings ONLY through these vars. */
+
+:root {
+  /* Surfaces */
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f0f0;
+  --color-border: #e6e6e6;
+  --color-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Text */
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: #ffffff;
+
+  /* Brand / accents */
+  --color-accent: #16a34a;
+  --color-accent-hover: #15803d;
+
+  /* Macro colors */
+  --color-calories: #16a34a;
+  --color-protein: #2563eb;
+  --color-carbs: #d97706;
+  --color-fat: #dc2626;
+
+  /* States */
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-warn: #d97706;
+  --color-success: #16a34a;
+  --color-track: #e5e7eb; /* unfilled portion of rings/bars */
+
+  /* Spacing scale (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
+
+  /* Typography */
+  --font-body: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans',
+               'Segoe UI', 'Roboto', sans-serif;
+  --font-display: 'Oranienbaum', Georgia, serif;
+
+  /* Layout */
+  --tab-bar-height: 64px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Z layers */
+  --z-tab-bar: 50;
+  --z-sheet-backdrop: 100;
+  --z-sheet: 110;
+  --z-toast: 200;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f0f0f;
+    --color-surface: #1a1a1a;
+    --color-surface-2: #262626;
+    --color-border: #2a2a2a;
+    --color-overlay: rgba(0, 0, 0, 0.65);
+
+    --color-text: #ededed;
+    --color-text-muted: #9ca3af;
+    --color-text-inverse: #0f0f0f;
+
+    --color-accent: #4ade80;
+    --color-accent-hover: #22c55e;
+
+    --color-calories: #4ade80;
+    --color-protein: #60a5fa;
+    --color-carbs: #fbbf24;
+    --color-fat: #f87171;
+
+    --color-danger: #f87171;
+    --color-danger-hover: #ef4444;
+    --color-warn: #fbbf24;
+    --color-success: #4ade80;
+    --color-track: #2a2a2a;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+}
