@@ -1,5 +1,6 @@
 com/stoyandev/caloriecalculator/service/ProductService.class
 com/stoyandev/caloriecalculator/security/controller/AuthenticationController.class
+com/stoyandev/caloriecalculator/entity/enums/GenderType.class
 com/stoyandev/caloriecalculator/dto/UpdateUserWeightRequestDTO.class
 com/stoyandev/caloriecalculator/exception/GlobalExceptionHandler.class
 com/stoyandev/caloriecalculator/dto/MealRequestDTO.class
@@ -11,6 +12,7 @@ com/stoyandev/caloriecalculator/service/implementations/GoalServiceImp$1.class
 com/stoyandev/caloriecalculator/repository/WeightRecordRepository.class
 com/stoyandev/caloriecalculator/repository/MealsRepository.class
 com/stoyandev/caloriecalculator/security/auth/RegisterRequest.class
+com/stoyandev/caloriecalculator/entity/ExerciseSet.class
 com/stoyandev/caloriecalculator/mapper/ProductMapper.class
 com/stoyandev/caloriecalculator/entity/MeasurementsRecord.class
 com/stoyandev/caloriecalculator/security/service/JwtService.class
@@ -34,6 +36,8 @@ com/stoyandev/caloriecalculator/entity/enums/ProductType.class
 com/stoyandev/caloriecalculator/repository/UserRepository.class
 com/stoyandev/caloriecalculator/repository/GoalRepository.class
 com/stoyandev/caloriecalculator/dto/UpdateMealQuantityDTO.class
+com/stoyandev/caloriecalculator/entity/enums/ExerciseType.class
+com/stoyandev/caloriecalculator/entity/Workout.class
 com/stoyandev/caloriecalculator/dto/MeasurementsRecordDTO.class
 com/stoyandev/caloriecalculator/entity/UserMeals.class
 com/stoyandev/caloriecalculator/controller/ProductController.class
@@ -49,12 +53,15 @@ com/stoyandev/caloriecalculator/mapper/MeasurementsRecordMapper.class
 com/stoyandev/caloriecalculator/controller/UserController.class
 com/stoyandev/caloriecalculator/entity/Product.class
 com/stoyandev/caloriecalculator/entity/WeightRecord.class
+com/stoyandev/caloriecalculator/entity/Exercise.class
+com/stoyandev/caloriecalculator/dto/UpdateUserPasswordRequestDTO.class
 com/stoyandev/caloriecalculator/dto/WeightRecordDTO.class
 com/stoyandev/caloriecalculator/entity/enums/Status.class
 com/stoyandev/caloriecalculator/security/ApplicationConfig.class
 com/stoyandev/caloriecalculator/controller/UserMealsController.class
 com/stoyandev/caloriecalculator/security/auth/AuthenticationResponse$AuthenticationResponseBuilder.class
 com/stoyandev/caloriecalculator/entity/enums/Activity.class
+com/stoyandev/caloriecalculator/entity/DaySummary$DaySummaryBuilder.class
 com/stoyandev/caloriecalculator/security/auth/AuthenticationResponse.class
 com/stoyandev/caloriecalculator/entity/WeightRecord$WeightRecordBuilder.class
 com/stoyandev/caloriecalculator/service/UserMealsService.class
@@ -63,4 +70,5 @@ com/stoyandev/caloriecalculator/security/SecurityConfiguration.class
 com/stoyandev/caloriecalculator/security/auth/LoginRequest.class
 com/stoyandev/caloriecalculator/security/auth/LoginRequest$LoginRequestBuilder.class
 com/stoyandev/caloriecalculator/mapper/UserMealsMapper.class
+com/stoyandev/caloriecalculator/entity/DaySummary.class
 com/stoyandev/caloriecalculator/entity/Users$UsersBuilder.class
