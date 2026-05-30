@@ -1,13 +1,10 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
-import com.stoyandev.caloriecalculator.dto.UpdateUserWeightRequestDTO;
-import com.stoyandev.caloriecalculator.dto.UserDTO;
 import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import com.stoyandev.caloriecalculator.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +25,6 @@ public class ProductController {
         return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/products/search")
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String query) {
         List<ProductDTO> products = productService.searchProducts(query);
@@ -37,18 +33,17 @@ public class ProductController {
 
 
     @GetMapping("/products/all")
-    public ResponseEntity<List<ProductDTO>> displayAllProducts(){
+    public ResponseEntity<List<ProductDTO>> displayAllProducts() {
         List<ProductDTO> products = productService.displayAllProducts();
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/products/{type}")
-    public ResponseEntity<List<ProductDTO>> displayProductsByType(@PathVariable ProductType type){
+    public ResponseEntity<List<ProductDTO>> displayProductsByType(@PathVariable ProductType type) {
         List<ProductDTO> products = productService.displayProductsByType(type);
         return ResponseEntity.ok(products);
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
     @PutMapping("/product/{id}/updateName")
     public ResponseEntity<ProductDTO> updateName(@PathVariable Long id, @RequestBody String newName) {
         var updatedProduct = productService.updateProductName(id, newName);

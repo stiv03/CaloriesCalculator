@@ -23,11 +23,11 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final GoalRepository goalRepository;
-
+    private final JwtService jwtService;
 
 
     public AuthenticationResponse register(RegisterRequest request) {
-        // Създаваме нов потребител
+        // Build the new user from the registration request.
         var user = Users.builder()
                 .name(request.getName())
                 .age(request.getAge())
@@ -40,22 +40,20 @@ public class AuthenticationService {
                 .activity(Activity.NORMAL)
                 .build();
 
-        // Запазваме потребителя в базата
+        // Persist the user.
         repository.save(user);
 
-        // Създаваме нов Goal със стойности 0 и го свързваме с потребителя
+        // Initialise the user's daily goal with zeros; it is filled in later
+        // either manually (POST /setGoal) or via auto-calculation (POST /autoSetGoal).
         Goal goal = new Goal();
         goal.setUser(user);
         goal.setCalories(0);
         goal.setProtein(0.0);
         goal.setCarbs(0.0);
         goal.setFat(0.0);
-
-        // Запазваме Goal в базата
         goalRepository.save(goal);
 
-        // Генерираме JWT токен
-        var jwtToken = JwtService.generateToken(user);
+        var jwtToken = jwtService.generateToken(user);
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -70,7 +68,7 @@ public class AuthenticationService {
         );
         var user = repository.findByUsername(request.getUsername())
                 .orElseThrow();
-        var jwtToken = JwtService.generateToken(user);
+        var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder().token(jwtToken).userId(user.getId()).build();
     }
 }
