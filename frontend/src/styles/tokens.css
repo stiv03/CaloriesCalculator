@@ -60,6 +60,9 @@
   /* Layout */
   --tab-bar-height: 64px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --sidebar-width: 240px;
+  --sub-nav-width: 200px;
+  --content-max: 1200px;
 
   /* Z layers */
   --z-tab-bar: 50;
