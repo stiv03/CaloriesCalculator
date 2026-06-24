@@ -34,6 +34,15 @@
 .date { font-size: 16px; font-weight: 600; color: var(--color-text); }
 .todayLabel { font-size: 11px; color: var(--color-text-muted); }
 
+.popover {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--space-1);
+  z-index: var(--z-tab-bar);
+}
+
 .hiddenInput {
   position: absolute;
   inset: 0;

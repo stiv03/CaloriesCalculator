@@ -3,34 +3,39 @@
    Components must reference colors and spacings ONLY through these vars. */
 
 :root {
-  /* Surfaces */
-  --color-bg: #f5f5f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #f0f0f0;
-  --color-border: #e6e6e6;
-  --color-overlay: rgba(0, 0, 0, 0.45);
+  /* Tells UA-rendered controls (date pickers, scrollbars) to use light styling. */
+  color-scheme: light;
+  /* Highlight color for native pickers, checkboxes, radios, etc. */
+  accent-color: #16a34a;
+
+  /* Surfaces — cool blue-grey neutrals */
+  --color-bg: #d0dcef;          /* page background — clearer blue */
+  --color-surface: #ffffff;     /* cards stay white so they pop against the blue */
+  --color-surface-2: #c2d0e6;   /* sunken / hover state */
+  --color-border: #aabad3;      /* borders share the blue undertone */
+  --color-overlay: rgba(15, 23, 42, 0.45);
 
   /* Text */
-  --color-text: #1a1a1a;
-  --color-text-muted: #6b7280;
+  --color-text: #0f172a;        /* slate-900 — slightly cooler than pure black */
+  --color-text-muted: #64748b;  /* slate-500 */
   --color-text-inverse: #ffffff;
 
   /* Brand / accents */
   --color-accent: #16a34a;
   --color-accent-hover: #15803d;
 
-  /* Macro colors */
+  /* Macro colors (unchanged — these are intentional brand identifiers) */
   --color-calories: #16a34a;
-  --color-protein: #2563eb;
+  --color-protein: #0891b2;
   --color-carbs: #d97706;
-  --color-fat: #dc2626;
+  --color-fat: #7c3aed;
 
   /* States */
   --color-danger: #dc2626;
   --color-danger-hover: #b91c1c;
   --color-warn: #d97706;
   --color-success: #16a34a;
-  --color-track: #e5e7eb; /* unfilled portion of rings/bars */
+  --color-track: #e2e8f0;       /* slightly cool grey for unfilled rings/bars */
 
   /* Spacing scale (4px grid) */
   --space-1: 4px;
@@ -48,9 +53,9 @@
   --radius-pill: 999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.18);
 
   /* Typography */
   --font-body: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans',
@@ -72,33 +77,105 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0f0f0f;
-    --color-surface: #1a1a1a;
-    --color-surface-2: #262626;
-    --color-border: #2a2a2a;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    accent-color: #4ade80;
+
+    /* Surfaces — cool blue-grey, dark variant */
+    --color-bg: #0b1220;          /* near-black with blue undertone */
+    --color-surface: #131c2e;     /* card surface */
+    --color-surface-2: #1c2740;   /* sunken / hover */
+    --color-border: #243049;
     --color-overlay: rgba(0, 0, 0, 0.65);
 
-    --color-text: #ededed;
-    --color-text-muted: #9ca3af;
-    --color-text-inverse: #0f0f0f;
+    --color-text: #e2e8f0;        /* slate-200 */
+    --color-text-muted: #94a3b8;  /* slate-400 */
+    --color-text-inverse: #0b1220;
 
     --color-accent: #4ade80;
     --color-accent-hover: #22c55e;
 
     --color-calories: #4ade80;
-    --color-protein: #60a5fa;
+    --color-protein: #22d3ee;
     --color-carbs: #fbbf24;
-    --color-fat: #f87171;
+    --color-fat: #a78bfa;
 
     --color-danger: #f87171;
     --color-danger-hover: #ef4444;
     --color-warn: #fbbf24;
     --color-success: #4ade80;
-    --color-track: #2a2a2a;
+    --color-track: #243049;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
   }
+}
+
+/* Manual dark override — wins over OS setting */
+[data-theme="dark"] {
+  color-scheme: dark;
+  accent-color: #4ade80;
+
+  --color-bg: #0b1220;
+  --color-surface: #131c2e;
+  --color-surface-2: #1c2740;
+  --color-border: #243049;
+  --color-overlay: rgba(0, 0, 0, 0.65);
+
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0b1220;
+
+  --color-accent: #4ade80;
+  --color-accent-hover: #22c55e;
+
+  --color-calories: #4ade80;
+  --color-protein: #22d3ee;
+  --color-carbs: #fbbf24;
+  --color-fat: #a78bfa;
+
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-warn: #fbbf24;
+  --color-success: #4ade80;
+  --color-track: #243049;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Manual light override — forces light even on dark-mode OS */
+[data-theme="light"] {
+  color-scheme: light;
+  accent-color: #16a34a;
+
+  --color-bg: #d0dcef;
+  --color-surface: #ffffff;
+  --color-surface-2: #c2d0e6;
+  --color-border: #aabad3;
+  --color-overlay: rgba(15, 23, 42, 0.45);
+
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-accent: #16a34a;
+  --color-accent-hover: #15803d;
+
+  --color-calories: #16a34a;
+  --color-protein: #0891b2;
+  --color-carbs: #d97706;
+  --color-fat: #7c3aed;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-warn: #d97706;
+  --color-success: #16a34a;
+  --color-track: #e2e8f0;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.18);
 }

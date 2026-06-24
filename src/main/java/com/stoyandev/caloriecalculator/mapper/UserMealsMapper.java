@@ -13,7 +13,8 @@ public final class UserMealsMapper {
                 userMeals.getId(),
                 userMeals.getProduct(),
                 userMeals.getQuantity(),
-                userMeals.getConsumedAt()
+                userMeals.getConsumedAt(),
+                userMeals.getMealType()
         );
     }
 

@@ -16,8 +16,8 @@ export async function getAllMacros(userId) {
   return data;
 }
 
-export async function addMeal(userId, productId, grams) {
-  await client.post(`/meals/${userId}`, { productId, grams });
+export async function addMeal(userId, productId, grams, mealType) {
+  await client.post(`/meals/${userId}`, { productId, grams, mealType });
 }
 
 export async function updateMealQuantity(userId, mealId, newQuantity) {

@@ -6,31 +6,223 @@
 
 .header { padding: var(--space-3) 0; }
 
+.dayPickerRow {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-right: 40px;
+}
+.dayPickerRow > :first-child {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+.dayPickerRow > button {
+  position: absolute;
+  right: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.diaryBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms;
+}
+.diaryBtn:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+.diaryDot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* Note modal */
+.noteOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: var(--z-sheet-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+}
+
+.noteModal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.noteModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.noteClose {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.noteClose:hover { color: var(--color-text); }
+
+.noteArea {
+  width: 100%;
+  resize: vertical;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+.noteArea:focus { outline: none; border-color: var(--color-accent); }
+
+.noteFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.noteSaved {
+  font-size: 13px;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
 .macroSection { margin-bottom: var(--space-5); }
 
-.mealsSection { display: flex; flex-direction: column; gap: var(--space-2); }
+.mealsSection { display: flex; flex-direction: column; gap: var(--space-3); }
 
-.h2 { margin-bottom: var(--space-3); }
+.h2 { margin-bottom: var(--space-2); }
 
 .muted { color: var(--color-text-muted); font-size: 14px; padding: var(--space-3) 0; }
 
-.fab {
-  position: fixed;
-  right: var(--space-4);
-  bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + var(--space-4));
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  color: var(--color-text-inverse);
-  border: 0;
-  font-size: 28px;
-  font-weight: 300;
-  box-shadow: var(--shadow-md);
-  z-index: var(--z-tab-bar);
-}
-.fab:hover { background: var(--color-accent-hover); }
+/* ---------- Meal sections (collapsible) ---------- */
 
-@media (min-width: 768px) {
-  .fab { bottom: var(--space-5); }
+.mealSection {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.sectionHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--color-text);
+  transition: background 120ms ease;
+}
+.sectionHead:hover { background: var(--color-surface-2); }
+
+/* When the section is expanded, tint the header so it reads as a heading
+   rather than blending into the meal cards stacked below it.
+   --color-surface-2 is a tinted blue in light mode and a lighter blue in
+   dark mode, so it differentiates from --color-surface in both. */
+.sectionHead.sectionHeadOpen,
+.sectionHead.sectionHeadOpen:hover {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chev {
+  width: 16px;
+  font-size: 16px;
+  color: var(--color-text-muted);
+  flex: 0 0 auto;
+}
+
+.sectionLabel {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.sectionMeta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  flex: 0 0 auto;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+.noteArea {
+  width: 100%;
+  resize: vertical;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+.noteArea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.noteFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.noteSaved {
+  font-size: 13px;
+  color: var(--color-success);
+  font-weight: 600;
 }

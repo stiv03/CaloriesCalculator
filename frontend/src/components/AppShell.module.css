@@ -6,55 +6,179 @@
 
 .main {
   flex: 1;
-  padding-bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom));
+  /* tab-bar height + the lift below it (--space-3) + safe area + a small
+     breathing buffer so the last content row isn't kissing the pill. */
+  padding-bottom: calc(var(--tab-bar-height) + var(--space-3) + var(--space-3) + var(--safe-area-bottom));
 }
 
+/* Sidebar — hidden on mobile, shown ≥768px. */
+.sidebar { display: none; }
+
+/* Bottom tab bar — mobile only. Floating "pill" style: lifted off the
+   bottom edge, fully rounded, soft shadow, with a single sliding pill
+   that animates between the active tab. Translucent surface with a
+   backdrop blur so page content shows softly through. */
 .tabBar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--space-3) + var(--safe-area-bottom));
   z-index: var(--z-tab-bar);
   display: flex;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  height: calc(var(--tab-bar-height) + var(--safe-area-bottom));
-  padding-bottom: var(--safe-area-bottom);
+  align-items: center;
+  gap: var(--space-1);
+  width: calc(100% - var(--space-4) * 2);
+  max-width: 460px;
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-surface) 60%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: var(--radius-pill);
+  height: var(--tab-bar-height);
+  padding: var(--space-1) var(--space-2);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Sliding active-tab pill. Sits behind the tab labels (z-index 0),
+   tabs sit on top (z-index 1) so their text is above the pill. The
+   transform is set inline based on the active tab index. */
+.tabPill {
+  position: absolute;
+  top: var(--space-1);
+  bottom: var(--space-1);
+  left: var(--space-2);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  z-index: 0;
+  pointer-events: none;
+  transition:
+    transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
+    width 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
 }
 
 .tab {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: 2px;
   text-decoration: none;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  transition: color 0.15s ease;
+  border-radius: var(--radius-pill);
+  height: 100%;
+  transition: color 220ms ease;
 }
 .tab:hover { text-decoration: none; }
 
-.icon { font-size: 22px; }
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon svg { width: 22px; height: 22px; }
 
-.tabActive { color: var(--color-accent); }
+/* On mobile the active styling is just the text color — the colored
+   background belongs to the sliding .tabPill behind the tabs. */
+.tabActive {
+  color: var(--color-text-inverse);
+  background: transparent;
+}
 
 @media (min-width: 768px) {
-  .shell { flex-direction: column; }
-  .main { padding-bottom: 0; padding-top: var(--tab-bar-height); }
-  .tabBar {
-    position: sticky;
+  .shell { flex-direction: row; }
+
+  /* Hide the bottom bar on desktop. */
+  .tabBar { display: none; }
+
+  /* Show the sidebar. */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
     top: 0;
-    bottom: auto;
-    height: var(--tab-bar-height);
-    padding-bottom: 0;
-    justify-content: center;
-    gap: var(--space-5);
-    border-top: 0;
-    border-bottom: 1px solid var(--color-border);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    padding: var(--space-5) var(--space-3);
+    z-index: var(--z-tab-bar);
   }
-  .tab { flex: 0 0 auto; flex-direction: row; gap: var(--space-2); padding: 0 var(--space-4); }
-  .icon { font-size: 18px; }
+
+  .brand {
+    padding: 0 var(--space-3) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-3);
+  }
+
+  .brandLogo {
+    display: block;
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .sidebarNav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1;
+  }
+
+  /* Sidebar nav items override the mobile tab styles. */
+  .sidebar .tab {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    height: auto;
+  }
+  .sidebar .tab:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+  .sidebar .tabActive {
+    background: var(--color-surface-2);
+    color: var(--color-accent);
+  }
+  .sidebar .icon svg { width: 18px; height: 18px; }
+
+  .logout {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    margin-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-4);
+  }
+  .logout:hover {
+    background: var(--color-surface-2);
+    color: var(--color-danger);
+  }
+
+  /* Main content fills the area to the right of the sidebar; the page itself
+     owns its max-width and centers via margin: 0 auto. */
+  .main {
+    margin-left: var(--sidebar-width);
+    padding-bottom: 0;
+  }
 }

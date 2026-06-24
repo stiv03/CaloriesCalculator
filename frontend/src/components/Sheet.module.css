@@ -4,32 +4,28 @@
   background: var(--color-overlay);
   z-index: var(--z-sheet-backdrop);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   animation: fadeIn 0.18s ease-out;
+  padding: var(--space-3);
 }
 
 .sheet {
   position: relative;
   width: 100%;
-  max-height: 90vh;
+  max-width: 460px;
+  max-height: min(85dvh, 640px);
   background: var(--color-surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-sheet);
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.22s ease-out;
-  padding-bottom: var(--safe-area-bottom);
+  animation: popIn 0.22s ease-out;
 }
 
-.handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--color-border);
-  margin: var(--space-3) auto var(--space-2);
-}
+/* Bottom-sheet drag handle no longer applies to a centered modal. */
+.handle { display: none; }
 
 .header {
   display: flex;
@@ -58,27 +54,11 @@
   border-top: 1px solid var(--color-border);
 }
 
-@media (min-width: 768px) {
-  .backdrop { align-items: center; }
-  .sheet {
-    max-width: 460px;
-    border-radius: var(--radius-lg);
-    max-height: min(80vh, 640px);
-  }
-  .handle { display: none; }
-}
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-@media (min-width: 768px) {
-  @keyframes slideUp {
-    from { transform: scale(0.96); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
+@keyframes popIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }

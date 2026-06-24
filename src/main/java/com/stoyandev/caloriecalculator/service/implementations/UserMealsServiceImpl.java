@@ -3,6 +3,7 @@ package com.stoyandev.caloriecalculator.service.implementations;
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
 import com.stoyandev.caloriecalculator.dto.MealResponseDTO;
 import com.stoyandev.caloriecalculator.entity.UserMeals;
+import com.stoyandev.caloriecalculator.entity.enums.MealType;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.UserMealsMapper;
 import com.stoyandev.caloriecalculator.repository.MealsRepository;
@@ -29,7 +30,7 @@ public class UserMealsServiceImpl implements UserMealsService {
     private final ProductRepository productRepository;
 
     @Override
-    public void addMealForUser(final Long userId, Long productId, Integer grams) {
+    public void addMealForUser(final Long userId, Long productId, Integer grams, MealType mealType) {
         var newMeal = new UserMeals();
 
         var user = userRepository
@@ -40,6 +41,7 @@ public class UserMealsServiceImpl implements UserMealsService {
         newMeal.setUser(user);
         newMeal.setProduct(product.orElseThrow(() -> new ResourceNotFoundException("Product not found")));
         newMeal.setConsumedAt(LocalDateTime.now());
+        newMeal.setMealType(mealType != null ? mealType : MealType.SNACK);
         usersMealsRepository.save(newMeal);
     }
 

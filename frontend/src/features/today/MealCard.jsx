@@ -42,7 +42,11 @@ export default function MealCard({ meal, expanded, onExpand, onSave, onDelete })
         </div>
         <div className={styles.right}>
           <div className={styles.macros}>
-            P {protein.toFixed(1)} · C {carbs.toFixed(1)} · F {fat.toFixed(1)}
+            <span className={styles.macroP}>{protein.toFixed(1)}</span>
+            <span className={styles.macroSep}> · </span>
+            <span className={styles.macroC}>{carbs.toFixed(1)}</span>
+            <span className={styles.macroSep}> · </span>
+            <span className={styles.macroF}>{fat.toFixed(1)}</span>
           </div>
         </div>
       </button>

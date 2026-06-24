@@ -13,7 +13,7 @@ public interface UserService {
 
     UserDTO updateAge(long id, int newAge);
 
-    UserDTO updateWeight(long id, double newWeight);
+    UserDTO updateWeight(long id, double newWeight, java.time.LocalTime measureTime);
 
     UserDTO updateHeight(long id, int newHeight);
 

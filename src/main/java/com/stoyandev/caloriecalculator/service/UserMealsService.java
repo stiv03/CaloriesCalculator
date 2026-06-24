@@ -3,6 +3,7 @@ package com.stoyandev.caloriecalculator.service;
 import com.stoyandev.caloriecalculator.dto.DailyMacrosDTO;
 import com.stoyandev.caloriecalculator.dto.GoalDTO;
 import com.stoyandev.caloriecalculator.dto.MealResponseDTO;
+import com.stoyandev.caloriecalculator.entity.enums.MealType;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,7 +13,7 @@ public interface UserMealsService {
 
     DailyMacrosDTO calculateDailyMacros(Long id, LocalDate date);
 
-    void addMealForUser(Long userId, Long productId, Integer grams);
+    void addMealForUser(Long userId, Long productId, Integer grams, MealType mealType);
 
     MealResponseDTO updateMealQuantity(long id, double newQuantity);
 

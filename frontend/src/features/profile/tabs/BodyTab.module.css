@@ -3,6 +3,30 @@
 .h3 { margin-bottom: var(--space-3); }
 .muted { color: var(--color-text-muted); }
 
+.toggleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font-weight: 600;
+  padding: var(--space-2) 0;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+.chev { color: var(--color-text-muted); font-size: 14px; }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
 .list { list-style: none; padding: 0; margin: 0; }
 .row {
   display: flex; justify-content: space-between;
@@ -10,12 +34,112 @@
   font-size: 14px;
 }
 
-.tableWrap { overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table { min-width: 560px; width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .table th, .table td {
-  padding: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   text-align: left;
   white-space: nowrap;
 }
-.table th { color: var(--color-text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+.table th { color: var(--color-text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0; }
+.table th.weightCol { color: var(--color-accent); }
+
+/* Highlighted weight column — green outline. */
+.weightCol {
+  border-left: 2px solid var(--color-accent);
+  border-right: 2px solid var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+.table thead .weightCol {
+  border-top: 2px solid var(--color-accent);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.table tbody tr:last-child .weightCol {
+  border-bottom: 2px solid var(--color-accent);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* ---------- Body silhouette layout ---------- */
+
+.bodyCanvas {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+
+.bodyImage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0.9;
+  filter:
+    drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 40%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 20%, transparent));
+}
+
+.bodyLabel { z-index: 2; }
+@media (prefers-color-scheme: dark) {
+  .bodyImage { filter: invert(1) drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 40%, transparent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 20%, transparent)); opacity: 0.85; }
+}
+[data-theme="dark"] .bodyImage { filter: invert(1) drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 40%, transparent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 20%, transparent)); opacity: 0.85; }
+
+.bodyLabel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+.pillLabel {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.posShoulders { top: 12%; left: 8%; }
+.posChest     { top: 28%; left: 90%; transform: translateX(-50%); }
+.posBiceps    { top: 27%; left: 2%; }
+.posWaist     { top: 43%; left: 16%; }
+.posHips      { top: 52%; left: 72%; transform: translateX(-50%); }
+.posThighs    { top: 65%; left: 72%; transform: translateX(-50%); }
+.posCalves    { top: 82%; left: 72%; transform: translateX(-50%); }
+
+@media (max-width: 479px) {
+  .bodyCanvas { max-width: 100%; }
+  .pill { font-size: 10px; padding: 2px 6px; }
+  .pillLabel { font-size: 8px; }
+  .posShoulders { top: 8%; left: 12%; }
+  .posChest     { top: 28%; left: 88%; transform: translateX(-50%); }
+  .posBiceps    { top: 22%; left: 2%; }
+  .posWaist     { top: 43%; left: 12%; }
+  .posHips      { top: 52%; left: 74%; transform: translateX(-50%); }
+  .posThighs    { top: 65%; left: 74%; transform: translateX(-50%); }
+  .posCalves    { top: 82%; left: 74%; transform: translateX(-50%); }
+}
+
+/* Always show canvas, hide the list fallback on all screen sizes */
+.list { display: none; }

@@ -1,3 +1,134 @@
+/* Tab bar */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+.tabBtn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.tabBtnActive {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* Templates list */
+.templateList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.templateCard {
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.templateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.templateToggle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.templateName { font-weight: 600; color: var(--color-text); font-size: 15px; }
+.templateMeta { font-size: 12px; color: var(--color-text-muted); }
+.templateActions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+
+.templateEdit {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.editItemRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.editItemName { flex: 1; font-size: 14px; color: var(--color-text); }
+.editItemGrams {
+  width: 64px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: right;
+}
+.editItemUnit { font-size: 13px; color: var(--color-text-muted); }
+.saveItemBtn {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.addItemBtn {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 600;
+  padding: var(--space-2);
+  cursor: pointer;
+  text-align: center;
+  margin-top: var(--space-1);
+}
+.deleteBtn {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.deleteBtn:hover { color: var(--color-danger); }
+
+/* Grams footer with save template link */
+.gramsFooter { display: flex; flex-direction: column; gap: var(--space-2); }
+.saveTemplateBtn {
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  padding: var(--space-1) 0;
+}
+
 .search { display: flex; flex-direction: column; gap: var(--space-4); }
 
 .results {

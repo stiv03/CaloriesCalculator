@@ -9,20 +9,79 @@
 .h3 { margin-bottom: var(--space-3); }
 .muted { color: var(--color-text-muted); }
 
-.weeklyCard {
-  background: var(--color-surface);
+.logRow { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+.logRow > :first-child { flex: 1; min-width: 120px; }
+.logBtn { padding-bottom: 0; }
+
+.timeInput {
+  width: 100px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  align-self: flex-end;
 }
-.weeklyHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); }
+
+/* Green placeholder for the "Current: X kg" hint in the Update weight field. */
+.weightField input::placeholder { color: var(--color-accent); opacity: 1; }
+
+.weeklyCard {
+  background: color-mix(in srgb, var(--color-protein) 12%, var(--color-surface));
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4) var(--space-4);
+}
+.weeklyHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1); }
 .weeklyTitle { font-weight: 600; }
-.weeklyDelta { font-weight: 700; color: var(--color-text); }
-.weeklyGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.weeklyDelta {
+  font-weight: 700;
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--color-text-muted) 18%, transparent);
+}
+/* Trend toned to the user's intent: green when the weekly change supports
+   their goal (gain on bulk, loss on cut), red when it works against it. */
+.weeklyDeltaGood {
+  background: color-mix(in srgb, var(--color-success) 22%, transparent);
+  color: var(--color-success);
+}
+.weeklyDeltaBad {
+  background: color-mix(in srgb, var(--color-danger) 22%, transparent);
+  color: var(--color-danger);
+}
+.weeklyGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); text-align: center; }
+.weeklyGrid > :first-child { border-right: 1px solid var(--color-border); }
 .weeklyLabel { font-size: 11px; text-transform: uppercase; color: var(--color-text-muted); letter-spacing: 0.5px; }
 .weeklyValue { font-size: 20px; font-weight: 700; margin-top: var(--space-1); }
 .weeklyRange { font-size: 11px; color: var(--color-text-muted); }
 
-.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.weekAvgRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-2);
+  margin-bottom: var(--space-2);
+  background: color-mix(in srgb, var(--color-protein) 10%, var(--color-surface));
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.weekAvgGood { background: color-mix(in srgb, var(--color-success) 15%, var(--color-surface)); }
+.weekAvgBad  { background: color-mix(in srgb, var(--color-danger)  15%, var(--color-surface)); }
+.weekAvgLabel { color: var(--color-text-muted); }
+.weekAvgValue { color: var(--color-protein); }
+.weekAvgGood .weekAvgValue { color: var(--color-success); }
+.weekAvgBad  .weekAvgValue { color: var(--color-danger); }
+.recordTime { color: var(--color-text-muted); font-size: 12px; font-weight: 400; }
+
 .row {
   display: flex;
   justify-content: space-between;
@@ -34,12 +93,56 @@
 
 .toggleBtn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   background: transparent;
   border: 0;
   color: var(--color-accent);
   font-weight: 600;
   padding: var(--space-2) 0;
   text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+.chev { color: var(--color-text-muted); font-size: 14px; }
+
+/* Wraps the segmented Tabs at the top of the combined history card so it
+   has breathing room above the content (records list / macro table).
+   The expand/collapse chevron sits at the right edge so the tabs and the
+   reveal toggle live on one row. */
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.historyHeader > :first-child { flex: 1; min-width: 0; }
+.historyToggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: inherit;
+}
+.historyToggle:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+/* Cap the height of long histories (a heavy logger can have hundreds of
+   weight records) so the page doesn't blow out vertically. The data is
+   still all there — just scrollable inside the box. */
+.scrollBox {
+  max-height: 320px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-sm);
 }
 
 .table {
@@ -54,3 +157,11 @@
   text-align: left;
 }
 .table th { color: var(--color-text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+
+/* Macro columns inherit the same colors as the rings on the Today page so
+   the visual mapping (cyan = protein, orange = carbs, purple = fat) stays
+   consistent across the app. */
+.table th.colP, .table td.colP { color: var(--color-protein); }
+.table th.colC, .table td.colC { color: var(--color-carbs); }
+.table th.colF, .table td.colF { color: var(--color-fat); }
+.table td.colP, .table td.colC, .table td.colF { font-weight: 600; }

@@ -1,35 +1,81 @@
 .root {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.25s ease;
-}
-
-.collapsed { text-align: center; }
-.expanded { padding: var(--space-4); }
-
-.concentricSvg {
-  width: 100%;
-  max-width: 240px;
-  height: auto;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
 }
 
-.cell {
-  text-align: center;
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
 }
+
+/* ---------- Calories headline bar ---------- */
+
+.calBar { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.calHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.calLabel {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.calRemaining {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.calNumbers { display: flex; align-items: baseline; gap: var(--space-1); }
+.calNumbers .calRemaining { margin-left: auto; }
+.calValue {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1;
+}
+.calGoal { font-size: 14px; color: var(--color-text-muted); }
+
+.calTrack {
+  height: 12px;
+  background: var(--color-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+
+.calFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease, background 0.2s ease;
+}
+
+/* ---------- Macros 3-up ---------- */
+
+.macroHeader {
+  margin-bottom: var(--space-2);
+}
+
+.macroGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.cell { text-align: center; }
 
 .ringWrap {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 100px;
+  height: 100px;
   margin: 0 auto;
 }
 
@@ -40,22 +86,33 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 80%;
+  text-align: center;
 }
 
-.cellValue { font-size: 18px; font-weight: 700; line-height: 1; color: var(--color-text); }
-.cellUnit  { font-size: 12px; color: var(--color-text-muted); margin-left: 1px; }
-.cellGoal  { margin-top: 2px; font-size: 11px; color: var(--color-text-muted); }
+.cellValue { font-size: 16px; font-weight: 700; line-height: 1; color: var(--color-text); }
+.cellValueOver { font-size: 11px; color: var(--color-danger); letter-spacing: 0; }
+.cellUnit  { font-size: 11px; color: var(--color-text-muted); margin-left: 1px; }
+.cellRemaining {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+.cellGoal  { margin-top: 2px; font-size: 11px; color: var(--color-text-muted); white-space: nowrap; }
+
 .cellLabel {
   margin-top: var(--space-2);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
-.hint {
-  margin-top: var(--space-3);
-  text-align: center;
-  font-size: 11px;
-  color: var(--color-text-muted);
+/* On narrow phones the 3 rings get tight. Slight shrink to keep them on one row. */
+@media (max-width: 380px) {
+  .ringWrap { width: 84px; height: 84px; }
+  .cellValue { font-size: 14px; }
 }

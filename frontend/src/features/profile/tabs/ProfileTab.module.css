@@ -54,3 +54,11 @@
   padding: var(--space-2) var(--space-3);
   font-size: 13px;
 }
+
+/* The closed Status/Activity selects show "Current: X" — style the field green
+   so the user sees their current setting clearly. */
+.currentSelect select { color: var(--color-accent); font-weight: 600; }
+
+/* Logout button shown only on phone (≥768px the sidebar provides it). */
+.mobileLogout { margin-top: var(--space-4); }
+@media (min-width: 768px) { .mobileLogout { display: none; } }

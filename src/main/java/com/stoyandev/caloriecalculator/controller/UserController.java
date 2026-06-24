@@ -37,7 +37,7 @@ public class UserController {
     @PutMapping("/update/weight/{id}")
     @PreAuthorize("@userAccessService.hasAccess(#id)")
     public ResponseEntity<UserDTO> updateWeight(@PathVariable Long id, @RequestBody UpdateUserWeightRequestDTO userWeightRequestDTO) {
-        var updatedUser = userService.updateWeight(id, userWeightRequestDTO.newWeight());
+        var updatedUser = userService.updateWeight(id, userWeightRequestDTO.newWeight(), userWeightRequestDTO.measureTime());
         return ResponseEntity.ok(updatedUser);
     }
 
