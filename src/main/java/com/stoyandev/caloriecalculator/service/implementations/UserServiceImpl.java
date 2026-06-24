@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public UserDTO updateWeight(final long id, final double newWeight) {
+    public UserDTO updateWeight(final long id, final double newWeight, final java.time.LocalTime measureTime) {
         final var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found " + id));
 
@@ -74,6 +74,7 @@ public class UserServiceImpl implements UserService {
                 });
 
         weightRecord.setWeight(newWeight);
+        weightRecord.setMeasureTime(measureTime);
         weightRecordRepository.save(weightRecord);
 
         user.setWeight(newWeight);

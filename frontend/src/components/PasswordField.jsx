@@ -28,7 +28,7 @@ export default function PasswordField({ label, error, id: providedId, ...rest })
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? 'Hide password' : 'Show password'}
         >
-          {visible ? '🙈' : '👁'}
+          {visible ? 'Hide' : 'Show'}
         </button>
       </div>
       {error && <p className={fieldStyles.error} role="alert">{error}</p>}

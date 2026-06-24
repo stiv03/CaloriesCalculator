@@ -1,9 +1,7 @@
 // frontend/src/components/MacroRings.jsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styles from './MacroRings.module.css';
 import { ringDashOffset, statusForPercent } from './macroMath';
-
-const STORAGE_KEY = 'caloriescalc:macros-expanded';
 
 const COLOR_VARS = {
   calories: '--color-calories',
@@ -18,118 +16,111 @@ function statusColor(metricKey, status) {
   return `var(${COLOR_VARS[metricKey]})`;
 }
 
+/** What goes in the center of a macro ring: remaining if under, "0g" at goal, "+Xg over" past it. */
+function renderRemaining(value, goal, unit) {
+  if (!goal || goal <= 0) return `0${unit}`;
+  const diff = Math.round(goal - value);
+  if (diff < 0) return `+${Math.abs(diff)}${unit} over`;
+  return `${diff}${unit}`;
+}
+
 /**
- * Concentric (default) or expanded 2x2 grid of rings.
- * Click anywhere on the rings to toggle. Choice persists in localStorage.
+ * Headline calorie progress bar + 3-up macro rings (protein/carbs/fat).
  *
  * Props:
  *   totals: { calories, protein, carbs, fat }   (numbers, eaten amounts)
  *   goals:  { calories, protein, carbs, fat }   (numbers, daily goals)
  */
 export default function MacroRings({ totals, goals }) {
-  const [expanded, setExpanded] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch { return false; }
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, expanded ? '1' : '0'); } catch {}
-  }, [expanded]);
-
-  const metrics = [
-    { key: 'calories', label: 'CALORIES', value: totals.calories || 0, goal: goals.calories || 0, unit: 'kcal' },
-    { key: 'protein',  label: 'PROTEIN',  value: totals.protein  || 0, goal: goals.protein  || 0, unit: 'g' },
-    { key: 'carbs',    label: 'CARBS',    value: totals.carbs    || 0, goal: goals.carbs    || 0, unit: 'g' },
-    { key: 'fat',      label: 'FAT',      value: totals.fat      || 0, goal: goals.fat      || 0, unit: 'g' },
+  const macros = [
+    { key: 'protein', label: 'PROTEIN', value: totals.protein || 0, goal: goals.protein || 0, unit: 'g' },
+    { key: 'carbs',   label: 'CARBS',   value: totals.carbs   || 0, goal: goals.carbs   || 0, unit: 'g' },
+    { key: 'fat',     label: 'FAT',     value: totals.fat     || 0, goal: goals.fat     || 0, unit: 'g' },
   ];
 
   return (
-    <div
-      className={[styles.root, expanded ? styles.expanded : styles.collapsed].join(' ')}
-      onClick={() => setExpanded((v) => !v)}
-      role="button"
-      aria-pressed={expanded}
-      aria-label={expanded ? 'Collapse macro rings' : 'Expand macro rings'}
-    >
-      {expanded
-        ? <ExpandedGrid metrics={metrics} />
-        : <ConcentricRings metrics={metrics} />}
-      <p className={styles.hint}>
-        {expanded ? 'Tap to collapse ⌃' : 'Tap to expand ⌄'}
-      </p>
+    <div className={styles.root}>
+      <div className={styles.card}>
+        <CaloriesBar value={totals.calories || 0} goal={goals.calories || 0} />
+      </div>
+      <div className={styles.card}>
+        <div className={styles.macroHeader}>
+          <span className={styles.calLabel}>Macros</span>
+        </div>
+        <div className={styles.macroGrid}>
+          {macros.map((m) => <MacroRing key={m.key} metricKey={m.key} label={m.label} value={m.value} goal={m.goal} unit={m.unit} />)}
+        </div>
+      </div>
     </div>
   );
 }
 
-function ConcentricRings({ metrics }) {
-  const STROKE = 11;
-  const radii = [78, 62, 46, 30]; // outer → inner
-  const size = 180;
-  const center = size / 2;
+function CaloriesBar({ value, goal }) {
+  const status = statusForPercent(value, goal);
+  const color = statusColor('calories', status);
+  const pct = goal > 0 ? Math.min((value / goal) * 100, 100) : 0;
+  // When over-budget we still cap the bar at 100% but recolor to danger;
+  // the "over" amount is conveyed by the eaten/goal numbers.
+  const diff = Math.round(goal - value);
+  const remainingText = (() => {
+    if (!goal || goal <= 0) return 'No goal set';
+    if (diff < 0) return `+${Math.abs(diff)} over`;
+    return `${diff} left`;
+  })();
 
   return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className={styles.concentricSvg}
-      aria-hidden="true"
-    >
-      {metrics.map((m, i) => {
-        const r = radii[i];
-        const c = 2 * Math.PI * r;
-        const status = statusForPercent(m.value, m.goal);
-        const color = statusColor(m.key, status);
-        return (
-          <g key={m.key} transform={`rotate(-90 ${center} ${center})`}>
-            <circle cx={center} cy={center} r={r}
-                    fill="none" stroke="var(--color-track)" strokeWidth={STROKE} />
-            <circle cx={center} cy={center} r={r}
-                    fill="none" stroke={color} strokeWidth={STROKE}
-                    strokeLinecap="round"
-                    strokeDasharray={c}
-                    strokeDashoffset={ringDashOffset(m.value, m.goal, c)} />
-          </g>
-        );
-      })}
-    </svg>
+    <div className={styles.calBar}>
+      <div className={styles.calHeader}>
+        <span className={styles.calLabel}>Calories</span>
+      </div>
+      <div className={styles.calNumbers}>
+        <span className={styles.calValue}>{Math.round(value)}</span>
+        <span className={styles.calGoal}> / {Math.round(goal)} kcal</span>
+        <span className={styles.calRemaining}>{remainingText}</span>
+      </div>
+      <div className={styles.calTrack} aria-hidden="true">
+        <div
+          className={styles.calFill}
+          style={{ width: `${pct}%`, background: color }}
+        />
+      </div>
+    </div>
   );
 }
 
-function ExpandedGrid({ metrics }) {
+function MacroRing({ metricKey, label, value, goal, unit }) {
   const STROKE = 7;
   const r = 44;
   const size = 100;
   const c = 2 * Math.PI * r;
+  const status = statusForPercent(value, goal);
+  const color = statusColor(metricKey, status);
+
   return (
-    <div className={styles.grid}>
-      {metrics.map((m) => {
-        const status = statusForPercent(m.value, m.goal);
-        const color = statusColor(m.key, status);
-        return (
-          <div key={m.key} className={styles.cell}>
-            <div className={styles.ringWrap}>
-              <svg viewBox={`0 0 ${size} ${size}`} className={styles.cellSvg}>
-                <g transform={`rotate(-90 ${size/2} ${size/2})`}>
-                  <circle cx={size/2} cy={size/2} r={r}
-                          fill="none" stroke="var(--color-track)" strokeWidth={STROKE} />
-                  <circle cx={size/2} cy={size/2} r={r}
-                          fill="none" stroke={color} strokeWidth={STROKE}
-                          strokeLinecap="round"
-                          strokeDasharray={c}
-                          strokeDashoffset={ringDashOffset(m.value, m.goal, c)} />
-                </g>
-              </svg>
-              <div className={styles.cellNumbers}>
-                <div className={styles.cellValue}>
-                  {Math.round(m.value)}{m.unit !== 'kcal' && <span className={styles.cellUnit}>{m.unit}</span>}
-                </div>
-                <div className={styles.cellGoal}>
-                  / {Math.round(m.goal)}{m.unit === 'kcal' ? '' : m.unit}
-                </div>
-              </div>
-            </div>
-            <div className={styles.cellLabel}>{m.label}</div>
+    <div className={styles.cell}>
+      <div className={styles.ringWrap}>
+        <svg viewBox={`0 0 ${size} ${size}`} className={styles.cellSvg} aria-hidden="true">
+          <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+            <circle cx={size / 2} cy={size / 2} r={r}
+                    fill="none" stroke="var(--color-track)" strokeWidth={STROKE} />
+            <circle cx={size / 2} cy={size / 2} r={r}
+                    fill="none" stroke={color} strokeWidth={STROKE}
+                    strokeLinecap="round"
+                    strokeDasharray={c}
+                    strokeDashoffset={ringDashOffset(value, goal, c)} />
+          </g>
+        </svg>
+        <div className={styles.cellNumbers}>
+          <div className={styles.cellValue}>
+            {renderRemaining(value, goal, unit)}
           </div>
-        );
-      })}
+          {value < goal && <div className={styles.cellRemaining}>Left</div>}
+        </div>
+      </div>
+      <div className={styles.cellLabel} style={{ color: `var(${COLOR_VARS[metricKey]})` }}>{label}</div>
+      <div className={styles.cellGoal}>
+        {Math.round(value)}{unit}/{Math.round(goal)}{unit}
+      </div>
     </div>
   );
 }

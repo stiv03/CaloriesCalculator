@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.entity;
 
+import com.stoyandev.caloriecalculator.entity.enums.MealType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,4 +34,9 @@ public class UserMeals {
 
     @Column(name = "date", nullable = false)
     private LocalDateTime consumedAt;
+
+    /** Which meal slot this entry belongs to. Nullable for legacy rows. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meal_type")
+    private MealType mealType;
 }

@@ -1,0 +1,176 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-6);
+}
+
+.header { padding: var(--space-3) 0 var(--space-4); }
+.title { font-size: 22px; }
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.h2 { font-size: 16px; margin-bottom: var(--space-3); }
+.weekRange { font-size: 13px; font-weight: 500; color: var(--color-text-muted); margin-left: var(--space-2); }
+.muted { color: var(--color-text-muted); font-size: 14px; }
+
+.linkBtn {
+  background: transparent; border: 0; padding: 0;
+  color: var(--color-accent); font-weight: 600; cursor: pointer;
+}
+
+/* ---------- Today's checklist ---------- */
+
+.checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.checkRow { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
+.checkRow:last-child { border-bottom: 0; }
+
+.checkLabel {
+  display: flex; align-items: center; gap: var(--space-3);
+  cursor: pointer;
+}
+.checkbox {
+  appearance: none;
+  width: 22px; height: 22px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex: 0 0 auto;
+  position: relative;
+  background: var(--color-surface);
+}
+.checkbox:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  /* SVG checkmark as a background image — works on input where ::after doesn't. */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='3,8 7,12 13,4'/%3e%3c/svg%3e");
+  background-size: 14px 14px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.checkName { font-weight: 600; color: var(--color-text); }
+.checkDosage { color: var(--color-text-muted); font-size: 13px; margin-left: auto; }
+
+/* ---------- Weekly grid ---------- */
+
+.gridWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+  font-size: 12px;
+}
+.grid th, .grid td {
+  padding: var(--space-1) 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.grid thead th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 10px;
+}
+.dayName { text-transform: uppercase; letter-spacing: 0.5px; }
+
+.rowLabel {
+  text-align: left;
+  min-width: 80px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding-right: var(--space-3) !important;
+}
+.rowDosage { display: block; font-size: 11px; font-weight: 500; color: var(--color-text-muted); }
+
+.dot {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: transparent;
+  font-size: 13px;
+}
+.dotTaken {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+.dotToday {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.dayToday {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* ---------- Manage list (collapsible) ---------- */
+
+.toggleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font-weight: 600;
+  padding: var(--space-2) 0;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+.chev { color: var(--color-text-muted); font-size: 14px; }
+
+.manageBody { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+
+.addRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.moveButtons { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.moveBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  width: 22px;
+  height: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.moveBtn:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
+.moveBtn:disabled { opacity: 0.3; cursor: default; }
+
+.editList { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.editRow:last-child { border-bottom: 0; }
+.editName { flex: 1; min-width: 140px; }
+.editDosage { color: var(--color-text-muted); font-size: 13px; margin-left: var(--space-2); font-weight: 500; }
+
+@media (max-width: 480px) {
+  .addRow { grid-template-columns: 1fr 1fr; }
+  .addRow > button { grid-column: 1 / -1; }
+}

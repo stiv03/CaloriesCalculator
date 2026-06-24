@@ -1,6 +1,7 @@
 package com.stoyandev.caloriecalculator.controller;
 
 import com.stoyandev.caloriecalculator.dto.*;
+import com.stoyandev.caloriecalculator.entity.enums.MealType;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,15 @@ public class UserMealsController {
     @PostMapping("/meals/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Void> addMeal(@PathVariable Long userId, @RequestBody MealRequestDTO mealRequest) {
-        userMealsService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams());
+        MealType mealType = null;
+        if (mealRequest.mealType() != null && !mealRequest.mealType().isBlank()) {
+            try {
+                mealType = MealType.valueOf(mealRequest.mealType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        userMealsService.addMealForUser(userId, mealRequest.productId(), mealRequest.grams(), mealType);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

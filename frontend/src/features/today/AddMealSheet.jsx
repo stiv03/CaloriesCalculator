@@ -1,24 +1,19 @@
 // frontend/src/features/today/AddMealSheet.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Sheet from '../../components/Sheet';
 import Field from '../../components/Field';
 import Button from '../../components/Button';
 import ErrorBanner from '../../components/ErrorBanner';
 import { addMeal, searchProducts } from '../../api/meals';
+import { getTemplates, createTemplate, deleteTemplate, addItemToTemplate, updateTemplateItem, removeTemplateItem } from '../../api/templates';
 import { getUserId } from '../../auth/storage';
 import AddProductSheet from './AddProductSheet';
 import styles from './AddMealSheet.module.css';
 
-/**
- * Two-step bottom sheet:
- *   step 'search'  → user types, sees live results
- *   step 'grams'   → user enters grams + Add
- *
- * If no results: "Create new product" link opens the AddProductSheet
- * stacked on top. After creation, jumps to step 'grams' with the new product.
- */
-export default function AddMealSheet({ isOpen, onClose, onAdded }) {
-  const [step, setStep] = useState('search');
+export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealType }) {
+  const userId = getUserId();
+  const [tab, setTab] = useState('search'); // 'search' | 'templates'
+  const [step, setStep] = useState('search'); // search step: 'search' | 'grams' | 'saveName'
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
@@ -27,38 +22,44 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [productSheetOpen, setProductSheetOpen] = useState(false);
+  const [searchNonce, setSearchNonce] = useState(0);
 
-  // Reset state every time we open
+  // Templates state
+  const [templates, setTemplates] = useState([]);
+  const [saveName, setSaveName] = useState('');
+  const [addedItems, setAddedItems] = useState([]);
+  const [expandedTemplateId, setExpandedTemplateId] = useState(null);
+  const [editingGrams, setEditingGrams] = useState({}); // { itemId: gramsString }
+  const [addingToTemplateId, setAddingToTemplateId] = useState(null); // templateId when adding product
+
+  const loadTemplates = useCallback(async () => {
+    try { setTemplates(await getTemplates(userId)); }
+    catch (_e) { /* silent */ }
+  }, [userId]);
+
   useEffect(() => {
     if (isOpen) {
-      setStep('search'); setQuery(''); setResults([]); setSelected(null);
-      setGrams(''); setServerError(''); setSubmitting(false);
+      setTab('search'); setStep('search'); setQuery(''); setResults([]);
+      setSelected(null); setGrams(''); setServerError('');
+      setSubmitting(false); setAddedItems([]); setSaveName('');
+      loadTemplates();
     }
-  }, [isOpen]);
+  }, [isOpen, loadTemplates]);
 
   // Debounced search
   useEffect(() => {
-    if (step !== 'search') return undefined;
+    if (tab !== 'search' || step !== 'search') return undefined;
     if (!query || query.trim().length < 1) { setResults([]); return undefined; }
     const handle = setTimeout(async () => {
       setLoadingSearch(true);
-      try {
-        const r = await searchProducts(query.trim());
-        setResults(r);
-      } catch (_err) {
-        // Silent on search errors — user retries by typing again
-      } finally {
-        setLoadingSearch(false);
-      }
+      try { setResults(await searchProducts(query.trim())); }
+      catch (_e) { /* silent */ }
+      finally { setLoadingSearch(false); }
     }, 200);
     return () => clearTimeout(handle);
-  }, [query, step]);
+  }, [query, tab, step, searchNonce]);
 
-  const pick = (product) => {
-    setSelected(product);
-    setStep('grams');
-    setGrams('');
-  };
+  const pick = (product) => { setSelected(product); setStep('grams'); setGrams(''); };
 
   const handleAdd = async () => {
     const n = parseFloat(grams);
@@ -66,8 +67,16 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
     setSubmitting(true);
     setServerError('');
     try {
-      await addMeal(getUserId(), selected.productId, Math.round(n));
-      onAdded();
+      await addMeal(userId, selected.productId, Math.round(n), mealType);
+      setAddedItems((prev) => [...prev, {
+        productId: selected.productId,
+        productName: selected.name,
+        grams: Math.round(n),
+        caloriesPer100Grams: selected.caloriesPer100Grams,
+      }]);
+      await onAdded();
+      // Stay open so user can add more or save a template
+      setStep('search'); setQuery(''); setResults([]); setSelected(null); setGrams('');
     } catch (err) {
       setServerError(err.message || 'Could not add meal');
     } finally {
@@ -75,21 +84,146 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
     }
   };
 
-  const title = step === 'search' ? 'Add a meal' : `How much ${selected?.name}?`;
+  const handleSaveTemplate = async () => {
+    if (!saveName.trim() || addedItems.length === 0) return;
+    try {
+      await createTemplate(userId, saveName.trim(), addedItems);
+      setSaveName('');
+      setStep('search');
+      await loadTemplates();
+    } catch (err) {
+      setServerError(err.message || 'Could not save template');
+    }
+  };
+
+  const handleApplyTemplate = async (template) => {
+    setSubmitting(true);
+    setServerError('');
+    try {
+      await Promise.all(
+        template.items.map((item) => addMeal(userId, item.productId, item.grams, mealType))
+      );
+      onAdded();
+    } catch (err) {
+      setServerError(err.message || 'Could not apply template');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (e, templateId) => {
+    e.stopPropagation();
+    try {
+      await deleteTemplate(userId, templateId);
+      await loadTemplates();
+    } catch (_e) { /* silent */ }
+  };
+
+  const handleUpdateItemGrams = async (templateId, itemId) => {
+    const g = parseInt(editingGrams[itemId], 10);
+    if (!g || g <= 0) return;
+    try {
+      const updated = await updateTemplateItem(userId, templateId, itemId, g);
+      setTemplates((prev) => prev.map((t) => t.id === templateId ? updated : t));
+      setEditingGrams((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
+    } catch (err) { setServerError(err.message || 'Failed to update'); }
+  };
+
+  const handleRemoveItem = async (templateId, itemId) => {
+    try {
+      const updated = await removeTemplateItem(userId, templateId, itemId);
+      setTemplates((prev) => prev.map((t) => t.id === templateId ? updated : t));
+    } catch (err) { setServerError(err.message || 'Failed to remove'); }
+  };
+
+  const handleAddProductToTemplate = async (product) => {
+    // Reuse pick() flow but after grams go to addToTemplate instead
+    setSelected(product);
+    setStep('gramsForTemplate');
+    setGrams('');
+  };
+
+  const handleConfirmAddToTemplate = async () => {
+    const n = parseFloat(grams);
+    if (Number.isNaN(n) || n <= 0) return;
+    try {
+      const item = {
+        productId: selected.productId,
+        productName: selected.name,
+        grams: Math.round(n),
+        caloriesPer100Grams: selected.caloriesPer100Grams,
+      };
+      const updated = await addItemToTemplate(userId, addingToTemplateId, item);
+      setTemplates((prev) => prev.map((t) => t.id === addingToTemplateId ? updated : t));
+      setStep('search');
+      setTab('templates');
+      setAddingToTemplateId(null);
+      setSelected(null);
+      setGrams('');
+      setQuery('');
+      setResults([]);
+    } catch (err) { setServerError(err.message || 'Failed to add'); }
+  };
+
+  const niceMeal = mealType ? mealType[0] + mealType.slice(1).toLowerCase() : null;
+  const title = step === 'grams'
+    ? `How much ${selected?.name}?`
+    : step === 'gramsForTemplate'
+    ? `How much ${selected?.name}?`
+    : step === 'saveName'
+    ? 'Save as template'
+    : (niceMeal ? `Add to ${niceMeal}` : 'Add a meal');
 
   const footer = step === 'grams'
     ? (
+      <div className={styles.gramsFooter}>
         <Button block disabled={!grams || submitting} onClick={handleAdd}>
           {submitting ? 'Adding…' : 'Add meal'}
         </Button>
-      )
+      </div>
+    )
+    : step === 'gramsForTemplate'
+    ? (
+      <Button block disabled={!grams} onClick={handleConfirmAddToTemplate}>Add to template</Button>
+    )
+    : step === 'saveName'
+    ? (
+      <Button block disabled={!saveName.trim()} onClick={handleSaveTemplate}>Save template</Button>
+    )
+    : step === 'search'
+    ? (
+      <div className={styles.gramsFooter}>
+        {addedItems.length > 0 && (
+          <button type="button" className={styles.saveTemplateBtn} onClick={() => setStep('saveName')}>
+            Save {addedItems.length} item{addedItems.length > 1 ? 's' : ''} as template
+          </button>
+        )}
+        <Button block variant="secondary" onClick={onDone}>Done</Button>
+      </div>
+    )
     : null;
 
   return (
     <>
       <Sheet isOpen={isOpen && !productSheetOpen} onClose={onClose} title={title} footer={footer}>
         <ErrorBanner message={serverError} onDismiss={() => setServerError('')} />
+
+        {/* Tab bar — only on the search step */}
         {step === 'search' && (
+          <div className={styles.tabs}>
+            <button
+              className={[styles.tabBtn, tab === 'search' ? styles.tabBtnActive : ''].join(' ')}
+              onClick={() => setTab('search')}
+            >Search</button>
+            <button
+              className={[styles.tabBtn, tab === 'templates' ? styles.tabBtnActive : ''].join(' ')}
+              onClick={() => setTab('templates')}
+            >Templates {templates.length > 0 && `(${templates.length})`}</button>
+          </div>
+        )}
+
+        {/* Search tab — also used when adding a product to an existing template */}
+        {step === 'search' && tab === 'search' && (
           <div className={styles.search}>
             <Field
               label="Search"
@@ -109,7 +243,9 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
                 </div>
               )}
               {results.map((p) => (
-                <button key={p.productId} className={styles.result} onClick={() => pick(p)}>
+                <button key={p.productId} className={styles.result} onClick={() =>
+                  addingToTemplateId ? handleAddProductToTemplate(p) : pick(p)
+                }>
                   <div className={styles.resultName}>{p.name}</div>
                   <div className={styles.resultMacros}>
                     {Math.round(p.caloriesPer100Grams)} kcal · P {p.proteinPer100Grams}
@@ -123,17 +259,96 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
             </div>
           </div>
         )}
+
+        {/* Templates tab */}
+        {step === 'search' && tab === 'templates' && (
+          <div className={styles.templateList}>
+            {templates.length === 0 && (
+              <p className={styles.muted}>No templates yet. Add some meals and save them as a template.</p>
+            )}
+            {templates.map((t) => (
+              <div key={t.id} className={styles.templateCard}>
+                <div className={styles.templateHeader}>
+                  <button className={styles.templateToggle} onClick={() =>
+                    setExpandedTemplateId((id) => id === t.id ? null : t.id)
+                  }>
+                    <span className={styles.templateName}>{t.name}</span>
+                    <span className={styles.templateMeta}>
+                      {t.items.length} item{t.items.length !== 1 ? 's' : ''} · {
+                        Math.round(t.items.reduce((s, i) => s + (i.caloriesPer100Grams || 0) * i.grams / 100, 0))
+                      } kcal
+                    </span>
+                  </button>
+                  <div className={styles.templateActions}>
+                    <Button disabled={submitting} onClick={() => handleApplyTemplate(t)}>
+                      {submitting ? '…' : 'Add all'}
+                    </Button>
+                    <button className={styles.deleteBtn} onClick={(e) => handleDeleteTemplate(e, t.id)} aria-label="Delete">✕</button>
+                  </div>
+                </div>
+
+                {expandedTemplateId === t.id && (
+                  <div className={styles.templateEdit}>
+                    {t.items.map((item) => (
+                      <div key={item.id} className={styles.editItemRow}>
+                        <span className={styles.editItemName}>{item.productName}</span>
+                        <input
+                          type="number"
+                          className={styles.editItemGrams}
+                          value={editingGrams[item.id] ?? item.grams}
+                          onChange={(e) => setEditingGrams((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          min="1"
+                        />
+                        <span className={styles.editItemUnit}>g</span>
+                        {editingGrams[item.id] !== undefined && String(editingGrams[item.id]) !== String(item.grams) && (
+                          <button className={styles.saveItemBtn} onClick={() => handleUpdateItemGrams(t.id, item.id)}>✓</button>
+                        )}
+                        <button className={styles.deleteBtn} onClick={() => handleRemoveItem(t.id, item.id)}>✕</button>
+                      </div>
+                    ))}
+                    <button className={styles.addItemBtn} onClick={() => {
+                      setAddingToTemplateId(t.id);
+                      setTab('search');
+                      setStep('search');
+                      setQuery('');
+                      setResults([]);
+                    }}>
+                      + Add product
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Grams for template step */}
+        {step === 'gramsForTemplate' && selected && (
+          <div className={styles.gramsStep}>
+            <button className={styles.back} onClick={() => { setStep('search'); setTab('search'); }}>‹ Search</button>
+            <p className={styles.selected}>
+              {selected.name} — {Math.round(selected.caloriesPer100Grams)} kcal / 100g
+            </p>
+            <Field label="Grams" type="number" min="1" step="any"
+              value={grams} onChange={(e) => setGrams(e.target.value)} autoFocus />
+            {grams && parseFloat(grams) > 0 && (
+              <p className={styles.preview}>
+                ≈ {Math.round(selected.caloriesPer100Grams * parseFloat(grams) / 100)} kcal
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Grams step */}
         {step === 'grams' && selected && (
           <div className={styles.gramsStep}>
-            <button className={styles.back} onClick={() => setStep('search')} aria-label="Back">‹ Search</button>
+            <button className={styles.back} onClick={() => setStep('search')}>‹ Search</button>
             <p className={styles.selected}>
               {selected.name} — {Math.round(selected.caloriesPer100Grams)} kcal / 100g
             </p>
             <Field
               label="Grams"
-              type="number"
-              min="1"
-              step="any"
+              type="number" min="1" step="any"
               value={grams}
               onChange={(e) => setGrams(e.target.value)}
               autoFocus
@@ -145,16 +360,33 @@ export default function AddMealSheet({ isOpen, onClose, onAdded }) {
             )}
           </div>
         )}
+
+        {/* Save template name step */}
+        {step === 'saveName' && (
+          <div className={styles.gramsStep}>
+            <button className={styles.back} onClick={() => setStep('grams')}>‹ Back</button>
+            <p className={styles.muted}>
+              Saving {addedItems.length} item{addedItems.length !== 1 ? 's' : ''} as a template.
+            </p>
+            <Field
+              label="Template name"
+              placeholder="e.g. My usual breakfast"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              autoFocus
+            />
+          </div>
+        )}
       </Sheet>
+
       <AddProductSheet
         isOpen={productSheetOpen}
         onClose={() => setProductSheetOpen(false)}
         defaultName={query}
         onCreated={(created) => {
           setProductSheetOpen(false);
-          // The /new/product response shape currently differs from /products/search;
-          // re-search so the picked item has the same shape as a search result.
           setQuery(created.name);
+          setSearchNonce((n) => n + 1);
         }}
       />
     </>

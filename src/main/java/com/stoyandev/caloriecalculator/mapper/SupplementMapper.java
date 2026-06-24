@@ -1,0 +1,20 @@
+package com.stoyandev.caloriecalculator.mapper;
+
+import com.stoyandev.caloriecalculator.dto.SupplementDTO;
+import com.stoyandev.caloriecalculator.dto.SupplementIntakeDTO;
+import com.stoyandev.caloriecalculator.entity.Supplement;
+import com.stoyandev.caloriecalculator.entity.SupplementIntake;
+
+public final class SupplementMapper {
+
+    private SupplementMapper() {
+    }
+
+    public static SupplementDTO toDto(Supplement s) {
+        return new SupplementDTO(s.getId(), s.getName(), s.getDosage());
+    }
+
+    public static SupplementIntakeDTO toDto(SupplementIntake i) {
+        return new SupplementIntakeDTO(i.getSupplement().getId(), i.getDate(), i.isTaken());
+    }
+}

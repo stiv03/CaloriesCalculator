@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +16,14 @@ import java.util.List;
 public interface MealsRepository extends JpaRepository<UserMeals, Long> {
 
     List<UserMeals> findAllByUserId(Long userId);
+
+    /**
+     * Distinct calendar days on which the user logged at least one meal,
+     * sorted descending. Used for streak calculations.
+     */
+    @Query("SELECT DISTINCT cast(m.consumedAt as localdate) FROM UserMeals m " +
+            "WHERE m.user.id = :userId ORDER BY cast(m.consumedAt as localdate) DESC")
+    List<LocalDate> findDistinctMealDatesDesc(@Param("userId") Long userId);
 
     /**
      * Returns meals consumed in {@code [start, end)} for the given user

@@ -26,16 +26,26 @@ export default function DayPicker({ value, onChange }) {
     onChange(new Date(y, m - 1, d));
   };
 
+  const openPicker = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      try { el.showPicker(); return; } catch { /* fall through */ }
+    }
+    el.click();
+  };
+
   const isoValue = `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
   const today = isToday(value);
   const nextDisabled = isFuture(addDays(value, 1));
 
   return (
     <div className={styles.bar}>
-      <button onClick={goPrev} className={styles.arrow} aria-label="Previous day">‹</button>
+      <button type="button" onClick={goPrev} className={styles.arrow} aria-label="Previous day">‹</button>
       <button
+        type="button"
         className={styles.dateBtn}
-        onClick={() => inputRef.current?.showPicker?.() || inputRef.current?.click()}
+        onClick={openPicker}
       >
         <span className={styles.date}>{formatHumanDate(value)}</span>
         {today && <span className={styles.todayLabel}>Today</span>}
@@ -46,16 +56,18 @@ export default function DayPicker({ value, onChange }) {
           onChange={handlePickerChange}
           className={styles.hiddenInput}
           aria-label="Pick a date"
+          tabIndex={-1}
         />
       </button>
       <button
+        type="button"
         onClick={goNext}
         className={styles.arrow}
         disabled={nextDisabled}
         aria-label="Next day"
       >›</button>
       {!today && (
-        <button className={styles.pill} onClick={goToday}>Today</button>
+        <button type="button" className={styles.pill} onClick={goToday}>Today</button>
       )}
     </div>
   );

@@ -1,4 +1,6 @@
 package com.stoyandev.caloriecalculator.dto;
 
-public record UpdateUserWeightRequestDTO(double newWeight) {
+import java.time.LocalTime;
+
+public record UpdateUserWeightRequestDTO(double newWeight, LocalTime measureTime) {
 }

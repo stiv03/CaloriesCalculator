@@ -1,4 +1,4 @@
 package com.stoyandev.caloriecalculator.dto;
 
-public record MealRequestDTO(Long productId, Integer grams) {
+public record MealRequestDTO(Long productId, Integer grams, String mealType) {
 }

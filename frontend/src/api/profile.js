@@ -6,8 +6,8 @@ export async function getUser(userId) {
   return data;
 }
 
-export async function updateWeight(userId, newWeight) {
-  const { data } = await client.put(`/update/weight/${userId}`, { newWeight });
+export async function updateWeight(userId, newWeight, measureTime) {
+  const { data } = await client.put(`/update/weight/${userId}`, { newWeight, measureTime: measureTime || null });
   return data;
 }
 

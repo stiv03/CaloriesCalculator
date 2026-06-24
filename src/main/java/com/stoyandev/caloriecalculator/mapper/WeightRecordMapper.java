@@ -9,6 +9,6 @@ public final class WeightRecordMapper {
     }
 
     public static WeightRecordDTO toDTO(WeightRecord weightRecord) {
-        return new WeightRecordDTO(weightRecord.getWeight(), weightRecord.getDate());
+        return new WeightRecordDTO(weightRecord.getWeight(), weightRecord.getDate(), weightRecord.getMeasureTime());
     }
 }

@@ -3,9 +3,8 @@ import React, { useEffect } from 'react';
 import styles from './Sheet.module.css';
 
 /**
- * Mobile: slides up from bottom. Desktop (>= 768px): renders as a
- * centered modal. Backdrop click and Escape close it. Caller controls
- * `isOpen` and `onClose`. Body scroll is locked while open.
+ * Centered modal dialog. Backdrop click and Escape close it.
+ * Caller controls `isOpen` and `onClose`. Body scroll is locked while open.
  */
 export default function Sheet({ isOpen, onClose, title, children, footer }) {
   useEffect(() => {

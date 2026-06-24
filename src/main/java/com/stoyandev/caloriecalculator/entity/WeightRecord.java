@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table
@@ -25,5 +26,6 @@ public class WeightRecord {
 
     private double weight;
     private LocalDate date;
+    private LocalTime measureTime;
 
 }

@@ -6,8 +6,13 @@
 import axios from 'axios';
 import { getToken, clearAuth } from '../auth/storage';
 
+// CRA exposes REACT_APP_* env vars to the build. .env.development and
+// .env.production each set REACT_APP_API_BASE_URL appropriately.
+// Falls back to localhost for safety if the var is somehow missing.
+const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1/';
+
 const client = axios.create({
-  baseURL: 'http://localhost:8080/api/v1/',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -45,7 +50,7 @@ function normalizeError(err) {
     const body = err.response.data || {};
     return {
       status: err.response.status,
-      message: body.message || err.message || 'Request failed',
+      message: body.message || body.detail || body.title || err.message || 'Request failed',
       fieldErrors: body.fieldErrors || null,
       raw: err,
     };
