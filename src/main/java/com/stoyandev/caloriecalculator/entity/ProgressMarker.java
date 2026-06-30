@@ -29,6 +29,10 @@ public class ProgressMarker {
     @Column(nullable = false, length = 64)
     private String label;
 
+    /** Hex color "#RRGGBB" shown on the timeline. Nullable → frontend default. */
+    @Column(length = 7)
+    private String color;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

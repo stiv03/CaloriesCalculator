@@ -16,14 +16,14 @@ import Field from '../../components/Field';
 import ErrorBanner from '../../components/ErrorBanner';
 import { getUserId } from '../../auth/storage';
 import {
-  listProgressPhotos, createProgressPhoto, deleteProgressPhoto,
+  listProgressPhotos, createProgressPhoto,
 } from '../../api/progressPhotos';
 import {
   listProgressMarkers, createProgressMarker, deleteProgressMarker,
 } from '../../api/progressMarkers';
 import {
   connect as connectDrive, isConnected as isDriveConnected,
-  uploadPhoto, deletePhoto as deleteDrivePhoto, getPhotoObjectUrl,
+  uploadPhoto, getPhotoObjectUrl,
 } from '../../integrations/googleDrive';
 import styles from './PhotoGalleryPage.module.css';
 
@@ -31,6 +31,18 @@ const MS_PER_DAY = 86_400_000;
 const MIN_DOT_GAP_PX = 56;   // minimum px between dots, no matter how close in date
 const PX_PER_DAY = 14;       // base horizontal scale
 const TIMELINE_PAD_PX = 48;  // left/right padding on the rail
+
+// Marker color choices shown in the add-marker modal.
+const MARKER_COLORS = [
+  '#FBBF24', // amber (default)
+  '#EF4444', // red
+  '#22C55E', // green
+  '#3B82F6', // blue
+  '#A855F7', // purple
+  '#EC4899', // pink
+  '#94A3B8', // slate
+];
+const DEFAULT_MARKER_COLOR = MARKER_COLORS[0];
 
 const todayIso = () => {
   const d = new Date();
@@ -90,8 +102,11 @@ export default function PhotoGalleryPage() {
   const fileRef = useRef(null);
 
   const [showAddMarker, setShowAddMarker] = useState(false);
-  const [markerForm, setMarkerForm] = useState({ date: todayIso(), label: '' });
+  const [markerForm, setMarkerForm] = useState({ date: todayIso(), label: '', color: DEFAULT_MARKER_COLOR });
   const [savingMarker, setSavingMarker] = useState(false);
+
+  // Whether the "all photos" list section is expanded.
+  const [showAll, setShowAll] = useState(false);
 
   // Object URLs we've created and need to release on unmount.
   const objectUrlsRef = useRef([]);
@@ -105,6 +120,12 @@ export default function PhotoGalleryPage() {
   /** Photos sorted ascending by date (timeline order: oldest → newest). */
   const photosAsc = useMemo(
     () => [...photos].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id),
+    [photos]
+  );
+
+  /** Photos newest first — what the "all photos" panel shows. */
+  const photosDesc = useMemo(
+    () => [...photos].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id),
     [photos]
   );
 
@@ -234,31 +255,6 @@ export default function PhotoGalleryPage() {
     } finally { setUploading(false); }
   };
 
-  // ── Delete photo ─────────────────────────────────────────────────────
-  const handleDeletePhoto = async (photo) => {
-    if (!window.confirm('Delete this photo? It will be removed from your Google Drive as well.')) return;
-    try {
-      try { await deleteDrivePhoto(photo.driveFileId); } catch (_) {}
-      await deleteProgressPhoto(userId, photo.id);
-      setPhotos(prev => prev.filter(p => p.id !== photo.id));
-      const u = thumbs[photo.id];
-      if (u) {
-        URL.revokeObjectURL(u);
-        setThumbs(prev => { const n = { ...prev }; delete n[photo.id]; return n; });
-      }
-      if (selectedId === photo.id) {
-        setSelectedId(null);
-        setCompareId(null);
-        userPickedCompare.current = false;
-      } else if (compareId === photo.id) {
-        setCompareId(null);
-        userPickedCompare.current = false;
-      }
-    } catch (e) {
-      setError(e.message || 'Delete failed.');
-    }
-  };
-
   // ── Markers ──────────────────────────────────────────────────────────
   const handleAddMarker = async () => {
     if (!markerForm.label.trim()) {
@@ -270,9 +266,10 @@ export default function PhotoGalleryPage() {
       const saved = await createProgressMarker(userId, {
         date: markerForm.date,
         label: markerForm.label.trim(),
+        color: markerForm.color || DEFAULT_MARKER_COLOR,
       });
       setMarkers(prev => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
-      setMarkerForm({ date: todayIso(), label: '' });
+      setMarkerForm({ date: todayIso(), label: '', color: DEFAULT_MARKER_COLOR });
       setShowAddMarker(false);
     } catch (e) {
       setError(e.message || 'Could not save marker.');
@@ -292,35 +289,54 @@ export default function PhotoGalleryPage() {
   // ── Marker positioning along the photo timeline ──────────────────────
   // We position markers by date relative to the photo dots, so a marker
   // between two photo dates lands proportionally between them.
-  const markerPositions = useMemo(() => {
-    if (!photosAsc.length) return [];
+  const todayStr = todayIso();
+
+  // Compute the x for any date. If the date is past the last photo we extend
+  // off the right edge using the same PX_PER_DAY scale so "today" doesn't pile
+  // on top of the newest dot when the user hasn't taken a photo yet today.
+  const xForDate = (date) => {
+    if (!photosAsc.length) return TIMELINE_PAD_PX;
     const first = photosAsc[0].date;
     const last = photosAsc[photosAsc.length - 1].date;
-    return markers.map(m => {
-      // Clamp markers outside the photo range to the nearest edge.
-      let x;
-      if (m.date <= first) {
-        x = TIMELINE_PAD_PX;
-      } else if (m.date >= last) {
-        x = layout.positions.get(photosAsc[photosAsc.length - 1].id);
-      } else {
-        // Find the two photos that bracket this date and lerp between them.
-        for (let i = 1; i < photosAsc.length; i++) {
-          if (photosAsc[i].date >= m.date) {
-            const a = photosAsc[i - 1];
-            const b = photosAsc[i];
-            const span = daysBetween(a.date, b.date) || 1;
-            const t = daysBetween(a.date, m.date) / span;
-            const ax = layout.positions.get(a.id);
-            const bx = layout.positions.get(b.id);
-            x = ax + (bx - ax) * t;
-            break;
-          }
-        }
+    if (date <= first) return TIMELINE_PAD_PX;
+    if (date >= last) {
+      const lastX = layout.positions.get(photosAsc[photosAsc.length - 1].id);
+      const extra = daysBetween(last, date) * PX_PER_DAY;
+      return lastX + extra;
+    }
+    for (let i = 1; i < photosAsc.length; i++) {
+      if (photosAsc[i].date >= date) {
+        const a = photosAsc[i - 1];
+        const b = photosAsc[i];
+        const span = daysBetween(a.date, b.date) || 1;
+        const t = daysBetween(a.date, date) / span;
+        const ax = layout.positions.get(a.id);
+        const bx = layout.positions.get(b.id);
+        return ax + (bx - ax) * t;
       }
-      return { marker: m, x };
-    });
+    }
+    return TIMELINE_PAD_PX;
+  };
+
+  const markerPositions = useMemo(() => {
+    if (!photosAsc.length) return [];
+    return markers.map(m => ({ marker: m, x: xForDate(m.date) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markers, photosAsc, layout]);
+
+  const todayX = photosAsc.length ? xForDate(todayStr) : null;
+
+  // Total width of the timeline inner — extend if anything (today or a
+  // future-dated marker) sits past the latest photo.
+  const innerWidth = useMemo(() => {
+    if (!photosAsc.length) return layout.totalWidth;
+    let max = layout.totalWidth;
+    if (todayX != null) max = Math.max(max, todayX + TIMELINE_PAD_PX);
+    for (const { x } of markerPositions) {
+      if (x != null) max = Math.max(max, x + TIMELINE_PAD_PX);
+    }
+    return max;
+  }, [layout, photosAsc, todayX, markerPositions]);
 
   // ── Dot grouping per date (multiple photos same day) ─────────────────
   const sameDayCount = (photoDate) => photos.filter(p => p.date === photoDate).length;
@@ -387,20 +403,38 @@ export default function PhotoGalleryPage() {
               <div className={styles.timelineRail} ref={timelineRef}>
                 <div
                   className={styles.timelineInner}
-                  style={{ width: `${layout.totalWidth}px` }}
+                  style={{ width: `${innerWidth}px` }}
                 >
-                  {/* Vertical marker bands behind everything */}
-                  {markerPositions.map(({ marker, x }) => (
+                  {/* "Today" vertical line */}
+                  {todayX != null && (
                     <div
-                      key={marker.id}
-                      className={styles.markerBand}
-                      style={{ left: `${x}px` }}
-                      onClick={() => handleDeleteMarker(marker)}
-                      title={`${marker.label} · ${marker.date} (click to delete)`}
+                      className={styles.todayBand}
+                      style={{ left: `${todayX}px` }}
+                      title={`Today · ${todayStr}`}
                     >
-                      <span className={styles.markerLabel}>{marker.label}</span>
+                      <span className={styles.todayLabel}>Today</span>
                     </div>
-                  ))}
+                  )}
+                  {/* Vertical marker bands behind everything */}
+                  {markerPositions.map(({ marker, x }) => {
+                    const color = marker.color || DEFAULT_MARKER_COLOR;
+                    return (
+                      <div
+                        key={marker.id}
+                        className={styles.markerBand}
+                        style={{ left: `${x}px`, background: color }}
+                        onClick={() => handleDeleteMarker(marker)}
+                        title={`${marker.label} · ${marker.date} (click to delete)`}
+                      >
+                        <span
+                          className={styles.markerLabel}
+                          style={{ color, borderColor: color }}
+                        >
+                          {marker.label}
+                        </span>
+                      </div>
+                    );
+                  })}
 
                   {/* The line itself */}
                   <div className={styles.line} />
@@ -494,12 +528,49 @@ export default function PhotoGalleryPage() {
                     })}
                 </select>
               </div>
+            </div>
+          )}
 
-              <div className={styles.compareActions}>
-                <Button variant="secondary" onClick={() => handleDeletePhoto(selected)}>
-                  Delete selected photo
-                </Button>
-              </div>
+          {/* ── Show all photos ──────────────────────────────────────── */}
+          {photosDesc.length > 0 && (
+            <div className={styles.allPhotosSection}>
+              <button
+                type="button"
+                className={styles.showAllBtn}
+                onClick={() => setShowAll(s => !s)}
+              >
+                {showAll ? 'Hide all photos' : `Show all photos (${photosDesc.length})`}
+              </button>
+
+              {showAll && (
+                <div className={styles.allPhotosList}>
+                  {photosDesc.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={[
+                        styles.allPhotoRow,
+                        selectedId === p.id ? styles.allPhotoRowActive : '',
+                      ].join(' ')}
+                      onClick={() => {
+                        setSelectedId(p.id);
+                        userPickedCompare.current = false;
+                      }}
+                    >
+                      {thumbs[p.id]
+                        ? <img src={thumbs[p.id]} alt={p.date} className={styles.allPhotoThumb} />
+                        : <div className={styles.allPhotoThumbPlaceholder}>…</div>}
+                      <div className={styles.allPhotoMeta}>
+                        <div className={styles.allPhotoDate}>{p.date}</div>
+                        <div className={styles.allPhotoSub}>
+                          {p.weight != null ? `${p.weight} kg` : '—'}
+                        </div>
+                        {p.notes && <div className={styles.allPhotoNotes}>{p.notes}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>
@@ -540,6 +611,24 @@ export default function PhotoGalleryPage() {
             <Field label='Label (e.g. "cut start")' type="text" value={markerForm.label}
                    maxLength={64}
                    onChange={(e) => setMarkerForm({ ...markerForm, label: e.target.value })} />
+            <div className={styles.colorRow}>
+              <div className={styles.colorRowLabel}>Color</div>
+              <div className={styles.colorSwatches}>
+                {MARKER_COLORS.map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-label={`Use color ${c}`}
+                    className={[
+                      styles.colorSwatch,
+                      markerForm.color === c ? styles.colorSwatchActive : '',
+                    ].join(' ')}
+                    style={{ background: c }}
+                    onClick={() => setMarkerForm({ ...markerForm, color: c })}
+                  />
+                ))}
+              </div>
+            </div>
             <Button block onClick={handleAddMarker} disabled={savingMarker}>
               {savingMarker ? 'Saving…' : 'Save marker'}
             </Button>

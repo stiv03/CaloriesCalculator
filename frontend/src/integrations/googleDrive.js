@@ -199,12 +199,60 @@ export const deletePhoto = async (fileId) => {
   await driveFetch(`drive/v3/files/${fileId}`, { method: 'DELETE' });
 };
 
+/** Set of MIME types every browser can render natively. */
+const BROWSER_RENDERABLE = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+  'image/svg+xml',
+  'image/avif',
+]);
+
 /**
- * Fetch a single photo's bytes and return an Object URL the browser can render.
- * (We can't use a public Drive URL with drive.file scope — we have to
- * authenticate the GET.) Callers should URL.revokeObjectURL() when done.
+ * Fetch a photo's bytes and return an Object URL the browser can render.
+ *
+ * For browser-renderable formats we stream the original bytes. For HEIC and
+ * other non-renderable formats we fall back to Drive's auto-generated JPEG
+ * thumbnail (up to 1600 px wide), which renders everywhere.
+ *
+ * Callers should URL.revokeObjectURL() when done.
  */
 export const getPhotoObjectUrl = async (fileId) => {
+  // First ask Drive what the file is and whether it has a usable thumbnail.
+  const metaRes = await driveFetch(`drive/v3/files/${fileId}?fields=mimeType,thumbnailLink`);
+  const meta = await metaRes.json();
+  const renderable = BROWSER_RENDERABLE.has((meta.mimeType || '').toLowerCase());
+
+  if (renderable) {
+    const res = await driveFetch(`drive/v3/files/${fileId}?alt=media`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  // Non-renderable (HEIC etc.) — use Drive's JPEG thumbnail, bumped to a
+  // larger size than the default 220 px. Drive's thumbnailLink encodes a
+  // signed token; we still need our access token on the request because the
+  // file is in a private scope.
+  if (meta.thumbnailLink) {
+    const big = meta.thumbnailLink.replace(/=s\d+$/, '=s1600');
+    const token = await getAccessToken();
+    const res = await fetch(big, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      // Fall through to raw bytes if the thumbnail URL fails — the browser
+      // probably can't render it, but at least the download will be valid.
+      const fallback = await driveFetch(`drive/v3/files/${fileId}?alt=media`);
+      const blob = await fallback.blob();
+      return URL.createObjectURL(blob);
+    }
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  // No thumbnail available — return raw bytes so the user at least sees the
+  // broken-image icon rather than nothing.
   const res = await driveFetch(`drive/v3/files/${fileId}?alt=media`);
   const blob = await res.blob();
   return URL.createObjectURL(blob);
