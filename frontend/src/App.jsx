@@ -10,6 +10,7 @@ import ProfilePage from './features/profile/ProfilePage';
 import SupplementsPage from './features/supplements/SupplementsPage';
 import WorkoutPage from './features/workout/WorkoutPage';
 import CalendarPage from './features/calendar/CalendarPage';
+import PhotoGalleryPage from './features/progress/PhotoGalleryPage';
 import { isAuthenticated } from './auth/storage';
 
 import './styles/tokens.css';
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/workout" element={<WorkoutPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/supplements" element={<SupplementsPage />} />
+          <Route path="/photos" element={<PhotoGalleryPage />} />
           <Route path="/settings" element={<ProfilePage />} />
         </Route>
         {/* Old route still resolves */}

@@ -1,5 +1,6 @@
 // frontend/src/features/profile/tabs/BodyTab.jsx
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatHumanDate } from '../../today/dateFormat';
 import { addMeasurement } from '../../../api/profile';
 import { getUserId } from '../../../auth/storage';
@@ -8,7 +9,6 @@ import Field from '../../../components/Field';
 import Button from '../../../components/Button';
 import ReminderDot from '../../../components/ReminderDot';
 import ErrorBanner from '../../../components/ErrorBanner';
-import ProgressPhotosCard from './ProgressPhotosCard';
 import styles from './BodyTab.module.css';
 
 const PARTS = ['shoulder', 'chest', 'biceps', 'waist', 'hips', 'thigh', 'calf'];
@@ -44,6 +44,7 @@ export default function BodyTab({
   measurements, latestMeasurement, weightRecords = [], onRefreshMeasurements,
 }) {
   const userId = getUserId();
+  const navigate = useNavigate();
   const [measForm, setMeasForm] = useState(EMPTY_MEAS);
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState('');
@@ -141,7 +142,11 @@ export default function BodyTab({
         )}
       </div>
 
-      <ProgressPhotosCard />
+      <div className={styles.card}>
+        <Button block variant="secondary" onClick={() => navigate('/photos')}>
+          Progress photos →
+        </Button>
+      </div>
 
       <div className={styles.card}>
         <h3 className={styles.h3}>Records</h3>

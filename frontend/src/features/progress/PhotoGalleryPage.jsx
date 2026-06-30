@@ -1,0 +1,554 @@
+// frontend/src/features/progress/PhotoGalleryPage.jsx
+//
+// Horizontal timeline of progress photos.
+//
+// - Each date with photo(s) becomes a dot. Dots are positioned by real date
+//   distance so a 2-week gap looks twice as wide as a 1-week gap.
+// - Markers (e.g. "cut start", "bulk start") render as vertical bands at their
+//   date.
+// - Clicking a dot opens a comparison: that photo vs the previous-date photo.
+//   A "Compare against" dropdown lets you swap the comparison target to any
+//   other photo by date.
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Button from '../../components/Button';
+import Field from '../../components/Field';
+import ErrorBanner from '../../components/ErrorBanner';
+import { getUserId } from '../../auth/storage';
+import {
+  listProgressPhotos, createProgressPhoto, deleteProgressPhoto,
+} from '../../api/progressPhotos';
+import {
+  listProgressMarkers, createProgressMarker, deleteProgressMarker,
+} from '../../api/progressMarkers';
+import {
+  connect as connectDrive, isConnected as isDriveConnected,
+  uploadPhoto, deletePhoto as deleteDrivePhoto, getPhotoObjectUrl,
+} from '../../integrations/googleDrive';
+import styles from './PhotoGalleryPage.module.css';
+
+const MS_PER_DAY = 86_400_000;
+const MIN_DOT_GAP_PX = 56;   // minimum px between dots, no matter how close in date
+const PX_PER_DAY = 14;       // base horizontal scale
+const TIMELINE_PAD_PX = 48;  // left/right padding on the rail
+
+const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const fmtShort = (iso) => {
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1];
+  return `${month} ${parseInt(d, 10)}`;
+};
+
+const daysBetween = (a, b) =>
+  Math.round((new Date(`${b}T00:00:00`) - new Date(`${a}T00:00:00`)) / MS_PER_DAY);
+
+/**
+ * Lay items out along a horizontal axis based on their `date` (YYYY-MM-DD).
+ * Returns { positions: Map<id, xPixels>, totalWidth }.
+ * Items must be sorted ascending by date.
+ */
+function layoutByDate(items) {
+  const positions = new Map();
+  if (!items.length) return { positions, totalWidth: TIMELINE_PAD_PX * 2 };
+  let x = TIMELINE_PAD_PX;
+  positions.set(items[0].id, x);
+  for (let i = 1; i < items.length; i++) {
+    const dayGap = daysBetween(items[i - 1].date, items[i].date);
+    const gapPx = Math.max(MIN_DOT_GAP_PX, dayGap * PX_PER_DAY);
+    x += gapPx;
+    positions.set(items[i].id, x);
+  }
+  const totalWidth = x + TIMELINE_PAD_PX;
+  return { positions, totalWidth };
+}
+
+export default function PhotoGalleryPage() {
+  const userId = getUserId();
+  const navigate = useNavigate();
+
+  const [photos, setPhotos] = useState([]);
+  const [markers, setMarkers] = useState([]);
+  const [thumbs, setThumbs] = useState({}); // { [photoId]: objectURL }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [connected, setConnected] = useState(isDriveConnected());
+
+  // Selection — drives the comparison panel.
+  const [selectedId, setSelectedId] = useState(null);
+  const [compareId, setCompareId] = useState(null);
+  const userPickedCompare = useRef(false); // sticky if user explicitly picked
+
+  // Modal states
+  const [showAddPhoto, setShowAddPhoto] = useState(false);
+  const [photoForm, setPhotoForm] = useState({ date: todayIso(), weight: '', notes: '' });
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const [showAddMarker, setShowAddMarker] = useState(false);
+  const [markerForm, setMarkerForm] = useState({ date: todayIso(), label: '' });
+  const [savingMarker, setSavingMarker] = useState(false);
+
+  // Object URLs we've created and need to release on unmount.
+  const objectUrlsRef = useRef([]);
+  const timelineRef = useRef(null);
+
+  const releaseObjectUrls = () => {
+    objectUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+    objectUrlsRef.current = [];
+  };
+
+  /** Photos sorted ascending by date (timeline order: oldest → newest). */
+  const photosAsc = useMemo(
+    () => [...photos].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id),
+    [photos]
+  );
+
+  const layout = useMemo(() => layoutByDate(photosAsc), [photosAsc]);
+
+  // Initial load.
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [ph, mk] = await Promise.all([
+        listProgressPhotos(userId),
+        listProgressMarkers(userId),
+      ]);
+      setPhotos(ph);
+      setMarkers(mk);
+    } catch (e) {
+      setError(e.message || 'Could not load.');
+    } finally { setLoading(false); }
+  }, [userId]);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => () => releaseObjectUrls(), []);
+
+  // Default selection = newest photo. Default compare = the one before it.
+  useEffect(() => {
+    if (!photosAsc.length) {
+      setSelectedId(null);
+      setCompareId(null);
+      userPickedCompare.current = false;
+      return;
+    }
+    if (selectedId == null) {
+      setSelectedId(photosAsc[photosAsc.length - 1].id);
+    }
+  }, [photosAsc, selectedId]);
+
+  // Auto-track compare unless user explicitly picked one.
+  useEffect(() => {
+    if (selectedId == null || userPickedCompare.current) return;
+    const idx = photosAsc.findIndex(p => p.id === selectedId);
+    if (idx <= 0) { setCompareId(null); return; }
+    setCompareId(photosAsc[idx - 1].id);
+  }, [selectedId, photosAsc]);
+
+  // Lazy-load thumbnails when connected.
+  useEffect(() => {
+    if (!connected || !photos.length) return;
+    let cancelled = false;
+    (async () => {
+      for (const p of photos) {
+        if (cancelled) break;
+        if (thumbs[p.id]) continue;
+        try {
+          const url = await getPhotoObjectUrl(p.driveFileId);
+          if (cancelled) { URL.revokeObjectURL(url); return; }
+          objectUrlsRef.current.push(url);
+          setThumbs(prev => ({ ...prev, [p.id]: url }));
+        } catch (_) { /* placeholder */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [connected, photos, thumbs]);
+
+  // Scroll the selected dot into the centre of the timeline rail.
+  useEffect(() => {
+    if (selectedId == null || !timelineRef.current) return;
+    const x = layout.positions.get(selectedId);
+    if (x == null) return;
+    const el = timelineRef.current;
+    const target = x - el.clientWidth / 2;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [selectedId, layout]);
+
+  const handleConnect = async () => {
+    setError('');
+    try {
+      await connectDrive();
+      setConnected(true);
+    } catch (e) { setError(e.message || 'Could not connect Google Drive.'); }
+  };
+
+  // ── Add photo ────────────────────────────────────────────────────────
+  const handlePickFile = () => fileRef.current?.click();
+
+  const handleFileChosen = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+    setUploading(true);
+    try {
+      if (!isDriveConnected()) {
+        await connectDrive();
+        setConnected(true);
+      }
+      const ext = (file.name.match(/\.[^.]+$/)?.[0] || '.jpg').toLowerCase();
+      const sameDayCount = photos.filter(p => p.date === photoForm.date).length;
+      const filename = sameDayCount === 0
+        ? `${photoForm.date}${ext}`
+        : `${photoForm.date}-${sameDayCount + 1}${ext}`;
+      const driveFile = await uploadPhoto(file, filename);
+      const saved = await createProgressPhoto(userId, {
+        driveFileId: driveFile.id,
+        date: photoForm.date,
+        weight: photoForm.weight ? parseFloat(photoForm.weight) : null,
+        notes: photoForm.notes || null,
+      });
+      setPhotos(prev => [...prev, saved]);
+      setSelectedId(saved.id);
+      userPickedCompare.current = false;
+      setPhotoForm({ date: todayIso(), weight: '', notes: '' });
+      setShowAddPhoto(false);
+    } catch (e) {
+      setError(e.message || 'Upload failed.');
+    } finally { setUploading(false); }
+  };
+
+  // ── Delete photo ─────────────────────────────────────────────────────
+  const handleDeletePhoto = async (photo) => {
+    if (!window.confirm('Delete this photo? It will be removed from your Google Drive as well.')) return;
+    try {
+      try { await deleteDrivePhoto(photo.driveFileId); } catch (_) {}
+      await deleteProgressPhoto(userId, photo.id);
+      setPhotos(prev => prev.filter(p => p.id !== photo.id));
+      const u = thumbs[photo.id];
+      if (u) {
+        URL.revokeObjectURL(u);
+        setThumbs(prev => { const n = { ...prev }; delete n[photo.id]; return n; });
+      }
+      if (selectedId === photo.id) {
+        setSelectedId(null);
+        setCompareId(null);
+        userPickedCompare.current = false;
+      } else if (compareId === photo.id) {
+        setCompareId(null);
+        userPickedCompare.current = false;
+      }
+    } catch (e) {
+      setError(e.message || 'Delete failed.');
+    }
+  };
+
+  // ── Markers ──────────────────────────────────────────────────────────
+  const handleAddMarker = async () => {
+    if (!markerForm.label.trim()) {
+      setError('Marker label is required.');
+      return;
+    }
+    setSavingMarker(true);
+    try {
+      const saved = await createProgressMarker(userId, {
+        date: markerForm.date,
+        label: markerForm.label.trim(),
+      });
+      setMarkers(prev => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
+      setMarkerForm({ date: todayIso(), label: '' });
+      setShowAddMarker(false);
+    } catch (e) {
+      setError(e.message || 'Could not save marker.');
+    } finally { setSavingMarker(false); }
+  };
+
+  const handleDeleteMarker = async (marker) => {
+    if (!window.confirm(`Delete marker "${marker.label}"?`)) return;
+    try {
+      await deleteProgressMarker(userId, marker.id);
+      setMarkers(prev => prev.filter(m => m.id !== marker.id));
+    } catch (e) {
+      setError(e.message || 'Could not delete marker.');
+    }
+  };
+
+  // ── Marker positioning along the photo timeline ──────────────────────
+  // We position markers by date relative to the photo dots, so a marker
+  // between two photo dates lands proportionally between them.
+  const markerPositions = useMemo(() => {
+    if (!photosAsc.length) return [];
+    const first = photosAsc[0].date;
+    const last = photosAsc[photosAsc.length - 1].date;
+    return markers.map(m => {
+      // Clamp markers outside the photo range to the nearest edge.
+      let x;
+      if (m.date <= first) {
+        x = TIMELINE_PAD_PX;
+      } else if (m.date >= last) {
+        x = layout.positions.get(photosAsc[photosAsc.length - 1].id);
+      } else {
+        // Find the two photos that bracket this date and lerp between them.
+        for (let i = 1; i < photosAsc.length; i++) {
+          if (photosAsc[i].date >= m.date) {
+            const a = photosAsc[i - 1];
+            const b = photosAsc[i];
+            const span = daysBetween(a.date, b.date) || 1;
+            const t = daysBetween(a.date, m.date) / span;
+            const ax = layout.positions.get(a.id);
+            const bx = layout.positions.get(b.id);
+            x = ax + (bx - ax) * t;
+            break;
+          }
+        }
+      }
+      return { marker: m, x };
+    });
+  }, [markers, photosAsc, layout]);
+
+  // ── Dot grouping per date (multiple photos same day) ─────────────────
+  const sameDayCount = (photoDate) => photos.filter(p => p.date === photoDate).length;
+  const sameDayIndex = (photo) =>
+    photosAsc.filter(p => p.date === photo.date).findIndex(p => p.id === photo.id);
+
+  const selected = useMemo(
+    () => photosAsc.find(p => p.id === selectedId) || null,
+    [selectedId, photosAsc]
+  );
+  const compare = useMemo(
+    () => photosAsc.find(p => p.id === compareId) || null,
+    [compareId, photosAsc]
+  );
+
+  const scrollRail = (delta) => {
+    if (!timelineRef.current) return;
+    timelineRef.current.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
+  return (
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <button type="button" className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Back">‹</button>
+        <h1 className={styles.title}>Photos</h1>
+        {connected && (
+          <>
+            <button type="button" className={styles.markerBtn} onClick={() => setShowAddMarker(true)}>
+              + Marker
+            </button>
+            <button type="button" className={styles.addBtn} onClick={() => setShowAddPhoto(true)}>
+              + Photo
+            </button>
+          </>
+        )}
+      </header>
+
+      <ErrorBanner message={error} onDismiss={() => setError('')} />
+
+      {!connected && (
+        <div className={styles.connectCard}>
+          <p className={styles.muted}>Connect Google Drive to view and add progress photos.</p>
+          <Button onClick={handleConnect}>Connect Google Drive</Button>
+        </div>
+      )}
+
+      {connected && (
+        <>
+          {loading && <p className={styles.muted}>Loading…</p>}
+
+          {!loading && photosAsc.length === 0 && (
+            <p className={styles.muted}>No progress photos yet. Tap “+ Photo” to add one.</p>
+          )}
+
+          {photosAsc.length > 0 && (
+            <div className={styles.timelineRow}>
+              <button
+                type="button"
+                className={styles.scrollBtn}
+                onClick={() => scrollRail(-280)}
+                aria-label="Scroll left"
+              >‹</button>
+
+              <div className={styles.timelineRail} ref={timelineRef}>
+                <div
+                  className={styles.timelineInner}
+                  style={{ width: `${layout.totalWidth}px` }}
+                >
+                  {/* Vertical marker bands behind everything */}
+                  {markerPositions.map(({ marker, x }) => (
+                    <div
+                      key={marker.id}
+                      className={styles.markerBand}
+                      style={{ left: `${x}px` }}
+                      onClick={() => handleDeleteMarker(marker)}
+                      title={`${marker.label} · ${marker.date} (click to delete)`}
+                    >
+                      <span className={styles.markerLabel}>{marker.label}</span>
+                    </div>
+                  ))}
+
+                  {/* The line itself */}
+                  <div className={styles.line} />
+
+                  {/* Photo dots */}
+                  {photosAsc.map(p => {
+                    const x = layout.positions.get(p.id);
+                    const count = sameDayCount(p.date);
+                    const idx = sameDayIndex(p);
+                    // Only render one dot per date — let it represent the
+                    // earliest same-day photo; later same-day photos appear
+                    // in the dropdown.
+                    if (idx !== 0) return null;
+                    const isSelected = selected && selected.date === p.date;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={[
+                          styles.dot,
+                          isSelected ? styles.dotSelected : '',
+                        ].join(' ')}
+                        style={{ left: `${x}px` }}
+                        onClick={() => {
+                          // Select the newest photo for this date so the panel
+                          // shows the most recent shot.
+                          const sameDay = photosAsc.filter(q => q.date === p.date);
+                          setSelectedId(sameDay[sameDay.length - 1].id);
+                          userPickedCompare.current = false;
+                        }}
+                        title={`${p.date}${count > 1 ? ` (${count} photos)` : ''}`}
+                      >
+                        <span className={styles.dotDate}>{fmtShort(p.date)}</span>
+                        {count > 1 && <span className={styles.dotBadge}>+{count - 1}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className={styles.scrollBtn}
+                onClick={() => scrollRail(280)}
+                aria-label="Scroll right"
+              >›</button>
+            </div>
+          )}
+
+          {/* ── Comparison panel ──────────────────────────────────────── */}
+          {selected && (
+            <div className={styles.comparePanel}>
+              <div className={styles.compareHeader}>
+                {compare
+                  ? <span>Comparing <strong>{fmtShort(selected.date)}</strong> vs <strong>{fmtShort(compare.date)}</strong></span>
+                  : <span>Selected: <strong>{fmtShort(selected.date)}</strong></span>}
+              </div>
+
+              <div className={styles.compareSlots}>
+                <PhotoPane photo={selected} url={thumbs[selected.id]} />
+                {compare
+                  ? <PhotoPane photo={compare} url={thumbs[compare.id]} />
+                  : <div className={styles.slotEmpty}>Add another photo to compare</div>}
+              </div>
+
+              <div className={styles.compareControls}>
+                <label className={styles.controlLabel}>Compare against:</label>
+                <select
+                  className={styles.controlSelect}
+                  value={compareId ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCompareId(v ? Number(v) : null);
+                    userPickedCompare.current = v !== '';
+                  }}
+                >
+                  <option value="">— none —</option>
+                  {photosAsc
+                    .filter(p => p.id !== selectedId)
+                    .slice()
+                    .reverse()
+                    .map(p => {
+                      const sameDay = photosAsc.filter(q => q.date === p.date);
+                      const idx = sameDay.findIndex(q => q.id === p.id);
+                      const suffix = sameDay.length > 1 ? ` (${idx + 1})` : '';
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {fmtShort(p.date)}{suffix}
+                        </option>
+                      );
+                    })}
+                </select>
+              </div>
+
+              <div className={styles.compareActions}>
+                <Button variant="secondary" onClick={() => handleDeletePhoto(selected)}>
+                  Delete selected photo
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Add photo modal ─────────────────────────────────────────────── */}
+      {showAddPhoto && (
+        <div className={styles.modalOverlay} onClick={() => !uploading && setShowAddPhoto(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Add photo</h2>
+              <button className={styles.modalClose} onClick={() => !uploading && setShowAddPhoto(false)}>✕</button>
+            </div>
+            <Field label="Date" type="date" value={photoForm.date}
+                   onChange={(e) => setPhotoForm({ ...photoForm, date: e.target.value })} />
+            <Field label="Weight (kg, optional)" type="number" step="0.1" min="0" value={photoForm.weight}
+                   onChange={(e) => setPhotoForm({ ...photoForm, weight: e.target.value })} />
+            <Field label="Notes (optional)" type="text" value={photoForm.notes}
+                   onChange={(e) => setPhotoForm({ ...photoForm, notes: e.target.value })} />
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChosen} />
+            <Button block onClick={handlePickFile} disabled={uploading}>
+              {uploading ? 'Uploading…' : 'Choose photo'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add marker modal ────────────────────────────────────────────── */}
+      {showAddMarker && (
+        <div className={styles.modalOverlay} onClick={() => !savingMarker && setShowAddMarker(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Add marker</h2>
+              <button className={styles.modalClose} onClick={() => !savingMarker && setShowAddMarker(false)}>✕</button>
+            </div>
+            <Field label="Date" type="date" value={markerForm.date}
+                   onChange={(e) => setMarkerForm({ ...markerForm, date: e.target.value })} />
+            <Field label='Label (e.g. "cut start")' type="text" value={markerForm.label}
+                   maxLength={64}
+                   onChange={(e) => setMarkerForm({ ...markerForm, label: e.target.value })} />
+            <Button block onClick={handleAddMarker} disabled={savingMarker}>
+              {savingMarker ? 'Saving…' : 'Save marker'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhotoPane({ photo, url }) {
+  return (
+    <div className={styles.slot}>
+      {url
+        ? <img src={url} alt={photo.date} className={styles.slotImage} />
+        : <div className={styles.slotPlaceholder}>Loading…</div>}
+      <div className={styles.slotMeta}>
+        <span className={styles.slotDate}>{photo.date}</span>
+        {photo.weight != null && <span className={styles.slotWeight}>{photo.weight} kg</span>}
+      </div>
+      {photo.notes && <div className={styles.slotNotes}>{photo.notes}</div>}
+    </div>
+  );
+}
