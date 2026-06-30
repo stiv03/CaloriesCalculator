@@ -5,5 +5,6 @@ import java.time.LocalDate;
 public record ProgressMarkerDTO(
         Long id,
         LocalDate date,
-        String label
+        String label,
+        String color
 ) {}

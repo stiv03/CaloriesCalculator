@@ -31,6 +31,9 @@ public class ProgressMarkerController {
                 .map(this::toDTO).toList());
     }
 
+    private static final java.util.regex.Pattern HEX_COLOR =
+            java.util.regex.Pattern.compile("^#[0-9a-fA-F]{6}$");
+
     @PostMapping("/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<ProgressMarkerDTO> create(
@@ -41,10 +44,13 @@ public class ProgressMarkerController {
         String label = req.label() != null ? req.label().trim() : "";
         if (label.isEmpty()) label = "marker";
         if (label.length() > 64) label = label.substring(0, 64);
+        String color = req.color();
+        if (color != null && !HEX_COLOR.matcher(color).matches()) color = null;
         ProgressMarker m = ProgressMarker.builder()
                 .user(user)
                 .date(req.date() != null ? req.date() : LocalDate.now())
                 .label(label)
+                .color(color)
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(markerRepository.save(m)));
     }
@@ -59,6 +65,6 @@ public class ProgressMarkerController {
     }
 
     private ProgressMarkerDTO toDTO(ProgressMarker m) {
-        return new ProgressMarkerDTO(m.getId(), m.getDate(), m.getLabel());
+        return new ProgressMarkerDTO(m.getId(), m.getDate(), m.getLabel(), m.getColor());
     }
 }
