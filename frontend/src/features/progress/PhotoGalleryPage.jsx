@@ -222,6 +222,25 @@ export default function PhotoGalleryPage() {
   // ── Add photo ────────────────────────────────────────────────────────
   const handlePickFile = () => fileRef.current?.click();
 
+  /**
+   * Convert HEIC/HEIF to JPEG client-side so the file lands in Drive as a
+   * browser-renderable format. Lazy-imports heic2any so the ~150 KB lib is
+   * only loaded when actually needed.
+   */
+  const convertHeicIfNeeded = async (file) => {
+    const name = (file.name || '').toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    const isHeic = type === 'image/heic' || type === 'image/heif'
+      || name.endsWith('.heic') || name.endsWith('.heif');
+    if (!isHeic) return file;
+    const { default: heic2any } = await import('heic2any');
+    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+    const out = Array.isArray(converted) ? converted[0] : converted;
+    // Drop the .heic extension and add .jpg.
+    const baseName = (file.name || 'photo').replace(/\.[^.]+$/, '');
+    return new File([out], `${baseName}.jpg`, { type: 'image/jpeg' });
+  };
+
   const handleFileChosen = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -233,12 +252,13 @@ export default function PhotoGalleryPage() {
         await connectDrive();
         setConnected(true);
       }
-      const ext = (file.name.match(/\.[^.]+$/)?.[0] || '.jpg').toLowerCase();
+      const ready = await convertHeicIfNeeded(file);
+      const ext = (ready.name.match(/\.[^.]+$/)?.[0] || '.jpg').toLowerCase();
       const sameDayCount = photos.filter(p => p.date === photoForm.date).length;
       const filename = sameDayCount === 0
         ? `${photoForm.date}${ext}`
         : `${photoForm.date}-${sameDayCount + 1}${ext}`;
-      const driveFile = await uploadPhoto(file, filename);
+      const driveFile = await uploadPhoto(ready, filename);
       const saved = await createProgressPhoto(userId, {
         driveFileId: driveFile.id,
         date: photoForm.date,
