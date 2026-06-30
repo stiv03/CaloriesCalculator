@@ -2,22 +2,55 @@
 //
 // Lightweight Google Drive integration using the implicit/token flow.
 //
-// - Uses Google Identity Services (loaded in public/index.html) to pop a
-//   consent window and obtain a short-lived (~1 h) access token.
-// - Token lives only in this module's memory; refreshing means re-popping the
-//   consent window. We never store refresh tokens, secrets, or anything in
-//   localStorage / on the backend.
+// - Uses Google Identity Services (loaded in public/index.html) to mint a
+//   short-lived (~1 h) access token.
+// - The token + its expiry is cached in localStorage so a page reload doesn't
+//   force a new popup. When it expires we try a silent refresh first
+//   (prompt: 'none'); only if that fails do we pop the visible consent window.
 // - Scope is drive.file — the app can only see files it has created.
 
 const CLIENT_ID = '553699428495-oc7votvipc76s9ms4vhr0f2kre3hsq42.apps.googleusercontent.com';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const FOLDER_NAME = 'Flex Progress Photos';
+const STORAGE_KEY = 'drive_token_v1';
 
 let accessToken = null;
 let tokenExpiresAt = 0;
 let folderIdCache = null;
 
 const isTokenValid = () => accessToken && Date.now() < tokenExpiresAt - 30_000;
+
+// Restore from localStorage on module load.
+(() => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed?.token && typeof parsed.expiresAt === 'number') {
+      accessToken = parsed.token;
+      tokenExpiresAt = parsed.expiresAt;
+    }
+  } catch (_) { /* ignore */ }
+})();
+
+const persistToken = () => {
+  try {
+    if (accessToken) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        token: accessToken,
+        expiresAt: tokenExpiresAt,
+      }));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch (_) { /* ignore */ }
+};
+
+const clearToken = () => {
+  accessToken = null;
+  tokenExpiresAt = 0;
+  persistToken();
+};
 
 const waitForGsi = () => new Promise((resolve, reject) => {
   if (window.google?.accounts?.oauth2) return resolve();
@@ -28,8 +61,13 @@ const waitForGsi = () => new Promise((resolve, reject) => {
   }, 50);
 });
 
-/** Request a fresh access token via the OAuth popup. Resolves with the token. */
-const requestToken = () => new Promise(async (resolve, reject) => {
+/**
+ * Request a fresh access token.
+ *  silent=true tries `prompt: 'none'` first — succeeds without UI if the user
+ *  already has a Google session in this browser and previously consented.
+ *  silent=false always pops the visible consent window.
+ */
+const requestToken = (silent) => new Promise(async (resolve, reject) => {
   await waitForGsi();
   const client = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
@@ -37,31 +75,49 @@ const requestToken = () => new Promise(async (resolve, reject) => {
     callback: (resp) => {
       if (resp.error) return reject(new Error(resp.error_description || resp.error));
       accessToken = resp.access_token;
-      // expires_in is seconds; cushion at 30s applied in isTokenValid.
       tokenExpiresAt = Date.now() + (Number(resp.expires_in) || 3600) * 1000;
+      persistToken();
       resolve(accessToken);
     },
     error_callback: (err) => reject(new Error(err.message || 'OAuth failed')),
   });
-  client.requestAccessToken({ prompt: '' });
+  client.requestAccessToken({ prompt: silent ? 'none' : '' });
 });
 
-/** Get a usable access token, popping the OAuth window if needed. */
+/** Get a usable access token, refreshing silently or popping the window. */
 export const getAccessToken = async () => {
   if (isTokenValid()) return accessToken;
-  return requestToken();
+  // Try silent first — works if the user is still signed into Google here.
+  try {
+    return await requestToken(true);
+  } catch (_) {
+    // Fall through to the visible popup.
+  }
+  return requestToken(false);
 };
 
-/** Force the consent popup (used by the "Connect Google Drive" button). */
-export const connect = async () => requestToken();
+/** Explicit "Connect Google Drive" click — always shows the consent UI. */
+export const connect = async () => requestToken(false);
+
+/** Drop the cached token (useful if you ever add a "Disconnect" UI). */
+export const disconnect = () => clearToken();
 
 /** True if we currently hold a non-expired token. */
 export const isConnected = () => isTokenValid();
 
 const driveFetch = async (path, init = {}) => {
-  const token = await getAccessToken();
-  const headers = { Authorization: `Bearer ${token}`, ...(init.headers || {}) };
-  const res = await fetch(`https://www.googleapis.com/${path}`, { ...init, headers });
+  const doFetch = async (token) => {
+    const headers = { Authorization: `Bearer ${token}`, ...(init.headers || {}) };
+    return fetch(`https://www.googleapis.com/${path}`, { ...init, headers });
+  };
+  let token = await getAccessToken();
+  let res = await doFetch(token);
+  if (res.status === 401) {
+    // Token was revoked/invalidated server-side. Drop cache, re-auth, retry.
+    clearToken();
+    token = await getAccessToken();
+    res = await doFetch(token);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Drive API ${res.status}: ${body}`);

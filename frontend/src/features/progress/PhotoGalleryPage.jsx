@@ -169,13 +169,25 @@ export default function PhotoGalleryPage() {
   }, [connected, photos, thumbs]);
 
   // Scroll the selected dot into the centre of the timeline rail.
+  // First time we land on a selection, jump instantly so the rail opens
+  // already showing the latest photo. Subsequent selections smooth-scroll.
+  const firstScrollDoneRef = useRef(false);
   useEffect(() => {
     if (selectedId == null || !timelineRef.current) return;
     const x = layout.positions.get(selectedId);
     if (x == null) return;
     const el = timelineRef.current;
-    const target = x - el.clientWidth / 2;
-    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    const doScroll = () => {
+      const target = x - el.clientWidth / 2;
+      el.scrollTo({
+        left: Math.max(0, target),
+        behavior: firstScrollDoneRef.current ? 'smooth' : 'auto',
+      });
+      firstScrollDoneRef.current = true;
+    };
+    // Defer one frame so the rail's width (and the inner total width) is
+    // measured by the browser before we ask it to scroll.
+    requestAnimationFrame(doScroll);
   }, [selectedId, layout]);
 
   const handleConnect = async () => {
