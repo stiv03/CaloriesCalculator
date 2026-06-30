@@ -16,14 +16,15 @@ import Field from '../../components/Field';
 import ErrorBanner from '../../components/ErrorBanner';
 import { getUserId } from '../../auth/storage';
 import {
-  listProgressPhotos, createProgressPhoto,
+  listProgressPhotos, createProgressPhoto, deleteProgressPhoto,
 } from '../../api/progressPhotos';
 import {
   listProgressMarkers, createProgressMarker, deleteProgressMarker,
 } from '../../api/progressMarkers';
 import {
   connect as connectDrive, isConnected as isDriveConnected,
-  uploadPhoto, getPhotoObjectUrl,
+  uploadPhoto, getPhotoObjectUrl, ensureFileInFolder,
+  deletePhoto as deleteDrivePhoto,
 } from '../../integrations/googleDrive';
 import styles from './PhotoGalleryPage.module.css';
 
@@ -149,6 +150,21 @@ export default function PhotoGalleryPage() {
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => () => releaseObjectUrls(), []);
 
+  // One-shot back-fill: move any older photos that ended up outside the
+  // "Flex Progress Photos" folder (uploaded before the folder logic existed)
+  // into it. Runs once per page load, silently in the background.
+  const backfilledRef = useRef(false);
+  useEffect(() => {
+    if (!connected || backfilledRef.current || !photos.length) return;
+    backfilledRef.current = true;
+    (async () => {
+      for (const p of photos) {
+        try { await ensureFileInFolder(p.driveFileId); }
+        catch (_) { /* ignore individual failures */ }
+      }
+    })();
+  }, [connected, photos]);
+
   // Default selection = newest photo. Default compare = the one before it.
   useEffect(() => {
     if (!photosAsc.length) {
@@ -273,6 +289,31 @@ export default function PhotoGalleryPage() {
     } catch (e) {
       setError(e.message || 'Upload failed.');
     } finally { setUploading(false); }
+  };
+
+  // ── Delete photo (from all-photos list) ──────────────────────────────
+  const handleDeletePhoto = async (photo) => {
+    if (!window.confirm('Delete this photo? It will be removed from your Google Drive as well.')) return;
+    try {
+      try { await deleteDrivePhoto(photo.driveFileId); } catch (_) {}
+      await deleteProgressPhoto(userId, photo.id);
+      setPhotos(prev => prev.filter(p => p.id !== photo.id));
+      const u = thumbs[photo.id];
+      if (u) {
+        URL.revokeObjectURL(u);
+        setThumbs(prev => { const n = { ...prev }; delete n[photo.id]; return n; });
+      }
+      if (selectedId === photo.id) {
+        setSelectedId(null);
+        setCompareId(null);
+        userPickedCompare.current = false;
+      } else if (compareId === photo.id) {
+        setCompareId(null);
+        userPickedCompare.current = false;
+      }
+    } catch (e) {
+      setError(e.message || 'Delete failed.');
+    }
   };
 
   // ── Markers ──────────────────────────────────────────────────────────
@@ -565,9 +606,10 @@ export default function PhotoGalleryPage() {
               {showAll && (
                 <div className={styles.allPhotosList}>
                   {photosDesc.map(p => (
-                    <button
+                    <div
                       key={p.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       className={[
                         styles.allPhotoRow,
                         selectedId === p.id ? styles.allPhotoRowActive : '',
@@ -575,6 +617,13 @@ export default function PhotoGalleryPage() {
                       onClick={() => {
                         setSelectedId(p.id);
                         userPickedCompare.current = false;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedId(p.id);
+                          userPickedCompare.current = false;
+                        }
                       }}
                     >
                       {thumbs[p.id]
@@ -587,7 +636,15 @@ export default function PhotoGalleryPage() {
                         </div>
                         {p.notes && <div className={styles.allPhotoNotes}>{p.notes}</div>}
                       </div>
-                    </button>
+                      <button
+                        type="button"
+                        className={styles.allPhotoDelete}
+                        aria-label="Delete photo"
+                        onClick={(e) => { e.stopPropagation(); handleDeletePhoto(p); }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}

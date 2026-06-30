@@ -199,6 +199,24 @@ export const deletePhoto = async (fileId) => {
   await driveFetch(`drive/v3/files/${fileId}`, { method: 'DELETE' });
 };
 
+/**
+ * Move a file into the app folder if it isn't there already.
+ * No-op for files that are already inside the folder. Used to back-fill
+ * older photos that were uploaded before the folder logic existed.
+ */
+export const ensureFileInFolder = async (fileId) => {
+  const folderId = await ensureFolder();
+  const meta = await driveFetch(`drive/v3/files/${fileId}?fields=parents`);
+  const json = await meta.json();
+  const parents = json.parents || [];
+  if (parents.includes(folderId)) return; // already there
+  const remove = parents.join(',');
+  await driveFetch(
+    `drive/v3/files/${fileId}?addParents=${folderId}${remove ? `&removeParents=${encodeURIComponent(remove)}` : ''}`,
+    { method: 'PATCH' }
+  );
+};
+
 /** Set of MIME types every browser can render natively. */
 const BROWSER_RENDERABLE = new Set([
   'image/jpeg',

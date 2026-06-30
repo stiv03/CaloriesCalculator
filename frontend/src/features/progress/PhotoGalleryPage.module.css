@@ -194,7 +194,7 @@
 }
 .todayLabel {
   position: absolute;
-  bottom: 2px;
+  top: 2px;
   left: 4px;
   font-size: 10px;
   font-weight: 700;
@@ -375,6 +375,27 @@
   margin-top: 4px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.allPhotoDelete {
+  align-self: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.allPhotoDelete:hover {
+  background: color-mix(in srgb, var(--color-danger, #EF4444) 16%, transparent);
+  color: var(--color-danger, #EF4444);
 }
 
 /* ── Modals ─────────────────────────────────────────────────────────── */
