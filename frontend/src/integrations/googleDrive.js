@@ -218,10 +218,16 @@ const BROWSER_RENDERABLE = new Set([
  * other non-renderable formats we fall back to Drive's auto-generated JPEG
  * thumbnail (up to 1600 px wide), which renders everywhere.
  *
+ * Notes on Drive's thumbnailLink:
+ *  - It's a pre-signed URL — DO NOT add an Authorization header (Google
+ *    rejects requests that combine a signed URL with a bearer token).
+ *  - It can be null for newly-uploaded HEIC files until Drive finishes
+ *    generating the thumbnail (asynchronously, seconds to minutes).
+ *
  * Callers should URL.revokeObjectURL() when done.
  */
 export const getPhotoObjectUrl = async (fileId) => {
-  // First ask Drive what the file is and whether it has a usable thumbnail.
+  // Ask Drive what the file is and whether it has a usable thumbnail yet.
   const metaRes = await driveFetch(`drive/v3/files/${fileId}?fields=mimeType,thumbnailLink`);
   const meta = await metaRes.json();
   const renderable = BROWSER_RENDERABLE.has((meta.mimeType || '').toLowerCase());
@@ -232,27 +238,29 @@ export const getPhotoObjectUrl = async (fileId) => {
     return URL.createObjectURL(blob);
   }
 
-  // Non-renderable (HEIC etc.) — use Drive's JPEG thumbnail, bumped to a
-  // larger size than the default 220 px. Drive's thumbnailLink encodes a
-  // signed token; we still need our access token on the request because the
-  // file is in a private scope.
+  // Non-renderable (HEIC etc.) — try the JPEG thumbnail. Bumped to a larger
+  // size than the default 220 px via the trailing =s<N> in the URL.
+  // No Authorization header: thumbnailLink is a signed URL.
   if (meta.thumbnailLink) {
-    const big = meta.thumbnailLink.replace(/=s\d+$/, '=s1600');
-    const token = await getAccessToken();
-    const res = await fetch(big, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) {
-      // Fall through to raw bytes if the thumbnail URL fails — the browser
-      // probably can't render it, but at least the download will be valid.
-      const fallback = await driveFetch(`drive/v3/files/${fileId}?alt=media`);
-      const blob = await fallback.blob();
-      return URL.createObjectURL(blob);
+    // Try a bumped-size variant first, then fall back to the URL as-is.
+    const variants = [
+      meta.thumbnailLink.replace(/=s\d+(?:$|(?=\?))/, '=s1600'),
+      meta.thumbnailLink,
+    ];
+    for (const url of variants) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const blob = await res.blob();
+          return URL.createObjectURL(blob);
+        }
+      } catch (_) { /* try next variant */ }
     }
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
   }
 
-  // No thumbnail available — return raw bytes so the user at least sees the
-  // broken-image icon rather than nothing.
+  // Either no thumbnailLink yet, or fetching it failed. As a last resort
+  // return the raw bytes — the browser likely can't render them, but at
+  // least the request will succeed and we won't break callers.
   const res = await driveFetch(`drive/v3/files/${fileId}?alt=media`);
   const blob = await res.blob();
   return URL.createObjectURL(blob);
