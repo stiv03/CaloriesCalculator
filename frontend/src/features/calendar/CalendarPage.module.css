@@ -61,6 +61,7 @@
   transition: background 120ms;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 .cell:hover { background: var(--color-surface-2); }
 
@@ -93,6 +94,8 @@
   display: flex; flex-direction: column; gap: var(--space-1);
   min-height: 100px;
   transition: background 120ms, border-color 120ms;
+  position: relative;
+  overflow: hidden;
 }
 .weekCell:hover { background: var(--color-surface-2); }
 
@@ -101,6 +104,33 @@
 .cell_ok    { border-color: color-mix(in srgb, var(--color-warn) 50%, transparent); background: color-mix(in srgb, var(--color-warn) 8%, var(--color-surface)); }
 .cell_poor  { border-color: color-mix(in srgb, var(--color-danger) 40%, transparent); background: color-mix(in srgb, var(--color-danger) 6%, var(--color-surface)); }
 .cell_bad   { border-color: color-mix(in srgb, var(--color-text-muted) 30%, transparent); }
+
+/* Missed day: a past day with nothing logged. Red tint + edge-to-edge X.
+   The X is an SVG drawn with preserveAspectRatio="none" so the two lines
+   stretch corner-to-corner in cells of any aspect ratio (square month cells
+   and taller week cells alike). */
+.cellMissed {
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface)) !important;
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent) !important;
+}
+.cellMissed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none' stroke='%23dc2626' stroke-width='0.5' stroke-opacity='0.55'%3e%3cline x1='0' y1='0' x2='10' y2='10'/%3e%3cline x1='10' y1='0' x2='0' y2='10'/%3e%3c/svg%3e");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* Dark theme uses the lighter danger red (#f87171) for the X. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cellMissed::after {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none' stroke='%23f87171' stroke-width='0.5' stroke-opacity='0.6'%3e%3cline x1='0' y1='0' x2='10' y2='10'/%3e%3cline x1='10' y1='0' x2='0' y2='10'/%3e%3c/svg%3e");
+  }
+}
+[data-theme="dark"] .cellMissed::after {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none' stroke='%23f87171' stroke-width='0.5' stroke-opacity='0.6'%3e%3cline x1='0' y1='0' x2='10' y2='10'/%3e%3cline x1='10' y1='0' x2='0' y2='10'/%3e%3c/svg%3e");
+}
 .weekCellHead { display: flex; flex-direction: column; align-items: center; gap: 1px; border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-1); margin-bottom: var(--space-1); }
 .weekDay { font-size: 9px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .weekDate { font-size: 16px; font-weight: 700; color: var(--color-text); }

@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getCalendarMonth } from '../../api/calendar';
 import { getNote } from '../../api/notes';
+import WeekDashboard from './WeekDashboard';
 import { setRestDay as apiSetRestDay } from '../../api/workouts';
 import { getUserId } from '../../auth/storage';
 import styles from './CalendarPage.module.css';
@@ -34,7 +35,8 @@ function dayScore(day) {
     if (diff <= 0.2) score += 25; else if (diff <= 0.4) score += 12;
   }
   if (day.supplementsTotal > 0) score += Math.round((day.supplementsTaken / day.supplementsTotal) * 25);
-  else score += 25;
+  else if (!day.hasSupplementRoutine) score += 25;
+  // else: user has a supplement routine but tracked none this day → 0 points.
   if (day.hasWorkout) score += 25;
   if (day.weight != null) score += 15;
   if (day.hasNote) score += 10;
@@ -47,6 +49,15 @@ function scoreTone(score) {
   if (score >= 50) return 'ok';
   if (score >= 25) return 'poor';
   return 'bad';
+}
+
+/**
+ * A "missed" day is a past day (strictly before today) with nothing logged.
+ * Today and future days are never marked missed — they simply haven't happened.
+ * `dateKey` and `todayKey` are YYYY-MM-DD strings (lexicographically ordered).
+ */
+function isMissedDay(score, dateKey, todayKey) {
+  return score === null && dateKey < todayKey;
 }
 
 // Generate array of {year, month} for range
@@ -98,6 +109,18 @@ export default function CalendarPage() {
       loadRange(from, to);
     }
   }, [view]);
+
+  // In week view, load the visible week whenever the cursor moves (prev/next),
+  // so the grid and dashboard always have that week's data.
+  useEffect(() => {
+    if (view !== 'week') return;
+    const start = new Date(cursor);
+    const dow = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - dow);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    loadRange(start, end);
+  }, [view, cursor, loadRange]);
 
   // Scroll to today's month on first load
   useEffect(() => {
@@ -158,8 +181,9 @@ export default function CalendarPage() {
             const score = dayScore(data);
             const tone = scoreTone(score);
             const isToday = key === isoDate(today);
+            const missed = isMissedDay(score, key, isoDate(today));
             return (
-              <button key={key} className={[styles.cell, styles[`cell_${tone}`], isToday ? styles.cellToday : ''].join(' ')} onClick={() => openDay(key)}>
+              <button key={key} className={[styles.cell, styles[`cell_${tone}`], missed ? styles.cellMissed : '', isToday ? styles.cellToday : ''].join(' ')} onClick={() => openDay(key)}>
                 <div className={styles.cellTop}>
                   <span className={styles.cellDate}>{d.getDate()}</span>
                   {score !== null && <span className={[styles.cellScore, styles[`cellScore_${tone}`]].join(' ')}>{score}%</span>}
@@ -198,8 +222,9 @@ export default function CalendarPage() {
             const score = dayScore(data);
             const tone = scoreTone(score);
             const isToday = key === isoDate(today);
+            const missed = isMissedDay(score, key, isoDate(today));
             return (
-              <button key={key} className={[styles.weekCell, styles[`cell_${tone}`], isToday ? styles.cellToday : ''].join(' ')} onClick={() => openDay(key)}>
+              <button key={key} className={[styles.weekCell, styles[`cell_${tone}`], missed ? styles.cellMissed : '', isToday ? styles.cellToday : ''].join(' ')} onClick={() => openDay(key)}>
                 <span className={[styles.weekDate, isToday ? styles.weekDateToday : ''].join(' ')}>{day.getDate()}</span>
                 {score !== null && <div className={[styles.weekScore, styles[`cellScore_${tone}`]].join(' ')}>{score}%</div>}
                 <div className={styles.weekDots}>
@@ -215,6 +240,7 @@ export default function CalendarPage() {
             );
           })}
         </div>
+        <WeekDashboard days={days.map((day) => dayData[isoDate(day)])} />
       </div>
     );
   };
@@ -321,13 +347,15 @@ export default function CalendarPage() {
                     <div className={styles.summaryLabel}>Workout</div>
                     <div className={styles.summaryRow}>
                       <span className={styles.summaryVal}>Rest day</span>
-                      <button
-                        type="button"
-                        className={styles.restLink}
-                        onClick={() => toggleRestDay(selected.day.date, false)}
-                      >
-                        Unmark
-                      </button>
+                      {selected.day.date === isoDate(today) && (
+                        <button
+                          type="button"
+                          className={styles.restLink}
+                          onClick={() => toggleRestDay(selected.day.date, false)}
+                        >
+                          Unmark
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

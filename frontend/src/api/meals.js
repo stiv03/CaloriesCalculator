@@ -38,3 +38,19 @@ export async function createProduct(product) {
   const { data } = await client.post('/new/product', product);
   return data;
 }
+
+/**
+ * Look up a product by barcode (our DB first, then Open Food Facts on the server).
+ * Returns { source: 'local' | 'external', product } on a hit, or null if not found.
+ */
+export async function lookupBarcode(code) {
+  try {
+    const { data } = await client.get(`/products/barcode/${encodeURIComponent(code)}`);
+    return data;
+  } catch (err) {
+    // client.js normalizes errors to { status, message, ... } (no .response),
+    // so check the normalized status. 404 = not found -> fall back to manual entry.
+    if (err && err.status === 404) return null;
+    throw err;
+  }
+}

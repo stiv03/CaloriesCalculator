@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import WeightChart from '../WeightChart';
 import { computeWeeklyAverages } from '../weeklyAverages';
+import { computeGoalETA } from '../goalProjection';
 import { updateWeight } from '../../../api/profile';
 import { getUserId } from '../../../auth/storage';
 import { needsWeightReminder } from '../reminders';
@@ -11,12 +12,105 @@ import ReminderDot from '../../../components/ReminderDot';
 import ErrorBanner from '../../../components/ErrorBanner';
 import styles from './WeightTab.module.css';
 
+const ETA_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/** "Aug 21" for the current year, "Aug 21, 2027" otherwise. Accepts a Date or ISO string. */
+function formatEtaDate(value) {
+  const d = value instanceof Date ? value : new Date(`${value}T00:00:00`);
+  if (Number.isNaN(+d)) return String(value);
+  const base = `${ETA_MONTHS[d.getMonth()]} ${d.getDate()}`;
+  return d.getFullYear() === new Date().getFullYear() ? base : `${base}, ${d.getFullYear()}`;
+}
+
+/**
+ * Goal progress bar from the user-entered `start` weight → `target`, with the
+ * current week's average marked on it. Below: weight left, the weekly rate from
+ * recent averages, and an honest ETA (no flooring — shows the real arithmetic).
+ */
+function GoalProgress({ eta, start, target, current }) {
+  if (start == null || target == null) {
+    return <p className={styles.goalMuted}>Set your starting and target weight in Profile.</p>;
+  }
+  if (current == null) {
+    return <p className={styles.goalMuted}>Log this week's weight to see your progress.</p>;
+  }
+
+  const span = target - start;
+  const pct = span === 0 ? 100 : Math.max(0, Math.min(100, ((current - start) / span) * 100));
+  const kgToGo = target - current;
+  const reached = Math.abs(kgToGo) <= 0.1;
+
+  // Rate + ETA come straight from the recent-weeks trend, shown honestly.
+  const rate = eta && eta.rateKgPerWeek != null ? eta.rateKgPerWeek : null;
+  // Weeks = weight left ÷ rate, but only when the trend actually moves toward
+  // the target (same sign). Otherwise we can't give a time.
+  let weeks = null;
+  if (rate != null && Math.sign(rate) === Math.sign(kgToGo) && Math.abs(rate) > 0.01) {
+    weeks = kgToGo / rate;
+  }
+  const etaDate = (() => {
+    if (weeks == null) return null;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + Math.round(weeks * 7));
+    return d;
+  })();
+  const weeksLabel = weeks == null ? null
+    : weeks < 1 ? 'under 1 week'
+    : `~${Math.round(weeks)} ${Math.round(weeks) === 1 ? 'week' : 'weeks'}`;
+  const rateLabel = rate != null
+    ? `${rate > 0 ? '+' : '−'}${Math.abs(rate).toFixed(2)} kg/wk`
+    : null;
+
+  return (
+    <div className={styles.goalWrap}>
+      <div className={styles.goalEnds}>
+        <span className={styles.goalEnd}>
+          <span className={styles.goalEndVal}>{start.toFixed(1)} kg</span>
+          <span className={styles.goalEndCap}>Start</span>
+        </span>
+        <span className={[styles.goalEnd, styles.goalEndRight].join(' ')}>
+          <span className={styles.goalTargetVal}>{target.toFixed(1)} kg</span>
+          <span className={styles.goalEndCap}>Target</span>
+        </span>
+      </div>
+      <div className={styles.goalBarZone}>
+        <div className={styles.goalTrack}>
+          <div className={styles.goalFill} style={{ width: `${pct}%` }} />
+        </div>
+        {!reached && pct > 3 && pct < 97 && (
+          <div className={styles.goalMarker} style={{ left: `${pct}%` }}>
+            <span className={styles.goalMarkerLabel}>
+              <span className={styles.goalMarkerCap}>Now</span> {current.toFixed(2)} kg
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={styles.goalSummary}>
+        {reached ? (
+          <span className={styles.goalStrong}>Target reached — nice.</span>
+        ) : (
+          <>
+            <span className={styles.goalToGo}>{Math.abs(kgToGo).toFixed(2)} kg to go</span>
+            {weeksLabel && <>{' · '}<span className={styles.goalTarget}>{weeksLabel}</span></>}
+            {etaDate && <>{' · '}<span className={styles.goalTarget}>{formatEtaDate(etaDate)}</span></>}
+            {rateLabel && <span className={styles.goalRate}> · {rateLabel}</span>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function WeightTab({
   user, weightRecords, allMacros,
   onRefreshUser, onRefreshWeights,
 }) {
   const userId = getUserId();
   const weekly = useMemo(() => computeWeeklyAverages(weightRecords), [weightRecords]);
+  const eta = useMemo(
+    () => computeGoalETA({ weightRecords, goalWeight: user?.goalWeight, today: new Date() }),
+    [weightRecords, user],
+  );
 
   // Group records by ISO week and compute per-week averages for the list.
   const groupedByWeek = useMemo(() => {
@@ -149,8 +243,18 @@ export default function WeightTab({
         </div>
       </div>
 
+      <div className={styles.goalCard}>
+        <div className={styles.goalHead}>Goal</div>
+        <GoalProgress
+          eta={eta}
+          start={user?.startWeight != null ? Number(user.startWeight) : (user?.weight != null ? Number(user.weight) : null)}
+          target={user?.goalWeight != null ? Number(user.goalWeight) : null}
+          current={weekly.thisWeek}
+        />
+      </div>
+
       <div className={styles.card}>
-        <WeightChart weightRecords={weightRecords} />
+        <WeightChart weightRecords={weightRecords} goalWeight={user?.goalWeight} />
       </div>
 
       <div className={styles.card}>
@@ -171,11 +275,20 @@ export default function WeightTab({
                         g.tone === 'good' ? styles.weekAvgGood : '',
                         g.tone === 'bad' ? styles.weekAvgBad : '',
                       ].join(' ')}>
-                        <span className={styles.weekAvgLabel}>⌀ {g.label}</span>
-                        <strong className={styles.weekAvgValue}>
-                          {g.diff != null ? (g.diff > 0 ? '▲' : '▼') + ' ' : ''}
-                          {g.avg.toFixed(2)} kg
-                        </strong>
+                        <span className={styles.weekAvgLabel}>
+                          <span className={styles.weekAvgTag}>
+                            <span className={styles.weekAvgTagFull}>Average</span>
+                            <span className={styles.weekAvgTagShort}>AVG</span>
+                          </span> {g.label}
+                        </span>
+                        <span className={styles.weekAvgValueWrap}>
+                          {g.diff != null && (
+                            <span className={styles.weekAvgPill}>
+                              {g.diff > 0 ? '+' : '−'}{Math.abs(g.diff).toFixed(2)} kg
+                            </span>
+                          )}
+                          <strong className={styles.weekAvgValue}>{g.avg.toFixed(2)} kg</strong>
+                        </span>
                       </li>
                       {g.records.map((r, i) => (
                         <li key={`${r.date}-${i}`} className={styles.row}>

@@ -20,7 +20,7 @@ public class SupplementController {
 
     private final SupplementService supplementService;
 
-    public record SupplementRequest(String name, String dosage) {}
+    public record SupplementRequest(String name, String dosage, String category) {}
     public record IntakeRequest(Long supplementId, LocalDate date, boolean taken) {}
     public record ReorderRequest(List<Long> orderedIds) {}
 
@@ -40,7 +40,7 @@ public class SupplementController {
     @PostMapping("/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<SupplementDTO> create(@PathVariable Long userId, @RequestBody SupplementRequest req) {
-        var dto = supplementService.createSupplement(userId, req.name(), req.dosage());
+        var dto = supplementService.createSupplement(userId, req.name(), req.dosage(), req.category());
         return new ResponseEntity<>(dto, HttpStatus.CREATED);
     }
 
@@ -48,7 +48,7 @@ public class SupplementController {
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<SupplementDTO> update(@PathVariable Long userId, @PathVariable Long supplementId,
                                                 @RequestBody SupplementRequest req) {
-        return ResponseEntity.ok(supplementService.updateSupplement(userId, supplementId, req.name(), req.dosage()));
+        return ResponseEntity.ok(supplementService.updateSupplement(userId, supplementId, req.name(), req.dosage(), req.category()));
     }
 
     @DeleteMapping("/{userId}/{supplementId}")

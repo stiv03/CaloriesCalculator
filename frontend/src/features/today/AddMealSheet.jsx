@@ -4,11 +4,24 @@ import Sheet from '../../components/Sheet';
 import Field from '../../components/Field';
 import Button from '../../components/Button';
 import ErrorBanner from '../../components/ErrorBanner';
-import { addMeal, searchProducts } from '../../api/meals';
+import { addMeal, searchProducts, lookupBarcode } from '../../api/meals';
 import { getTemplates, createTemplate, deleteTemplate, addItemToTemplate, updateTemplateItem, removeTemplateItem } from '../../api/templates';
 import { getUserId } from '../../auth/storage';
 import AddProductSheet from './AddProductSheet';
+import BarcodeScanner from './BarcodeScanner';
 import styles from './AddMealSheet.module.css';
+
+/** Barcode glyph — vertical bars of varying width. Uses currentColor. */
+const BarcodeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <rect x="3" y="5" width="1.5" height="14" />
+    <rect x="6" y="5" width="1" height="14" />
+    <rect x="9" y="5" width="2" height="14" />
+    <rect x="13" y="5" width="1" height="14" />
+    <rect x="16" y="5" width="2.5" height="14" />
+    <rect x="20" y="5" width="1" height="14" />
+  </svg>
+);
 
 export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealType }) {
   const userId = getUserId();
@@ -22,6 +35,9 @@ export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealTyp
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [productSheetOpen, setProductSheetOpen] = useState(false);
+  const [productPrefill, setProductPrefill] = useState(null); // seeds AddProductSheet after a scan/lookup
+  const [scanning, setScanning] = useState(false);
+  const [looking, setLooking] = useState(false);
   const [searchNonce, setSearchNonce] = useState(0);
 
   // Templates state
@@ -60,6 +76,43 @@ export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealTyp
   }, [query, tab, step, searchNonce]);
 
   const pick = (product) => { setSelected(product); setStep('grams'); setGrams(''); };
+
+  // Barcode lookup from the search row. Local hit -> jump straight to the grams
+  // step for that product. External hit -> open the create sheet prefilled with
+  // the OFF data. Miss -> open the create sheet with just the barcode.
+  const runBarcode = async (code) => {
+    const trimmed = String(code || '').trim();
+    if (!trimmed) return;
+    setLooking(true);
+    setServerError('');
+    try {
+      const result = await lookupBarcode(trimmed);
+      if (result && result.source === 'local' && result.product) {
+        pick(result.product); // already in our DB with an id — log it directly
+      } else if (result && result.product) {
+        setProductPrefill({
+          ...result.product,
+          notice: 'Product found. Set the type and check the macros are correct before saving.',
+        });
+        setProductSheetOpen(true);
+      } else {
+        setProductPrefill({
+          barcode: trimmed,
+          notice: `Product not found for barcode ${trimmed}. Enter its details below to add it — it'll be saved for next time.`,
+        });
+        setProductSheetOpen(true);
+      }
+    } catch (err) {
+      setServerError(err.message || 'Barcode lookup failed');
+    } finally {
+      setLooking(false);
+    }
+  };
+
+  const handleScanDetected = (code) => {
+    setScanning(false);
+    runBarcode(code);
+  };
 
   const handleAdd = async () => {
     const n = parseFloat(grams);
@@ -225,13 +278,27 @@ export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealTyp
         {/* Search tab — also used when adding a product to an existing template */}
         {step === 'search' && tab === 'search' && (
           <div className={styles.search}>
-            <Field
-              label="Search"
-              placeholder="Type a product name…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
+            <div className={styles.searchRow}>
+              <div className={styles.searchField}>
+                <Field
+                  label="Search"
+                  placeholder="Type a product name…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <button
+                type="button"
+                className={styles.scanBtn}
+                onClick={() => setScanning(true)}
+                disabled={looking}
+                aria-label="Scan barcode"
+                title="Scan barcode"
+              >
+                {looking ? '…' : (<><BarcodeIcon /><span>Scan</span></>)}
+              </button>
+            </div>
             <div className={styles.results}>
               {loadingSearch && <p className={styles.muted}>Searching…</p>}
               {!loadingSearch && query && results.length === 0 && (
@@ -381,14 +448,22 @@ export default function AddMealSheet({ isOpen, onClose, onAdded, onDone, mealTyp
 
       <AddProductSheet
         isOpen={productSheetOpen}
-        onClose={() => setProductSheetOpen(false)}
+        onClose={() => { setProductSheetOpen(false); setProductPrefill(null); }}
         defaultName={query}
+        prefill={productPrefill}
         onCreated={(created) => {
           setProductSheetOpen(false);
+          setProductPrefill(null);
           setQuery(created.name);
           setSearchNonce((n) => n + 1);
         }}
       />
+      {scanning && (
+        <BarcodeScanner
+          onDetected={handleScanDetected}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </>
   );
 }

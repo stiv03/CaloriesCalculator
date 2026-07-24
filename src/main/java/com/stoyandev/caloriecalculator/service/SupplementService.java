@@ -10,9 +10,9 @@ public interface SupplementService {
 
     List<SupplementDTO> listSupplements(Long userId);
 
-    SupplementDTO createSupplement(Long userId, String name, String dosage);
+    SupplementDTO createSupplement(Long userId, String name, String dosage, String category);
 
-    SupplementDTO updateSupplement(Long userId, Long supplementId, String name, String dosage);
+    SupplementDTO updateSupplement(Long userId, Long supplementId, String name, String dosage, String category);
 
     void deleteSupplement(Long userId, Long supplementId);
 

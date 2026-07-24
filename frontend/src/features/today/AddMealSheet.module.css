@@ -131,6 +131,36 @@
 
 .search { display: flex; flex-direction: column; gap: var(--space-4); }
 
+/* Search input + green Scan button on one row. */
+.searchRow {
+  display: flex;
+  align-items: flex-end; /* align button with the input, below the field's label */
+  gap: var(--space-2);
+}
+
+.searchField { flex: 1; }
+
+.scanBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-md, 12px);
+  background: #22c55e;            /* green */
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.scanBtn:hover:not(:disabled) { background: #16a34a; }
+.scanBtn:disabled { opacity: 0.6; cursor: default; }
+
 .results {
   display: flex;
   flex-direction: column;

@@ -41,6 +41,142 @@ function sessionVolume(workout, exerciseName) {
   return ex.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
 }
 
+/**
+ * Rank key for a session's performance on one exercise, as a comparable tuple.
+ * Priority (each level breaks ties of the level above):
+ *   1. Heaviest weight lifted on any set — heavier wins even with fewer reps.
+ *   2. Most reps achieved at that heaviest weight (best single top set).
+ *   3. Total reps done at that heaviest weight (rewards more sets at the top).
+ *   4. Total volume (Σ weight×reps) as a final tiebreak.
+ * Returns null for an empty session. Compare with `rankKeyCmp`.
+ */
+function sessionRankKey(sets) {
+  if (!sets || !sets.length) return null;
+  const valid = sets.filter(s => s.weight > 0 && s.reps > 0);
+  if (!valid.length) return null;
+  const maxWeight = Math.max(...valid.map(s => s.weight));
+  const topSets = valid.filter(s => s.weight === maxWeight);
+  const topSetReps = Math.max(...topSets.map(s => s.reps));       // best single set at top weight
+  const totalRepsAtTop = topSets.reduce((sum, s) => sum + s.reps, 0);
+  const volume = valid.reduce((sum, s) => sum + s.weight * s.reps, 0);
+  return [maxWeight, topSetReps, totalRepsAtTop, volume];
+}
+
+/** Compare two rank keys (from `sessionRankKey`). >0 if a beats b, 0 if equal. */
+function rankKeyCmp(a, b) {
+  if (!a) return b ? -1 : 0;
+  if (!b) return 1;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+/**
+ * For each exercise, find which session holds its all-time best set (its PR),
+ * ranked by weight first then reps (see `sessionRankKey`). Returns a map:
+ * exerciseName -> sessionId of the PR session. Ties resolve to the earliest
+ * session (the one that first reached that best).
+ */
+function computePrSessions(sessions, exercises) {
+  const prByExercise = {};
+  for (const ex of exercises) {
+    let bestKey = null;
+    let bestId = null;
+    for (const w of sessions) {
+      const found = w.exercises.find(e => e.exerciseName === ex.exerciseName);
+      const key = sessionRankKey(found?.sets);
+      if (key && rankKeyCmp(key, bestKey) > 0) { // strictly better → first to reach it wins
+        bestKey = key;
+        bestId = w.id;
+      }
+    }
+    if (bestId != null && bestKey) prByExercise[ex.exerciseName] = bestId;
+  }
+  return prByExercise;
+}
+
+/**
+ * Parse a target like "3×8", "3x8-10", "4×8–12", "2X20-15" into
+ * { sets, repMin, repMax, repLabel }. Handles x/X/× separators, -/– range
+ * dashes, and ranges written either ascending (8-10) or descending (20-15).
+ * `repLabel` is the reps portion as written (e.g. "8-6", "8"). Returns null if
+ * no rep info can be parsed.
+ */
+function parseTarget(targetSetsReps) {
+  if (!targetSetsReps) return null;
+  const norm = targetSetsReps.replace(/[×xX]/g, 'x').replace(/[–—]/g, '-').trim();
+  // sets x reps, where reps may be a single number or a-b range
+  const m = norm.match(/^(\d+)\s*x\s*(\d+)(?:\s*-\s*(\d+))?/);
+  if (!m) {
+    // no "sets x" prefix — try a bare rep or range
+    const r = norm.match(/(\d+)(?:\s*-\s*(\d+))?/);
+    if (!r) return null;
+    const a = parseInt(r[1], 10);
+    const b = r[2] != null ? parseInt(r[2], 10) : a;
+    return { sets: null, repMin: Math.min(a, b), repMax: Math.max(a, b), repLabel: r[2] != null ? `${a}-${b}` : `${a}` };
+  }
+  const sets = parseInt(m[1], 10);
+  const a = parseInt(m[2], 10);
+  const b = m[3] != null ? parseInt(m[3], 10) : a;
+  return { sets, repMin: Math.min(a, b), repMax: Math.max(a, b), repLabel: m[3] != null ? `${a}-${b}` : `${a}` };
+}
+
+/**
+ * Progression suggestion for the next session of one exercise, comparing the
+ * latest result against the target set×rep range.
+ *
+ * Rule (double progression):
+ *  - If EVERY working set (at the top weight) reached the top of the rep range
+ *    → you hit the target → suggest adding weight (+2.5 kg).
+ *  - Otherwise → keep the same weight and add reps, aiming for the top of the
+ *    range.
+ * Returns { kind: 'weight'|'reps', weight, repLabel, shortSets } or null.
+ * `shortSets` is the 1-based set numbers (at the top weight) that fell below
+ * the top of the rep range — used to tell the user exactly where to add reps.
+ */
+const WEIGHT_STEP = 2.5;
+function nextSuggestion(lastSets, target) {
+  if (!lastSets || !lastSets.length) return null;
+  const weights = lastSets.map(s => s.weight).filter(w => w > 0);
+  if (!weights.length) return null;
+  const topWeight = Math.max(...weights);
+  const workingSets = lastSets.filter(s => s.weight === topWeight && s.reps > 0);
+  if (!workingSets.length) return null;
+
+  // No usable rep range → can't judge "hit target", just prompt to add reps.
+  if (!target || target.repMax == null) {
+    return { kind: 'reps', weight: topWeight, repLabel: null, shortSets: [] };
+  }
+
+  const hitTop = workingSets.every(s => s.reps >= target.repMax);
+  if (hitTop) {
+    return { kind: 'weight', weight: topWeight + WEIGHT_STEP, repLabel: target.repLabel, shortSets: [] };
+  }
+  // Which sets (1-based, by their position among the full set list) fell short.
+  const shortSets = lastSets
+    .map((s, i) => ({ n: i + 1, s }))
+    .filter(({ s }) => s.weight === topWeight && s.reps > 0 && s.reps < target.repMax)
+    .map(({ n }) => n);
+  return { kind: 'reps', weight: topWeight, repLabel: target.repLabel, shortSets };
+}
+
+/** Compact "last time" summary for an exercise's sets, e.g. "80 kg × 8,8,7". */
+function lastTimeSummary(sets) {
+  if (!sets || !sets.length) return null;
+  const allSame = sets.every(s => s.weight === sets[0].weight);
+  if (allSame) return `${sets[0].weight} kg × ${sets.map(s => s.reps).join(',')}`;
+  return sets.map(s => `${s.weight}×${s.reps}`).join(', ');
+}
+
+/** Human list of set numbers: [3] → "set 3", [2,3] → "sets 2 & 3", [1,2,3] → "sets 1, 2 & 3". */
+function formatSetList(nums) {
+  if (!nums || !nums.length) return '';
+  if (nums.length === 1) return `set ${nums[0]}`;
+  const head = nums.slice(0, -1).join(', ');
+  return `sets ${head} & ${nums[nums.length - 1]}`;
+}
+
 /** Scrollable previous-sessions table.
  *  sessions: array of workout logs (oldest → newest)
  *  exercises: [{exerciseName, targetSetsReps}]
@@ -54,6 +190,12 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
       scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     }
   }, []); // only on mount
+
+  // All-time best (estimated 1RM) session per exercise — its PR cell gets a star.
+  const prSessions = React.useMemo(
+    () => computePrSessions(sessions, exercises),
+    [sessions, exercises],
+  );
 
   if (!sessions.length) return null;
   return (
@@ -98,9 +240,11 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
                       else if (curR < prevR) cellClass += ' ' + styles.cellDown;
                     }
                   }
+                  const isPr = found?.sets?.length && prSessions[ex.exerciseName] === w.id;
                   return (
                     <td key={w.id} className={cellClass}>
                       {found ? formatSets(found.sets) : '—'}
+                      {isPr && <span className={styles.prStar} title="Personal record (heaviest weight, then most reps)">★</span>}
                     </td>
                   );
                 })}
@@ -149,6 +293,35 @@ export default function WorkoutPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [openExercise, setOpenExercise] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * Per-exercise lookup of the most recent PAST session's sets for the template
+   * being logged, keyed by exercise name. "Past" = strictly before today's log
+   * date, so re-opening today's draft doesn't compare against itself. Used to
+   * show "Last time" + the double-progression "Try" suggestion on each card.
+   */
+  const lastByExercise = React.useMemo(() => {
+    const map = {};
+    if (!selectedTemplate) return map;
+    // Most recent SAVED session on or before the log date. history holds only
+    // saved sessions (never the in-progress draft), so `<= logDate` safely picks
+    // up a session you already logged today without comparing against the draft.
+    const matches = history.filter(w =>
+      !w.isRestDay && (
+        w.templateId === selectedTemplate.id ||
+        (w.templateId == null && w.exerciseType === selectedTemplate.exerciseType &&
+         (w.label || '') === (selectedTemplate.label || ''))
+      ) && w.date <= logDate
+    ); // history is newest-first
+    for (const ex of selectedTemplate.exercises) {
+      for (const w of matches) {
+        const found = w.exercises.find(e => e.exerciseName === ex.exerciseName);
+        if (found?.sets?.length) { map[ex.exerciseName] = { sets: found.sets, date: w.date }; break; }
+      }
+    }
+    return map;
+  }, [history, selectedTemplate, logDate]);
+
   const [restTimer, setRestTimer] = useState(null); // { exerciseName, remaining, total }
   const [restDefaults, setRestDefaults] = useState({}); // { exerciseName: seconds }
   const restRef = useRef(null);
@@ -919,7 +1092,12 @@ export default function WorkoutPage() {
           {selectedTemplate.exercises.map(ex => {
             const isOpen = openExercise === ex.exerciseName;
             const exSets = sets[ex.exerciseName] || [];
-            const filled = exSets.filter(s => s.weight && s.reps).length;            return (
+            const filled = exSets.filter(s => s.weight && s.reps).length;
+            const last = lastByExercise[ex.exerciseName];
+            const target = parseTarget(ex.targetSetsReps);
+            const suggestion = last ? nextSuggestion(last.sets, target) : null;
+            const lastLabel = last ? lastTimeSummary(last.sets) : null;
+            return (
               <React.Fragment key={ex.exerciseName}>
                 {restTimer?.exerciseName === ex.exerciseName && (() => {
                   const pct = restTimer.remaining / restTimer.total;
@@ -954,6 +1132,39 @@ export default function WorkoutPage() {
                 </button>
                 {isOpen && (
                   <>
+                    {(lastLabel || suggestion) && (
+                      <div className={styles.coachCard}>
+                        {lastLabel && (
+                          <div className={styles.coachLastRow}>
+                            <span className={styles.coachLabel}>Last time</span>
+                            <span className={styles.coachLast}>{lastLabel}</span>
+                            {last?.date && <span className={styles.coachDatePill}>{last.date}</span>}
+                          </div>
+                        )}
+                        {suggestion && (
+                          <div className={styles.coachTryRow}>
+                            <span className={styles.coachTryIcon}>
+                              {suggestion.kind === 'weight' ? '▲' : '↻'}
+                            </span>
+                            <div className={styles.coachTryMain}>
+                              <div className={styles.coachTryValue}>
+                                {suggestion.weight}<span className={styles.coachTryUnit}>kg</span>
+                                {suggestion.repLabel && (
+                                  <span className={styles.coachTryReps}>× {suggestion.repLabel}</span>
+                                )}
+                              </div>
+                              <div className={styles.coachTryHint}>
+                                {suggestion.kind === 'weight'
+                                  ? 'Increase the weight'
+                                  : suggestion.shortSets?.length
+                                    ? <>Aim for more reps on <span className={styles.coachSets}>{formatSetList(suggestion.shortSets)}</span></>
+                                    : 'Aim for more reps'}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className={styles.setHeader}>
                       <span>Set</span><span>Weight (kg)</span><span>Reps</span><span></span>
                     </div>

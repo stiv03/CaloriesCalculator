@@ -164,13 +164,13 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     public void setRestDay(Long userId, LocalDate date, boolean rest) {
+        // Rest days can only be marked or unmarked for today; past days are locked.
+        if (!date.equals(LocalDate.now())) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Rest day can only be changed for today.");
+        }
         Optional<Workout> existing = workoutRepository.findByUserIdAndDate(userId, date);
         if (rest) {
-            // Only today can be newly marked as rest. Unmarking past rest days stays allowed.
-            if (!date.equals(LocalDate.now())) {
-                throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
-                        "Rest day can only be set for today.");
-            }
             if (existing.isPresent() && !existing.get().isRestDay()) {
                 throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
                         "A workout is already logged for this day.");

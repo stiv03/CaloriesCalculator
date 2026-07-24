@@ -54,7 +54,15 @@ public class CalendarController {
                 .filter(w -> !w.getDate().isBefore(from) && !w.getDate().isAfter(to))
                 .toList();
 
-        int totalSupplements = supplementRepository.findByUserIdOrderBySortOrderAscIdAsc(userId).size();
+        // Split by schedule type: only PREWORKOUT supps are training-only (due on
+        // workout days, and always "today" so the checklist still reminds). Every
+        // other category — DAILY, SLEEP, or a null/legacy value — is due daily.
+        var allSupps = supplementRepository.findByUserIdOrderBySortOrderAscIdAsc(userId);
+        int totalSupplements = allSupps.size();
+        int trainingCount = (int) allSupps.stream()
+                .filter(s -> s.getCategory() == com.stoyandev.caloriecalculator.entity.enums.SupplementCategory.PREWORKOUT)
+                .count();
+        int dailyCount = totalSupplements - trainingCount;
 
         List<SupplementIntake> intakes = supplementIntakeRepository
                 .findBySupplementUserIdAndDateBetween(userId, from, to);
@@ -70,6 +78,13 @@ public class CalendarController {
         Map<LocalDate, Long> intakesByDay = intakes.stream()
                 .filter(SupplementIntake::isTaken)
                 .collect(Collectors.groupingBy(SupplementIntake::getDate, Collectors.counting()));
+        // How many supplements were actually tracked on each past day (taken or not).
+        // Using this as the per-day denominator keeps historical scores stable: adding
+        // a new supplement today no longer retroactively lowers past days' scores.
+        Map<LocalDate, Long> trackedByDay = intakes.stream()
+                .collect(Collectors.groupingBy(SupplementIntake::getDate, Collectors.counting()));
+
+        LocalDate today = LocalDate.now();
 
         List<CalendarDayDTO> result = new ArrayList<>();
         LocalDate cur = from;
@@ -91,6 +106,15 @@ public class CalendarController {
 
             Workout w = workoutByDay.get(day);
             boolean isRest = w != null && w.isRestDay();
+            // Today is scored against the current supplement list; past days are scored
+            // against what was tracked that day, so historical scores don't shift when
+            // supplements are added or removed later. PREWORKOUT supps are only due on
+            // non-rest days — on a rest day (incl. today) they are excluded from the
+            // denominator. Past rest days already exclude them naturally, since a
+            // pre-workout supp can never have an intake row on a rest day.
+            int dayTotalSupps = day.isBefore(today)
+                    ? trackedByDay.getOrDefault(day, 0L).intValue()
+                    : (isRest ? dailyCount : dailyCount + trainingCount);
             result.add(new CalendarDayDTO(
                     day, calories, calorieGoal, protein, carbs, fat,
                     weightByDay.get(day),
@@ -98,8 +122,9 @@ public class CalendarController {
                     w != null,
                     isRest ? null : (w != null ? w.getExerciseType().name() : null),
                     isRest ? null : (w != null ? w.getLabel() : null),
-                    totalSupplements,
+                    dayTotalSupps,
                     intakesByDay.getOrDefault(day, 0L).intValue(),
+                    totalSupplements > 0,
                     isRest
             ));
             cur = cur.plusDays(1);

@@ -4,6 +4,7 @@ import com.stoyandev.caloriecalculator.dto.SupplementDTO;
 import com.stoyandev.caloriecalculator.dto.SupplementIntakeDTO;
 import com.stoyandev.caloriecalculator.entity.Supplement;
 import com.stoyandev.caloriecalculator.entity.SupplementIntake;
+import com.stoyandev.caloriecalculator.entity.enums.SupplementCategory;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.mapper.SupplementMapper;
 import com.stoyandev.caloriecalculator.repository.SupplementIntakeRepository;
@@ -36,6 +37,24 @@ public class SupplementServiceImpl implements SupplementService {
                 .forEach(s -> { s.setSortOrder(s.getId().intValue()); supplementRepository.save(s); });
     }
 
+    @PostConstruct
+    @Transactional
+    public void backfillCategory() {
+        supplementRepository.findAll().stream()
+                .filter(s -> s.getCategory() == null)
+                .forEach(s -> { s.setCategory(SupplementCategory.DAILY); supplementRepository.save(s); });
+    }
+
+    /** Parse a category name, defaulting to DAILY for null/blank/unknown values. */
+    private static SupplementCategory parseCategory(String category) {
+        if (category == null || category.isBlank()) return SupplementCategory.DAILY;
+        try {
+            return SupplementCategory.valueOf(category.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return SupplementCategory.DAILY;
+        }
+    }
+
     @Override
     public List<SupplementDTO> listSupplements(Long userId) {
         return supplementRepository.findByUserIdOrderBySortOrderAscIdAsc(userId).stream()
@@ -44,7 +63,7 @@ public class SupplementServiceImpl implements SupplementService {
     }
 
     @Override
-    public SupplementDTO createSupplement(Long userId, String name, String dosage) {
+    public SupplementDTO createSupplement(Long userId, String name, String dosage, String category) {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name is required");
         }
@@ -54,14 +73,16 @@ public class SupplementServiceImpl implements SupplementService {
         s.setUser(user);
         s.setName(name.trim());
         s.setDosage(dosage == null || dosage.isBlank() ? null : dosage.trim());
+        s.setCategory(parseCategory(category));
         return SupplementMapper.toDto(supplementRepository.save(s));
     }
 
     @Override
-    public SupplementDTO updateSupplement(Long userId, Long supplementId, String name, String dosage) {
+    public SupplementDTO updateSupplement(Long userId, Long supplementId, String name, String dosage, String category) {
         var s = ownedSupplement(userId, supplementId);
         if (name != null && !name.isBlank()) s.setName(name.trim());
         s.setDosage(dosage == null || dosage.isBlank() ? null : dosage.trim());
+        s.setCategory(parseCategory(category));
         return SupplementMapper.toDto(supplementRepository.save(s));
     }
 

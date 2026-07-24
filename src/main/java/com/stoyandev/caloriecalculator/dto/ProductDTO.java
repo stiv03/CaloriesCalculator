@@ -9,5 +9,6 @@ public record ProductDTO(String name,
                          double caloriesPer100Grams,
                          double proteinPer100Grams,
                          double fatPer100Grams,
-                         double carbsPer100Grams) {
+                         double carbsPer100Grams,
+                         String barcode) {
 }

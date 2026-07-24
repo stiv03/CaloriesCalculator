@@ -23,6 +23,7 @@ const EMPTY = {
   proteinPer100Grams: '',
   fatPer100Grams: '',
   carbsPer100Grams: '',
+  barcode: '',
 };
 
 function validate(form) {
@@ -36,21 +37,49 @@ function validate(form) {
   return e;
 }
 
-/** Returns the created product to the caller via onCreated. */
-export default function AddProductSheet({ isOpen, onClose, onCreated, defaultName = '' }) {
+// A number turned into a form-input string, or '' if null/undefined.
+function numOrEmpty(v) {
+  return v == null ? '' : String(v);
+}
+
+/**
+ * Create-product form. `defaultName` seeds the name; `prefill` (optional) seeds
+ * any fields from a scanned/looked-up product (name, macros, barcode, type).
+ * Returns the created product to the caller via onCreated.
+ */
+export default function AddProductSheet({ isOpen, onClose, onCreated, defaultName = '', prefill = null }) {
   const [form, setForm] = useState({ ...EMPTY, name: defaultName });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState('');
 
-  // Reset on open
+  // Reset on open. When a prefill is provided (from a scan/lookup), seed the
+  // form from it; otherwise start empty with just the search query as the name.
+  // The barcode is carried in state (not shown) so it still saves with the
+  // product, keeping the next scan of it instant.
   React.useEffect(() => {
     if (isOpen) {
-      setForm({ ...EMPTY, name: defaultName });
+      if (prefill) {
+        setForm({
+          ...EMPTY,
+          name: prefill.name ?? defaultName,
+          productType: prefill.productType ?? '',
+          caloriesPer100Grams: numOrEmpty(prefill.caloriesPer100Grams),
+          proteinPer100Grams: numOrEmpty(prefill.proteinPer100Grams),
+          fatPer100Grams: numOrEmpty(prefill.fatPer100Grams),
+          carbsPer100Grams: numOrEmpty(prefill.carbsPer100Grams),
+          barcode: prefill.barcode ?? '',
+        });
+        setNotice(prefill.notice || '');
+      } else {
+        setForm({ ...EMPTY, name: defaultName });
+        setNotice('');
+      }
       setErrors({});
       setServerError('');
     }
-  }, [isOpen, defaultName]);
+  }, [isOpen, defaultName, prefill]);
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -67,6 +96,7 @@ export default function AddProductSheet({ isOpen, onClose, onCreated, defaultNam
         proteinPer100Grams: parseFloat(form.proteinPer100Grams),
         fatPer100Grams: parseFloat(form.fatPer100Grams),
         carbsPer100Grams: parseFloat(form.carbsPer100Grams),
+        barcode: form.barcode.trim() || null,
       });
       onCreated(created);
     } catch (err) {
@@ -88,6 +118,7 @@ export default function AddProductSheet({ isOpen, onClose, onCreated, defaultNam
       }
     >
       <ErrorBanner message={serverError} onDismiss={() => setServerError('')} />
+      {notice && <p className={styles.notice}>{notice}</p>}
       <div className={styles.fields}>
         <Field label="Name" value={form.name} onChange={update('name')} error={errors.name} />
         <Field label="Type" as="select" value={form.productType}

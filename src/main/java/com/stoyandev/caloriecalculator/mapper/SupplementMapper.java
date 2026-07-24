@@ -11,7 +11,9 @@ public final class SupplementMapper {
     }
 
     public static SupplementDTO toDto(Supplement s) {
-        return new SupplementDTO(s.getId(), s.getName(), s.getDosage());
+        // Guard against pre-backfill rows that may still have a null category.
+        String category = s.getCategory() == null ? "DAILY" : s.getCategory().name();
+        return new SupplementDTO(s.getId(), s.getName(), s.getDosage(), category);
     }
 
     public static SupplementIntakeDTO toDto(SupplementIntake i) {

@@ -12,6 +12,19 @@ import styles from './SupplementsPage.module.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+/** Supplement schedule categories (must match backend SupplementCategory enum). */
+const CATEGORIES = [
+  { value: 'DAILY', label: 'Daily' },
+  { value: 'PREWORKOUT', label: 'Pre-workout' },
+  { value: 'SLEEP', label: 'Sleep' },
+];
+const CATEGORY_LABEL = { DAILY: 'Daily', PREWORKOUT: 'Pre-workout', SLEEP: 'Sleep' };
+const VALID_CATEGORIES = new Set(CATEGORIES.map((c) => c.value));
+/** Map any stored value (incl. null/legacy) to a known category, defaulting to DAILY. */
+const normalizeCategory = (c) => (VALID_CATEGORIES.has(c) ? c : 'DAILY');
+/** Per-category CSS-module class used to color headers, checkboxes and dots. */
+const categoryClass = (styles, c) => styles[`cat_${normalizeCategory(c)}`];
+
 /** Current week Mon–Sun. */
 function currentWeekMonToSun() {
   const out = [];
@@ -40,9 +53,11 @@ export default function SupplementsPage() {
   const [showManage, setShowManage] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDosage, setNewDosage] = useState('');
+  const [newCategory, setNewCategory] = useState('DAILY');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editDosage, setEditDosage] = useState('');
+  const [editCategory, setEditCategory] = useState('DAILY');
 
   const week = useMemo(currentWeekMonToSun, []);
   const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
@@ -71,6 +86,17 @@ export default function SupplementsPage() {
 
   const isTaken = (supplementId, date) => intakeMap.get(`${supplementId}|${isoKey(date)}`) === true;
 
+  /** Supplements grouped by category, preserving sort order within each group. */
+  const groupedSupplements = useMemo(() => {
+    return CATEGORIES
+      .map(({ value, label }) => ({
+        value,
+        label,
+        items: supplements.filter((s) => normalizeCategory(s.category) === value),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [supplements]);
+
   const handleToggleToday = async (supplementId, currentValue) => {
     try {
       await setIntake(userId, supplementId, today, !currentValue);
@@ -82,8 +108,8 @@ export default function SupplementsPage() {
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      await createSupplement(userId, { name: newName.trim(), dosage: newDosage.trim() || null });
-      setNewName(''); setNewDosage('');
+      await createSupplement(userId, { name: newName.trim(), dosage: newDosage.trim() || null, category: newCategory });
+      setNewName(''); setNewDosage(''); setNewCategory('DAILY');
       await refresh();
     } catch (e) { setError(e.message || 'Failed to add supplement'); }
   };
@@ -91,7 +117,7 @@ export default function SupplementsPage() {
   const handleSaveEdit = async () => {
     if (!editingId) return;
     try {
-      await updateSupplement(userId, editingId, { name: editName.trim(), dosage: editDosage.trim() || null });
+      await updateSupplement(userId, editingId, { name: editName.trim(), dosage: editDosage.trim() || null, category: editCategory });
       setEditingId(null);
       await refresh();
     } catch (e) { setError(e.message || 'Failed to update supplement'); }
@@ -120,6 +146,7 @@ export default function SupplementsPage() {
     setEditingId(s.id);
     setEditName(s.name);
     setEditDosage(s.dosage || '');
+    setEditCategory(normalizeCategory(s.category));
   };
 
   return (
@@ -138,25 +165,30 @@ export default function SupplementsPage() {
             No supplements yet. Add some in <button type="button" className={styles.linkBtn} onClick={() => setShowManage(true)}>Manage list</button>.
           </p>
         ) : (
-          <ul className={styles.checklist}>
-            {supplements.map((s) => {
-              const taken = isTaken(s.id, today);
-              return (
-                <li key={s.id} className={styles.checkRow}>
-                  <label className={styles.checkLabel}>
-                    <input
-                      type="checkbox"
-                      checked={taken}
-                      onChange={() => handleToggleToday(s.id, taken)}
-                      className={styles.checkbox}
-                    />
-                    <span className={styles.checkName}>{s.name}</span>
-                    {s.dosage && <span className={styles.checkDosage}>{s.dosage}</span>}
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
+          groupedSupplements.map((group) => (
+            <div key={group.value} className={[styles.catGroup, categoryClass(styles, group.value)].join(' ')}>
+              <div className={styles.catHeader}>{group.label}</div>
+              <ul className={styles.checklist}>
+                {group.items.map((s) => {
+                  const taken = isTaken(s.id, today);
+                  return (
+                    <li key={s.id} className={styles.checkRow}>
+                      <label className={styles.checkLabel}>
+                        <input
+                          type="checkbox"
+                          checked={taken}
+                          onChange={() => handleToggleToday(s.id, taken)}
+                          className={styles.checkbox}
+                        />
+                        <span className={styles.checkName}>{s.name}</span>
+                        {s.dosage && <span className={styles.checkDosage}>{s.dosage}</span>}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))
         )}
       </section>
 
@@ -184,31 +216,39 @@ export default function SupplementsPage() {
                 </tr>
               </thead>
               <tbody>
-                {supplements.map((s) => (
-                  <tr key={s.id}>
-                    <th className={styles.rowLabel}>
-                      <span>{s.name}</span>
-                      {s.dosage && <span className={styles.rowDosage}>{s.dosage}</span>}
-                    </th>
-                    {week.map((d) => {
-                      const taken = isTaken(s.id, d);
-                      const isToday = sameDay(d, today);
-                      return (
-                        <td key={isoKey(d)}>
-                          <div
-                            className={[
-                              styles.dot,
-                              taken ? styles.dotTaken : '',
-                              isToday ? styles.dotToday : '',
-                            ].filter(Boolean).join(' ')}
-                            aria-label={taken ? 'Taken' : 'Not taken'}
-                          >
-                            {taken ? '✓' : ''}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
+                {groupedSupplements.map((group) => (
+                  <React.Fragment key={group.value}>
+                    <tr>
+                      <td className={styles.catSpacer} />
+                      <th className={[styles.catRow, categoryClass(styles, group.value)].join(' ')} colSpan={7}>{group.label}</th>
+                    </tr>
+                    {group.items.map((s) => (
+                      <tr key={s.id} className={categoryClass(styles, group.value)}>
+                        <th className={styles.rowLabel}>
+                          <span>{s.name}</span>
+                          {s.dosage && <span className={styles.rowDosage}>{s.dosage}</span>}
+                        </th>
+                        {week.map((d) => {
+                          const taken = isTaken(s.id, d);
+                          const isToday = sameDay(d, today);
+                          return (
+                            <td key={isoKey(d)}>
+                              <div
+                                className={[
+                                  styles.dot,
+                                  taken ? styles.dotTaken : '',
+                                  isToday ? styles.dotToday : '',
+                                ].filter(Boolean).join(' ')}
+                                aria-label={taken ? 'Taken' : 'Not taken'}
+                              >
+                                {taken ? '✓' : ''}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -242,6 +282,9 @@ export default function SupplementsPage() {
                 value={newDosage}
                 onChange={(e) => setNewDosage(e.target.value)}
               />
+              <Field as="select" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
+                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </Field>
               <Button onClick={handleAdd} disabled={!newName.trim()}>Add</Button>
             </div>
 
@@ -256,6 +299,9 @@ export default function SupplementsPage() {
                     <>
                       <Field value={editName} onChange={(e) => setEditName(e.target.value)} />
                       <Field value={editDosage} onChange={(e) => setEditDosage(e.target.value)} />
+                      <Field as="select" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
+                        {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </Field>
                       <Button onClick={handleSaveEdit}>Save</Button>
                       <Button variant="secondary" onClick={() => setEditingId(null)}>Cancel</Button>
                     </>
@@ -268,6 +314,7 @@ export default function SupplementsPage() {
                       <div className={styles.editName}>
                         <strong>{s.name}</strong>
                         {s.dosage && <span className={styles.editDosage}>{s.dosage}</span>}
+                        <span className={[styles.catBadge, categoryClass(styles, s.category)].join(' ')}>{CATEGORY_LABEL[normalizeCategory(s.category)]}</span>
                       </div>
                       <Button variant="secondary" onClick={() => startEdit(s)}>Edit</Button>
                       <Button variant="danger" onClick={() => handleDelete(s.id)}>Delete</Button>

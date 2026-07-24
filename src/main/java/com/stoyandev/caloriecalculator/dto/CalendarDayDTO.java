@@ -17,5 +17,6 @@ public record CalendarDayDTO(
         String workoutLabel,
         int supplementsTotal,
         int supplementsTaken,
+        boolean hasSupplementRoutine,
         boolean isRestDay
 ) {}

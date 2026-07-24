@@ -332,6 +332,78 @@
   flex-shrink: 0;
 }
 
+/* Progressive-overload coach card shown at the top of an open exercise. */
+.coachCard {
+  --coach: var(--color-protein);   /* cyan card accent */
+  --coach-pop: var(--color-success); /* green for icon + weight */
+  border: 1px solid color-mix(in srgb, var(--coach) 25%, transparent);
+  border-left: 3px solid var(--coach);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--coach) 7%, var(--color-surface));
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  overflow: hidden;
+}
+
+/* "Last time" strip */
+.coachLastRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-muted) 15%, transparent);
+}
+.coachLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+}
+.coachLast { font-size: 13px; color: var(--color-text); font-weight: 600; }
+.coachDatePill {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+/* "Try" recommendation */
+.coachTryRow { display: flex; align-items: center; gap: var(--space-3); }
+.coachTryIcon {
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--coach-pop) 18%, var(--color-surface));
+  color: var(--coach-pop);
+  font-size: 14px;
+  font-weight: 700;
+}
+.coachTryMain { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.coachTryValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--coach-pop);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.coachTryUnit { font-size: 12px; font-weight: 700; margin-left: 1px; }
+.coachTryReps { font-size: 14px; font-weight: 700; color: var(--color-text); }
+.coachTryHint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.2px;
+}
+.coachSets { color: var(--color-protein); font-weight: 700; }
+
 .setHeader {
   display: grid;
   grid-template-columns: 28px 1fr 1fr 28px;
@@ -636,6 +708,14 @@
 .cellDown {
   background: color-mix(in srgb, var(--color-danger) 18%, var(--color-surface)) !important;
   color: var(--color-danger) !important;
+}
+
+/* All-time best (PR) cell for an exercise: star marker only, no outline. */
+.prStar {
+  color: var(--color-warn);
+  margin-left: 4px;
+  font-size: 12px;
+  line-height: 1;
 }
 
 /* Highlight newest session column */

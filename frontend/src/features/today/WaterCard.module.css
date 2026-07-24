@@ -1,0 +1,68 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg, 16px);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.total {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.goal {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-2, rgba(0, 0, 0, 0.06));
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #3b82f6; /* water blue */
+  transition: width 0.2s ease;
+}
+
+.addRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface-2, transparent);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.input:focus { border-color: var(--color-accent); outline: none; }
+
+.error {
+  margin: 0;
+  color: var(--color-danger, #dc2626);
+  font-size: 0.85rem;
+}

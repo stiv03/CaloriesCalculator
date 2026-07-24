@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table
+@Table(indexes = @Index(name = "idx_product_barcode", columnList = "barcode"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,6 +37,11 @@ public class Product {
 
     @Column(name = "carbs_per_100g", length = 10, nullable = false)
     private double carbsPer100Grams;
+
+    // EAN/UPC barcode. Nullable: existing and manually-entered products may have none.
+    // Indexed for fast lookup by scan.
+    @Column(name = "barcode", length = 32)
+    private String barcode;
 
 
 }

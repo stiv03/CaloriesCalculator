@@ -8,14 +8,17 @@ import Button from '../../components/Button';
 import StreakChips from '../../components/StreakChips';
 import MealCard from './MealCard';
 import AddMealSheet from './AddMealSheet';
+import WaterCard from './WaterCard';
 import {
   listMealsForDay, getDailyMacros, updateMealQuantity, deleteMeal,
 } from '../../api/meals';
-import { getGoal } from '../../api/profile';
+import { getGoal, getUser, getWeightRecords, setGoal } from '../../api/profile';
 import { getStreaks } from '../../api/streaks';
 import { getNote, saveNote } from '../../api/notes';
 import { getUserId } from '../../auth/storage';
 import { formatBackendDate } from './dateFormat';
+import { computeWeeklyRate } from '../profile/goalProjection';
+import { computeCalorieSuggestion, rescaleMacros, suggestionSignature } from './calorieCoach';
 import styles from './TodayPage.module.css';
 
 const ZERO_TOTALS = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -43,6 +46,11 @@ export default function TodayPage() {
   const [meals, setMeals] = useState([]);
   const [totals, setTotals] = useState(ZERO_TOTALS);
   const [goals, setGoals] = useState(ZERO_GOALS);
+  const [user, setUser] = useState(null);
+  const [weightRecords, setWeightRecords] = useState([]);
+  const [dismissedSig, setDismissedSig] = useState(() => {
+    try { return localStorage.getItem(`calCoachDismiss_${getUserId()}`) || ''; } catch { return ''; }
+  });
   const [expandedMealId, setExpandedMealId] = useState(null);
   const [openSections, setOpenSections] = useState(() => new Set()); // collapsed by default
   const [addSheetType, setAddSheetType] = useState(null); // mealType string when open, null when closed
@@ -111,22 +119,30 @@ export default function TodayPage() {
     return () => { cancelled = true; };
   }, [userId, dateIso]);
   // Goals are user-wide, not per-day — load once
+  const refreshGoal = useCallback(async () => {
+    try {
+      const g = await getGoal(userId);
+      setGoals({
+        calories: g.calories || 0,
+        protein: g.protein || 0,
+        carbs: g.carbs || 0,
+        fat: g.fat || 0,
+      });
+    } catch (_err) {
+      // Goal may not be set yet — leave zeros
+    }
+  }, [userId]);
+
+  useEffect(() => { refreshGoal(); }, [refreshGoal]);
+
+  // Load status + weight history for the calorie coach (non-critical).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const g = await getGoal(userId);
-        if (!cancelled) {
-          setGoals({
-            calories: g.calories || 0,
-            protein: g.protein || 0,
-            carbs: g.carbs || 0,
-            fat: g.fat || 0,
-          });
-        }
-      } catch (_err) {
-        // Goal may not be set yet — leave zeros
-      }
+        const [u, wr] = await Promise.all([getUser(userId), getWeightRecords(userId)]);
+        if (!cancelled) { setUser(u); setWeightRecords(wr || []); }
+      } catch (_err) { /* coach just won't show */ }
     })();
     return () => { cancelled = true; };
   }, [userId]);
@@ -140,6 +156,48 @@ export default function TodayPage() {
     }
     return buckets;
   }, [meals]);
+
+  // ── Calorie coach ────────────────────────────────────────────────────────
+  // Smoothed weekly rate (least-squares over recent consecutive weeks) so a
+  // single water-weight spike doesn't trigger a nudge.
+  const weeklyRate = useMemo(() => computeWeeklyRate(weightRecords), [weightRecords]);
+  const suggestion = useMemo(
+    () => computeCalorieSuggestion({
+      status: user?.status,
+      weeklyDiff: weeklyRate,
+      currentCalories: goals.calories,
+    }),
+    [user, weeklyRate, goals.calories],
+  );
+  const suggestionSig = suggestion
+    ? suggestionSignature(user?.status, weeklyRate)
+    : null;
+  const showCoach = suggestion && suggestionSig !== dismissedSig;
+
+  // Persist a snooze against the current trend so the banner doesn't reappear
+  // until the weight trend actually changes.
+  const snoozeCoach = (sig) => {
+    if (!sig) return;
+    try { localStorage.setItem(`calCoachDismiss_${userId}`, sig); } catch { /* ignore */ }
+    setDismissedSig(sig);
+  };
+
+  const applyCoach = async () => {
+    if (!suggestion) return;
+    const sig = suggestionSig;
+    try {
+      const newGoal = rescaleMacros(goals, suggestion.newCalories);
+      await setGoal(userId, newGoal);
+      await refreshGoal();
+      // Acted on this trend's advice → snooze until the trend changes, so
+      // applying can't loop and keep suggesting further cuts on the same trend.
+      snoozeCoach(sig);
+    } catch (e) {
+      setError(e.message || 'Failed to update goal');
+    }
+  };
+
+  const dismissCoach = () => snoozeCoach(suggestionSig);
 
   const handleSaveMeal = async (mealId, newQuantity) => {
     try {
@@ -262,8 +320,32 @@ export default function TodayPage() {
         </div>
       )}
 
+      {showCoach && (
+        <div className={[styles.coachBanner, styles[`coachBanner_${suggestion.direction}`]].join(' ')}>
+          <div className={styles.coachBannerBody}>
+            <div className={styles.coachBannerTitle}>
+              {suggestion.direction === 'up' ? '↑' : '↓'} Adjust calories
+            </div>
+            <div className={styles.coachBannerReason}>{suggestion.reason}</div>
+            <div className={styles.coachBannerNums}>
+              <span className={styles.coachBannerOld}>{goals.calories} kcal</span>
+              <span className={styles.coachBannerArrow}>→</span>
+              <span className={styles.coachBannerNew}>{suggestion.newCalories} kcal</span>
+            </div>
+          </div>
+          <div className={styles.coachBannerActions}>
+            <Button block onClick={applyCoach}>Apply</Button>
+            <Button block variant="secondary" className={styles.coachDismissBtn} onClick={dismissCoach}>Dismiss</Button>
+          </div>
+        </div>
+      )}
+
       <section className={styles.macroSection}>
         <MacroRings totals={totals} goals={goals} />
+      </section>
+
+      <section className={styles.waterSection}>
+        <WaterCard userId={userId} dateIso={dateIso} goalMl={user?.waterGoalMl ?? null} />
       </section>
 
       <section className={styles.mealsSection}>
