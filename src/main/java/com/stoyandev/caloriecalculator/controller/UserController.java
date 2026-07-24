@@ -48,6 +48,27 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PutMapping("/update/goal-weight/{id}")
+    @PreAuthorize("@userAccessService.hasAccess(#id)")
+    public ResponseEntity<UserDTO> updateGoalWeight(@PathVariable Long id, @RequestBody UpdateUserGoalWeightRequestDTO req) {
+        var updatedUser = userService.updateGoalWeight(id, req.goalWeight());
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/update/start-weight/{id}")
+    @PreAuthorize("@userAccessService.hasAccess(#id)")
+    public ResponseEntity<UserDTO> updateStartWeight(@PathVariable Long id, @RequestBody UpdateUserStartWeightRequestDTO req) {
+        var updatedUser = userService.updateStartWeight(id, req.startWeight());
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/update/water-goal/{id}")
+    @PreAuthorize("@userAccessService.hasAccess(#id)")
+    public ResponseEntity<UserDTO> updateWaterGoal(@PathVariable Long id, @RequestBody UpdateUserWaterGoalRequestDTO req) {
+        var updatedUser = userService.updateWaterGoal(id, req.waterGoalMl());
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @PutMapping("/update/status/{id}")
     @PreAuthorize("@userAccessService.hasAccess(#id)")
     public ResponseEntity<UserDTO> updateStatus(@PathVariable Long id, @RequestBody int statusCode) {

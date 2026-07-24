@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.controller;
 
+import com.stoyandev.caloriecalculator.dto.BarcodeLookupDTO;
 import com.stoyandev.caloriecalculator.dto.ProductDTO;
 import com.stoyandev.caloriecalculator.entity.enums.ProductType;
 import com.stoyandev.caloriecalculator.service.ProductService;
@@ -29,6 +30,14 @@ public class ProductController {
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String query) {
         List<ProductDTO> products = productService.searchProducts(query);
         return ResponseEntity.ok(products);
+    }
+
+    // Two path segments (barcode/{code}) so this never collides with /products/{type}.
+    @GetMapping("/products/barcode/{code}")
+    public ResponseEntity<BarcodeLookupDTO> lookupByBarcode(@PathVariable String code) {
+        return productService.lookupByBarcode(code)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 

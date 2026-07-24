@@ -6,16 +6,16 @@ const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2
 
 export async function listSupplements(userId) {
   const { data } = await client.get(`/supplements/${userId}`);
-  return data; // [{id, name, dosage}]
+  return data; // [{id, name, dosage, category}]
 }
 
-export async function createSupplement(userId, { name, dosage }) {
-  const { data } = await client.post(`/supplements/${userId}`, { name, dosage });
+export async function createSupplement(userId, { name, dosage, category }) {
+  const { data } = await client.post(`/supplements/${userId}`, { name, dosage, category });
   return data;
 }
 
-export async function updateSupplement(userId, supplementId, { name, dosage }) {
-  const { data } = await client.put(`/supplements/${userId}/${supplementId}`, { name, dosage });
+export async function updateSupplement(userId, supplementId, { name, dosage, category }) {
+  const { data } = await client.put(`/supplements/${userId}/${supplementId}`, { name, dosage, category });
   return data;
 }
 

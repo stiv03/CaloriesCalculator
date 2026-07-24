@@ -16,6 +16,24 @@ export async function updateHeight(userId, newHeight) {
   return data;
 }
 
+/** Set (or clear, when goalWeight is null) the user's target weight. */
+export async function updateGoalWeight(userId, goalWeight) {
+  const { data } = await client.put(`/update/goal-weight/${userId}`, { goalWeight });
+  return data;
+}
+
+/** Set (or clear, when startWeight is null) the user's starting weight. */
+export async function updateStartWeight(userId, startWeight) {
+  const { data } = await client.put(`/update/start-weight/${userId}`, { startWeight });
+  return data;
+}
+
+/** Set (or clear, when waterGoalMl is null) the user's daily water goal in ml. */
+export async function updateWaterGoal(userId, waterGoalMl) {
+  const { data } = await client.put(`/update/water-goal/${userId}`, { waterGoalMl });
+  return data;
+}
+
 export async function updateAge(userId, newAge) {
   const { data } = await client.put(`/update/age/${userId}`, { newAge });
   return data;

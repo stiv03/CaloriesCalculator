@@ -22,7 +22,7 @@ function movingAverage(values, window) {
   });
 }
 
-export default function WeightChart({ weightRecords }) {
+export default function WeightChart({ weightRecords, goalWeight }) {
   const [limit, setLimit] = useState(30);
   const [maWindow, setMaWindow] = useState(7);
 
@@ -39,6 +39,11 @@ export default function WeightChart({ weightRecords }) {
 
   const accent = readCssVar('--color-protein') || '#2563eb';
   const maColor = readCssVar('--color-accent') || '#16a34a';
+  const goalColor = readCssVar('--color-warn') || '#d97706';
+
+  const goal = goalWeight != null && !Number.isNaN(parseFloat(goalWeight))
+    ? parseFloat(goalWeight)
+    : null;
 
   const data = {
     labels: visible.map((r) => r.date),
@@ -62,6 +67,17 @@ export default function WeightChart({ weightRecords }) {
         tension: 0.4,
         spanGaps: false,
       },
+      // Horizontal target line (orange), only when a goal weight is set.
+      ...(goal != null ? [{
+        label: `Target (${goal} kg)`,
+        data: visible.map(() => goal),
+        borderColor: goalColor,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        tension: 0,
+      }] : []),
     ],
   };
 

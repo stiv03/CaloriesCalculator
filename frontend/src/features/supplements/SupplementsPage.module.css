@@ -55,7 +55,70 @@
 .checkName { font-weight: 600; color: var(--color-text); }
 .checkDosage { color: var(--color-text-muted); font-size: 13px; margin-left: auto; }
 
-/* ---------- Weekly grid ---------- */
+/* ---------- Category grouping ---------- */
+
+.catGroup { margin-bottom: var(--space-3); }
+.catGroup:last-child { margin-bottom: 0; }
+.catHeader {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+/* Empty cell over the supplement-name column so the category label starts
+   at the Monday (first day) column instead of the far-left edge. */
+.catSpacer { padding: 0; border: 0; }
+/* Category subheader row inside the weekly grid table */
+.catRow {
+  text-align: left !important;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  padding-top: var(--space-2) !important;
+}
+/* Small pill next to a supplement name in the manage list */
+.catBadge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text-muted) 15%, var(--color-surface));
+  vertical-align: middle;
+}
+
+/* ---------- Per-category colors ----------
+   Each category sets a --cat color; headers, checkboxes, dots and badges
+   below reference var(--cat). Green = Daily, Cyan = Sleep, Orange = Pre-workout. */
+.cat_DAILY      { --cat: var(--color-success); }
+.cat_SLEEP      { --cat: var(--color-protein); }  /* app's cyan */
+.cat_PREWORKOUT { --cat: var(--color-warn); }     /* orange */
+
+/* Group header text (checklist) and grid subheader row */
+.cat_DAILY .catHeader, .cat_SLEEP .catHeader, .cat_PREWORKOUT .catHeader,
+.catRow.cat_DAILY, .catRow.cat_SLEEP, .catRow.cat_PREWORKOUT { color: var(--cat); }
+
+/* Checkboxes inside a colored group */
+.cat_DAILY .checkbox:checked, .cat_SLEEP .checkbox:checked, .cat_PREWORKOUT .checkbox:checked {
+  background-color: var(--cat);
+  border-color: var(--cat);
+}
+
+/* Weekly-grid dots: taken fill + today outline follow the category color */
+.cat_DAILY .dotTaken, .cat_SLEEP .dotTaken, .cat_PREWORKOUT .dotTaken { background: var(--cat); }
+.cat_DAILY .dotToday, .cat_SLEEP .dotToday, .cat_PREWORKOUT .dotToday { outline-color: var(--cat); }
+
+/* Manage-list badge tinted by category */
+.catBadge.cat_DAILY, .catBadge.cat_SLEEP, .catBadge.cat_PREWORKOUT {
+  color: var(--cat);
+  background: color-mix(in srgb, var(--cat) 15%, var(--color-surface));
+}
 
 .gridWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .grid {

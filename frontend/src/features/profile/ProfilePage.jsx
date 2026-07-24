@@ -6,7 +6,7 @@ import Button from '../../components/Button';
 import ErrorBanner from '../../components/ErrorBanner';
 import {
   getUser, getGoal,
-  updateStatus, updateActivity, setGoal as apiSetGoal, autoSetGoal,
+  updateStatus, updateActivity, setGoal as apiSetGoal, autoSetGoal, updateGoalWeight, updateStartWeight, updateWaterGoal,
 } from '../../api/profile';
 import { changePassword } from '../../api/auth';
 import { getAllNotes } from '../../api/notes';
@@ -37,6 +37,11 @@ export default function ProfilePage() {
 
   const [goalForm, setGoalForm] = useState(EMPTY_GOAL);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [goalWeightOpen, setGoalWeightOpen] = useState(false);
+  const [goalWeight, setGoalWeight] = useState('');
+  const [startWeight, setStartWeight] = useState('');
+  const [waterGoalOpen, setWaterGoalOpen] = useState(false);
+  const [waterGoal, setWaterGoal] = useState('');
 
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState([]);
@@ -74,6 +79,48 @@ export default function ProfilePage() {
       carbs: goal.carbs || '', fat: goal.fat || '',
     });
   }, [goal]);
+
+  useEffect(() => {
+    setGoalWeight(user?.goalWeight != null ? String(user.goalWeight) : '');
+    // Default the starting weight to the user's current weight when it hasn't
+    // been set yet (e.g. accounts created before this field existed).
+    const start = user?.startWeight != null ? user.startWeight : user?.weight;
+    setStartWeight(start != null ? String(start) : '');
+    setWaterGoal(user?.waterGoalMl != null ? String(user.waterGoalMl) : '');
+  }, [user]);
+
+  const handleGoalWeight = async () => {
+    const trimmed = goalWeight.trim();
+    const value = trimmed === '' ? null : Number(trimmed);
+    if (value != null && (Number.isNaN(value) || value <= 0)) {
+      setError('Enter a valid goal weight, or leave it empty to clear.');
+      return;
+    }
+    try { await updateGoalWeight(userId, value); await refreshUser(); }
+    catch (e) { setError(e.message); }
+  };
+
+  const handleStartWeight = async () => {
+    const trimmed = startWeight.trim();
+    const value = trimmed === '' ? null : Number(trimmed);
+    if (value != null && (Number.isNaN(value) || value <= 0)) {
+      setError('Enter a valid starting weight, or leave it empty to clear.');
+      return;
+    }
+    try { await updateStartWeight(userId, value); await refreshUser(); }
+    catch (e) { setError(e.message); }
+  };
+
+  const handleWaterGoal = async () => {
+    const trimmed = waterGoal.trim();
+    const value = trimmed === '' ? null : Math.round(Number(trimmed));
+    if (value != null && (Number.isNaN(value) || value <= 0)) {
+      setError('Enter a valid water goal in ml, or leave it empty to clear.');
+      return;
+    }
+    try { await updateWaterGoal(userId, value); await refreshUser(); }
+    catch (e) { setError(e.message); }
+  };
 
   const handleStatus = async (e) => {
     const code = e.target.value;
@@ -171,6 +218,43 @@ export default function ProfilePage() {
         <div className={styles.actions}>
           <Button block onClick={handleGoalSubmit}>Save goals</Button>
           <Button variant="secondary" block onClick={handleAuto}>Auto-calculate</Button>
+        </div>
+      </Section>
+
+      <Section title="Goal weight" expandable open={goalWeightOpen} onToggle={() => setGoalWeightOpen((o) => !o)}>
+        <div className={styles.grid2}>
+          <Field
+            label="Starting weight (kg)"
+            type="number" min="0" step="0.1"
+            value={startWeight}
+            placeholder="e.g. 80"
+            onChange={(e) => setStartWeight(e.target.value)}
+          />
+          <Field
+            label="Target weight (kg)"
+            type="number" min="0" step="0.1"
+            value={goalWeight}
+            placeholder="e.g. 90"
+            onChange={(e) => setGoalWeight(e.target.value)}
+          />
+        </div>
+        <div className={styles.actions}>
+          <Button block onClick={async () => { await handleStartWeight(); await handleGoalWeight(); }}>
+            Save
+          </Button>
+        </div>
+      </Section>
+
+      <Section title="Water goal" expandable open={waterGoalOpen} onToggle={() => setWaterGoalOpen((o) => !o)}>
+        <Field
+          label="Daily water goal (ml)"
+          type="number" min="0" step="50"
+          value={waterGoal}
+          placeholder="e.g. 2500"
+          onChange={(e) => setWaterGoal(e.target.value)}
+        />
+        <div className={styles.actions}>
+          <Button block onClick={handleWaterGoal}>Save</Button>
         </div>
       </Section>
 

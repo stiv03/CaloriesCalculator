@@ -93,6 +93,37 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapToUserDTO(savedUser);
     }
 
+    @Override
+    public UserDTO updateGoalWeight(final long id, final Double goalWeight) {
+        final var user = userRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        user.setGoalWeight(goalWeight);
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
+    @Override
+    public UserDTO updateStartWeight(final long id, final Double startWeight) {
+        final var user = userRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        user.setStartWeight(startWeight);
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
+    @Override
+    public UserDTO updateWaterGoal(final long id, final Integer waterGoalMl) {
+        final var user = userRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        // Clamp to non-negative; null clears the goal.
+        user.setWaterGoalMl(waterGoalMl == null ? null : Math.max(0, waterGoalMl));
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
 
 
     @Override

@@ -39,6 +39,9 @@ public class AuthenticationService {
                 .userType(UserType.USER)
                 .status(Status.MAINTAINING)
                 .activity(Activity.NORMAL)
+                // Default the goal-progress starting weight to the registration
+                // weight; the user can change it later in Profile.
+                .startWeight(request.getWeight())
                 .build();
 
         // Persist the user.

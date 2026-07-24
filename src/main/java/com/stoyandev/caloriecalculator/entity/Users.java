@@ -51,6 +51,20 @@ public class Users implements UserDetails {
     @Column(name = "height", length = 3, nullable = false)
     private int height;
 
+    /** Optional target weight for the ETA projection. Nullable so ddl-auto=update
+        can add the column to a table with existing rows. */
+    @Column(name = "goal_weight")
+    private Double goalWeight;
+
+    /** Optional starting weight — the fixed baseline the goal progress bar fills from. */
+    @Column(name = "start_weight")
+    private Double startWeight;
+
+    /** Optional daily water intake goal in millilitres. Nullable so ddl-auto=update
+        can add the column to a table with existing rows. */
+    @Column(name = "water_goal_ml")
+    private Integer waterGoalMl;
+
     @Column(name = "username", length = 100, nullable = false, unique = true)
     private String username;
 

@@ -31,11 +31,12 @@
 .weightField input::placeholder { color: var(--color-accent); opacity: 1; }
 
 .weeklyCard {
-  background: color-mix(in srgb, var(--color-protein) 12%, var(--color-surface));
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-4) var(--space-4);
+  background: color-mix(in srgb, var(--color-protein) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-protein) 22%, transparent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
-.weeklyHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1); }
+.weeklyHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
 .weeklyTitle { font-weight: 600; }
 .weeklyDelta {
   font-weight: 700;
@@ -43,7 +44,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: var(--radius-pill);
   font-size: 13px;
   background: color-mix(in srgb, var(--color-text-muted) 18%, transparent);
@@ -64,6 +65,88 @@
 .weeklyValue { font-size: 20px; font-weight: 700; margin-top: var(--space-1); }
 .weeklyRange { font-size: 11px; color: var(--color-text-muted); }
 
+/* Goal progress card (separate, orange-tinted) */
+.goalCard {
+  background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-warn) 30%, transparent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+.goalHead {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-warn);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+.goalWrap { display: flex; flex-direction: column; gap: var(--space-2); }
+.goalEnds { display: flex; justify-content: space-between; align-items: flex-start; }
+.goalEnd { display: flex; flex-direction: column; gap: 1px; }
+.goalEndRight { align-items: flex-end; text-align: right; }
+.goalEndVal { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
+.goalEndCap { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); opacity: 0.8; }
+.goalTargetVal { font-size: 14px; color: var(--color-warn); font-weight: 700; }
+
+/* Track + fill + current position. Styled as a *progress* meter, not a slider:
+   a taller filled track with a thin position tick, no draggable knob. */
+/* Non-clipped wrapper so the Now marker's labels can sit below the track
+   without being cut off by the track's overflow:hidden. */
+.goalBarZone {
+  position: relative;
+  margin: 6px 0 30px;
+}
+.goalTrack {
+  position: relative;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-track);
+  overflow: hidden;               /* fill clips to the rounded track — reads as progress */
+}
+.goalFill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--color-warn) 55%, var(--color-accent)),
+    var(--color-warn));
+  transition: width 400ms ease;
+}
+.goalFillOff { background: color-mix(in srgb, var(--color-text-muted) 45%, transparent); }
+/* Anchor for the "Now" label at the current position. The fill edge already
+   marks where you are, so the tick itself is invisible (no white sliver). */
+.goalMarker {
+  position: absolute;
+  top: 0;
+  height: 14px;                 /* matches the track height */
+  width: 0;
+  transform: translateX(-50%);
+}
+.goalMarkerLabel {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.goalMarkerCap {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--color-warn);
+}
+.goalSummary { text-align: center; font-size: 13px; color: var(--color-text); }
+.goalToGo { font-weight: 700; color: var(--color-text); }
+.goalStrong { font-weight: 700; color: var(--color-success); }
+.goalTarget { font-weight: 700; color: var(--color-warn); }
+.goalRate { color: var(--color-text-muted); }
+.goalEst { color: var(--color-text-muted); font-style: italic; font-size: 12px; }
+.goalMuted { color: var(--color-text-muted); font-size: 13px; text-align: center; margin: 0; }
+
 .weekAvgRow {
   display: flex;
   justify-content: space-between;
@@ -77,6 +160,36 @@
 .weekAvgGood { background: color-mix(in srgb, var(--color-success) 15%, var(--color-surface)); }
 .weekAvgBad  { background: color-mix(in srgb, var(--color-danger)  15%, var(--color-surface)); }
 .weekAvgLabel { color: var(--color-text-muted); }
+.weekAvgTag {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.weekAvgTagShort { display: none; }
+@media (max-width: 480px) {
+  .weekAvgTagFull { display: none; }
+  .weekAvgTagShort { display: inline; }
+}
+.weekAvgValueWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.weekAvgPill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text-muted) 18%, var(--color-surface));
+}
+.weekAvgGood .weekAvgPill {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 20%, var(--color-surface));
+}
+.weekAvgBad .weekAvgPill {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 20%, var(--color-surface));
+}
 .weekAvgValue { color: var(--color-protein); }
 .weekAvgGood .weekAvgValue { color: var(--color-success); }
 .weekAvgBad  .weekAvgValue { color: var(--color-danger); }

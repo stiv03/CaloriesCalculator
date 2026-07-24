@@ -16,7 +16,8 @@ public final class ProductMapper {
                 product.getCaloriesPer100Grams(),
                 product.getProteinPer100Grams(),
                 product.getFatPer100Grams(),
-                product.getCarbsPer100Grams()
+                product.getCarbsPer100Grams(),
+                product.getBarcode()
         );
     }
 
@@ -28,6 +29,7 @@ public final class ProductMapper {
         product.setProteinPer100Grams(productDTO.proteinPer100Grams());
         product.setFatPer100Grams(productDTO.fatPer100Grams());
         product.setCarbsPer100Grams(productDTO.carbsPer100Grams());
+        product.setBarcode(productDTO.barcode());
         return product;
     }
 }

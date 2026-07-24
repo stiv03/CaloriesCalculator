@@ -24,6 +24,24 @@
 
 .input:focus { border-color: var(--color-accent); outline: none; }
 
+/* Native date/time inputs on WebKit/iOS have an intrinsic min-width and
+   ignore width:100%, overflowing their container. Reset the appearance and
+   allow the field to shrink to the box. */
+input.input[type="date"],
+input.input[type="time"],
+input.input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+/* Keep the tap-to-open calendar/clock affordance visible and inside the box. */
+input.input[type="date"]::-webkit-calendar-picker-indicator,
+input.input[type="time"]::-webkit-calendar-picker-indicator,
+input.input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+}
+
 .inputError { border-color: var(--color-danger); }
 
 .error {

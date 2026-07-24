@@ -17,6 +17,15 @@ public interface UserService {
 
     UserDTO updateHeight(long id, int newHeight);
 
+    /** Set (or clear, when null) the user's target/goal weight. */
+    UserDTO updateGoalWeight(long id, Double goalWeight);
+
+    /** Set (or clear, when null) the user's starting weight. */
+    UserDTO updateStartWeight(long id, Double startWeight);
+
+    /** Set (or clear, when null) the user's daily water goal in ml. */
+    UserDTO updateWaterGoal(long id, Integer waterGoalMl);
+
     UserDTO updateStatus (final Long userId, Status status);
     UserDTO updateActivity (final Long userId, Activity activity);
 
