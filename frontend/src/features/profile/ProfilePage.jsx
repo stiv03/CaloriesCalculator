@@ -7,7 +7,9 @@ import ErrorBanner from '../../components/ErrorBanner';
 import {
   getUser, getGoal,
   updateStatus, updateActivity, setGoal as apiSetGoal, autoSetGoal, updateGoalWeight, updateStartWeight, updateWaterGoal,
+  updateWeight,
 } from '../../api/profile';
+import * as googleHealth from '../../integrations/googleHealth';
 import { changePassword } from '../../api/auth';
 import { getAllNotes } from '../../api/notes';
 import { getTheme, setTheme } from '../../utils/theme';
@@ -46,6 +48,10 @@ export default function ProfilePage() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState([]);
   const [theme, setThemeState] = useState(() => getTheme() || 'system');
+
+  const [healthConnected, setHealthConnected] = useState(() => googleHealth.isConnected());
+  const [healthBusy, setHealthBusy] = useState(false);
+  const [healthMsg, setHealthMsg] = useState('');
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ newPassword: '', confirm: '' });
@@ -120,6 +126,37 @@ export default function ProfilePage() {
     }
     try { await updateWaterGoal(userId, value); await refreshUser(); }
     catch (e) { setError(e.message); }
+  };
+
+  const handleHealthConnect = async () => {
+    setError(''); setHealthMsg(''); setHealthBusy(true);
+    try {
+      await googleHealth.connect();
+      setHealthConnected(true);
+      setHealthMsg('Connected to Google Health.');
+    } catch (e) {
+      setError(e.message || 'Could not connect to Google Health');
+    } finally { setHealthBusy(false); }
+  };
+
+  const handleHealthDisconnect = () => {
+    googleHealth.disconnect();
+    setHealthConnected(false);
+    setHealthMsg('Disconnected.');
+  };
+
+  const handleHealthSyncWeight = async () => {
+    setError(''); setHealthMsg(''); setHealthBusy(true);
+    try {
+      const latest = await googleHealth.getLatestWeight(30);
+      setHealthConnected(googleHealth.isConnected());
+      if (!latest) { setHealthMsg('No weight readings found in the last 30 days.'); return; }
+      await updateWeight(userId, latest.kg, null);
+      await refreshUser();
+      setHealthMsg(`Synced ${latest.kg} kg from Google Health.`);
+    } catch (e) {
+      setError(e.message || 'Google Health sync failed');
+    } finally { setHealthBusy(false); }
   };
 
   const handleStatus = async (e) => {
@@ -256,6 +293,37 @@ export default function ProfilePage() {
         <div className={styles.actions}>
           <Button block onClick={handleWaterGoal}>Save</Button>
         </div>
+      </Section>
+
+      <Section title="Google Health">
+        {healthConnected ? (
+          <>
+            <p className={styles.muted} style={{ marginTop: 0 }}>
+              Connected (this session). Import data synced from Fitbit / Google Health.
+            </p>
+            <div className={styles.actions}>
+              <Button block onClick={handleHealthSyncWeight} disabled={healthBusy}>
+                {healthBusy ? 'Syncing…' : 'Sync weight now'}
+              </Button>
+              <Button block variant="secondary" onClick={handleHealthDisconnect} disabled={healthBusy}>
+                Disconnect
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className={styles.muted} style={{ marginTop: 0 }}>
+              Connect your Google Health account to import weight (and later steps &amp; activity)
+              synced from your Fitbit.
+            </p>
+            <div className={styles.actions}>
+              <Button block onClick={handleHealthConnect} disabled={healthBusy}>
+                {healthBusy ? 'Connecting…' : 'Connect Google Health'}
+              </Button>
+            </div>
+          </>
+        )}
+        {healthMsg && <p className={styles.muted}>{healthMsg}</p>}
       </Section>
 
       <Section title="Status">

@@ -1,5 +1,6 @@
 package com.stoyandev.caloriecalculator.entity;
 
+import com.stoyandev.caloriecalculator.entity.enums.Pose;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,11 @@ public class ProgressPhoto {
 
     @Column(nullable = false)
     private LocalDate date;
+
+    /** Camera angle for the shot: FRONT / SIDE / BACK. Defaults to FRONT. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Pose pose;
 
     /** Optional snapshot of the user's weight at the time of the photo. */
     @Column

@@ -344,12 +344,11 @@ export default function TodayPage() {
         <MacroRings totals={totals} goals={goals} />
       </section>
 
-      <section className={styles.waterSection}>
-        <WaterCard userId={userId} dateIso={dateIso} goalMl={user?.waterGoalMl ?? null} />
-      </section>
-
       <section className={styles.mealsSection}>
-        <h2 className={styles.h2}>Meals</h2>
+        <div className={styles.mealsHead}>
+          <h2 className={styles.h2}>Meals</h2>
+          <WaterCard userId={userId} dateIso={dateIso} goalMl={user?.waterGoalMl ?? null} />
+        </div>
         <ErrorBanner message={error} onDismiss={() => setError('')} />
         {loading && meals.length === 0 && <p className={styles.muted}>Loading…</p>}
 

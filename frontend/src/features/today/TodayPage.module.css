@@ -130,8 +130,6 @@
 
 .macroSection { margin-bottom: var(--space-5); }
 
-.waterSection { margin-bottom: var(--space-5); }
-
 /* Calorie coach nudge above the rings */
 .coachBanner {
   --coach: var(--color-accent);
@@ -173,6 +171,14 @@
 }
 
 .mealsSection { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.mealsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.mealsHead .h2 { margin-bottom: 0; }
 
 .h2 { margin-bottom: var(--space-2); }
 

@@ -1,11 +1,63 @@
-.card {
+.wrap { position: relative; flex-shrink: 0; }
+
+/* Drop-icon trigger — matches the calendar/note buttons on this page. */
+.dropBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.dropBtn:hover { background: var(--color-surface-2); color: var(--color-text); }
+.dropBtnOpen { background: var(--color-surface-2); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: var(--z-sheet-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-5);
 }
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.close:hover { color: var(--color-text); }
 
 .head {
   display: flex;
@@ -14,18 +66,30 @@
 }
 
 .title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   font-weight: 600;
   font-size: 1rem;
 }
+.titleIcon { color: #3b82f6; flex-shrink: 0; }
 
 .total {
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.pct {
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
+  color: #3b82f6;
 }
 
 .goal {
   color: var(--color-text-muted);
   font-weight: 400;
+  font-size: 1rem;
 }
 
 .barTrack {
@@ -41,6 +105,26 @@
   background: #3b82f6; /* water blue */
   transition: width 0.2s ease;
 }
+
+.quickRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.quickBtn {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface-2, transparent);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.quickBtn:hover:not(:disabled) { border-color: var(--color-accent); }
+.quickBtn:disabled { opacity: 0.5; cursor: default; }
 
 .addRow {
   display: flex;

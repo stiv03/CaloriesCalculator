@@ -8,6 +8,7 @@
 
 .h3 { margin-bottom: var(--space-3); }
 .muted { color: var(--color-text-muted); }
+.syncMsg { margin: var(--space-2) 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
 
 .logRow { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
 .logRow > :first-child { flex: 1; min-width: 120px; }
