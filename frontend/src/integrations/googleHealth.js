@@ -63,6 +63,10 @@ const requestToken = (silent) => new Promise(async (resolve, reject) => {
   const client = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPE,
+    // Do NOT fold in previously-granted scopes (e.g. Drive). The Health API
+    // rejects any token carrying scopes it doesn't recognize (drive_resource),
+    // so this token must be Health-scope-only.
+    include_granted_scopes: false,
     callback: (resp) => {
       if (resp.error) return reject(new Error(resp.error_description || resp.error));
       accessToken = resp.access_token;
