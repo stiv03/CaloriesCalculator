@@ -95,7 +95,14 @@ const healthFetch = async (path) => {
     fetch(`${HEALTH_BASE}/${path}`, { headers: { Authorization: `Bearer ${token}` } });
   let token = await getAccessToken();
   let res = await doFetch(token);
-  if (res.status === 401) { clearToken(); token = await getAccessToken(); res = await doFetch(token); }
+  // 401 (expired/revoked) or 403 DISALLOWED_OAUTH_SCOPES (token carried a stale
+  // Drive scope from a pre-fix grant) → drop the cached token and re-consent
+  // fresh (visible prompt) so we get a clean Health-only token, then retry once.
+  if (res.status === 401 || res.status === 403) {
+    clearToken();
+    token = await requestToken(false); // force visible consent, not silent
+    res = await doFetch(token);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Health API ${res.status}: ${body}`);
@@ -120,35 +127,25 @@ export const fetchWeightPoints = async (days = 30) => {
   const filter = `weight.sample_time.physical_time >= "${from}" AND weight.sample_time.physical_time < "${to}"`;
   const path = `users/me/dataTypes/weight/dataPoints?filter=${encodeURIComponent(filter)}`;
   const json = await healthFetch(path);
-  // eslint-disable-next-line no-console
-  console.log('[googleHealth] raw weight response:', JSON.stringify(json, null, 2));
   return json.dataPoints || [];
 };
 
 /**
- * Best-effort extraction of {kg, at} from a weight data point. The exact schema
- * (WeightRollupValue) wasn't fully documented, so we probe the likely locations
- * and fall back gracefully. Verify against the logged raw response and tighten.
+ * Extract {kg, at} from Google Health weight data points. Real shape (verified
+ * against a live response):
+ *   p.weight.weightGrams                    → grams (÷1000 = kg)
+ *   p.weight.sampleTime.physicalTime         → RFC-3339 timestamp
  */
 export function parseWeightPoints(points) {
   const out = [];
   for (const p of points || []) {
-    // Timestamp: try common shapes.
-    const at = p?.sampleTime?.physicalTime || p?.startTime || p?.time || p?.sampleTime?.civilTime || null;
-    // Value: probe several plausible paths for a numeric kilograms figure.
-    const candidates = [
-      p?.value?.weightValue?.value,
-      p?.value?.fpVal,
-      p?.value?.value,
-      p?.weightRollupValue?.average?.value,
-      p?.weightRollupValue?.average?.kilograms,
-      p?.value?.kilograms,
-      typeof p?.value === 'number' ? p.value : undefined,
-    ];
-    const kg = candidates.find((v) => typeof v === 'number' && !Number.isNaN(v));
-    if (kg != null && at) out.push({ kg: Math.round(kg * 10) / 10, at });
+    const grams = p?.weight?.weightGrams;
+    const at = p?.weight?.sampleTime?.physicalTime;
+    if (typeof grams === 'number' && !Number.isNaN(grams) && at) {
+      out.push({ kg: Math.round((grams / 1000) * 10) / 10, at });
+    }
   }
-  // Sort ascending by time.
+  // Sort ascending by time so the last element is the most recent.
   out.sort((a, b) => new Date(a.at) - new Date(b.at));
   return out;
 }
