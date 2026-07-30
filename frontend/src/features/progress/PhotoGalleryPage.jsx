@@ -45,6 +45,10 @@ const MARKER_COLORS = [
 ];
 const DEFAULT_MARKER_COLOR = MARKER_COLORS[0];
 
+// Progress-photo poses. Order here drives the gallery column order.
+const POSES = ['FRONT', 'SIDE', 'BACK'];
+const POSE_LABEL = { FRONT: 'Front', SIDE: 'Side', BACK: 'Back' };
+
 const todayIso = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -59,6 +63,14 @@ const fmtShort = (iso) => {
 
 const daysBetween = (a, b) =>
   Math.round((new Date(`${b}T00:00:00`) - new Date(`${a}T00:00:00`)) / MS_PER_DAY);
+
+/** "Jul 28" + separate year, for the gallery row date column. */
+const fmtGalleryDate = (iso) => {
+  if (!iso) return { main: '', year: '' };
+  const [y, m, d] = iso.split('-');
+  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1];
+  return { main: `${month} ${parseInt(d, 10)}`, year: y };
+};
 
 /**
  * Lay items out along a horizontal axis based on their `date` (YYYY-MM-DD).
@@ -98,7 +110,7 @@ export default function PhotoGalleryPage() {
 
   // Modal states
   const [showAddPhoto, setShowAddPhoto] = useState(false);
-  const [photoForm, setPhotoForm] = useState({ date: todayIso(), weight: '', notes: '' });
+  const [photoForm, setPhotoForm] = useState({ date: todayIso(), pose: 'FRONT', weight: '', notes: '' });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
 
@@ -108,6 +120,12 @@ export default function PhotoGalleryPage() {
 
   // Whether the "all photos" list section is expanded.
   const [showAll, setShowAll] = useState(false);
+
+  // 'timeline' (compare view) or 'gallery' (date rows × pose columns).
+  const [view, setView] = useState('timeline');
+
+  // Lightbox: the photo currently shown full-screen, or null.
+  const [lightboxId, setLightboxId] = useState(null);
 
   // Object URLs we've created and need to release on unmount.
   const objectUrlsRef = useRef([]);
@@ -278,13 +296,14 @@ export default function PhotoGalleryPage() {
       const saved = await createProgressPhoto(userId, {
         driveFileId: driveFile.id,
         date: photoForm.date,
+        pose: photoForm.pose || 'FRONT',
         weight: photoForm.weight ? parseFloat(photoForm.weight) : null,
         notes: photoForm.notes || null,
       });
       setPhotos(prev => [...prev, saved]);
       setSelectedId(saved.id);
       userPickedCompare.current = false;
-      setPhotoForm({ date: todayIso(), weight: '', notes: '' });
+      setPhotoForm({ date: todayIso(), pose: 'FRONT', weight: '', notes: '' });
       setShowAddPhoto(false);
     } catch (e) {
       setError(e.message || 'Upload failed.');
@@ -413,6 +432,68 @@ export default function PhotoGalleryPage() {
     [compareId, photosAsc]
   );
 
+  // ── Gallery model: one row per date (newest first), each holding the
+  // photos for that date bucketed by pose. Multiple same-pose-same-day
+  // photos keep the newest as the visible one; the rest are reachable via
+  // the lightbox's within-cell paging is out of scope, so we simply show
+  // the latest and badge the count.
+  const galleryRows = useMemo(() => {
+    const byDate = new Map();
+    for (const p of photosDesc) {
+      if (!byDate.has(p.date)) byDate.set(p.date, { date: p.date, weight: null, byPose: {} });
+      const row = byDate.get(p.date);
+      const pose = POSES.includes(p.pose) ? p.pose : 'FRONT';
+      if (!row.byPose[pose]) row.byPose[pose] = [];
+      row.byPose[pose].push(p);
+      if (row.weight == null && p.weight != null) row.weight = p.weight;
+    }
+    return [...byDate.values()];
+  }, [photosDesc]);
+
+  // Flat list of photos in gallery reading order (row by row, pose by pose)
+  // so the lightbox can page next/prev across the whole gallery.
+  const galleryFlat = useMemo(() => {
+    const out = [];
+    for (const row of galleryRows) {
+      for (const pose of POSES) {
+        for (const p of (row.byPose[pose] || [])) out.push(p);
+      }
+    }
+    return out;
+  }, [galleryRows]);
+
+  const lightboxPhoto = useMemo(
+    () => photos.find(p => p.id === lightboxId) || null,
+    [photos, lightboxId]
+  );
+
+  const stepLightbox = useCallback((dir) => {
+    if (lightboxId == null || !galleryFlat.length) return;
+    const idx = galleryFlat.findIndex(p => p.id === lightboxId);
+    if (idx === -1) return;
+    const next = (idx + dir + galleryFlat.length) % galleryFlat.length;
+    setLightboxId(galleryFlat[next].id);
+  }, [lightboxId, galleryFlat]);
+
+  // Keyboard nav for the lightbox.
+  useEffect(() => {
+    if (lightboxId == null) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setLightboxId(null);
+      else if (e.key === 'ArrowRight') stepLightbox(1);
+      else if (e.key === 'ArrowLeft') stepLightbox(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxId, stepLightbox]);
+
+  // Open the add-photo modal preset to a given date + pose (from an empty
+  // gallery cell).
+  const openAddForCell = (date, pose) => {
+    setPhotoForm({ date, pose, weight: '', notes: '' });
+    setShowAddPhoto(true);
+  };
+
   const scrollRail = (delta) => {
     if (!timelineRef.current) return;
     timelineRef.current.scrollBy({ left: delta, behavior: 'smooth' });
@@ -423,6 +504,28 @@ export default function PhotoGalleryPage() {
       <header className={styles.header}>
         <button type="button" className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Back">‹</button>
         <h1 className={styles.title}>Photos</h1>
+        {connected && photosAsc.length > 0 && (
+          <div className={styles.viewToggle} role="tablist" aria-label="Photo view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'timeline'}
+              className={[styles.viewToggleBtn, view === 'timeline' ? styles.viewToggleBtnActive : ''].join(' ')}
+              onClick={() => setView('timeline')}
+            >
+              Timeline
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'gallery'}
+              className={[styles.viewToggleBtn, view === 'gallery' ? styles.viewToggleBtnActive : ''].join(' ')}
+              onClick={() => setView('gallery')}
+            >
+              Gallery
+            </button>
+          </div>
+        )}
         {connected && (
           <>
             <button type="button" className={styles.markerBtn} onClick={() => setShowAddMarker(true)}>
@@ -452,7 +555,7 @@ export default function PhotoGalleryPage() {
             <p className={styles.muted}>No progress photos yet. Tap “+ Photo” to add one.</p>
           )}
 
-          {photosAsc.length > 0 && (
+          {photosAsc.length > 0 && view === 'timeline' && (
             <div className={styles.timelineRow}>
               <button
                 type="button"
@@ -546,7 +649,7 @@ export default function PhotoGalleryPage() {
           )}
 
           {/* ── Comparison panel ──────────────────────────────────────── */}
-          {selected && (
+          {selected && view === 'timeline' && (
             <div className={styles.comparePanel}>
               <div className={styles.compareHeader}>
                 {compare
@@ -592,8 +695,76 @@ export default function PhotoGalleryPage() {
             </div>
           )}
 
-          {/* ── Show all photos ──────────────────────────────────────── */}
-          {photosDesc.length > 0 && (
+          {/* ── Gallery: date rows × pose columns ─────────────────────── */}
+          {view === 'gallery' && photosAsc.length > 0 && (
+            <div className={styles.gallery}>
+              <div className={styles.galleryHead}>
+                <div className={styles.galleryHeadDate} />
+                {POSES.map(pose => (
+                  <div key={pose} className={styles.galleryHeadPose}>{POSE_LABEL[pose]}</div>
+                ))}
+              </div>
+
+              {galleryRows.map(row => {
+                const d = fmtGalleryDate(row.date);
+                return (
+                  <div key={row.date} className={styles.galleryRow}>
+                    <div className={styles.galleryRowDate}>
+                      <span className={styles.galleryRowDateMain}>{d.main}</span>
+                      <span className={styles.galleryRowDateYear}>{d.year}</span>
+                      {row.weight != null && (
+                        <span className={styles.galleryRowDateWeight}>{row.weight} kg</span>
+                      )}
+                    </div>
+                    {POSES.map(pose => {
+                      const shots = row.byPose[pose] || [];
+                      // Show the newest same-pose-same-day shot in the cell.
+                      const shot = shots[0];
+                      if (!shot) {
+                        return (
+                          <button
+                            key={pose}
+                            type="button"
+                            className={styles.cellEmpty}
+                            onClick={() => openAddForCell(row.date, pose)}
+                            title={`Add ${POSE_LABEL[pose]} photo for ${row.date}`}
+                          >
+                            +
+                          </button>
+                        );
+                      }
+                      return (
+                        <div key={pose} className={styles.cell}>
+                          {thumbs[shot.id]
+                            ? <img
+                                src={thumbs[shot.id]}
+                                alt={`${POSE_LABEL[pose]} · ${shot.date}`}
+                                className={styles.cellImg}
+                                onClick={() => setLightboxId(shot.id)}
+                              />
+                            : <div className={styles.cellPlaceholder}>…</div>}
+                          {shots.length > 1 && (
+                            <span className={styles.cellBadge}>+{shots.length - 1}</span>
+                          )}
+                          <button
+                            type="button"
+                            className={styles.cellDelete}
+                            aria-label="Delete photo"
+                            onClick={() => handleDeletePhoto(shot)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Show all photos (timeline view only) ─────────────────── */}
+          {view === 'timeline' && photosDesc.length > 0 && (
             <div className={styles.allPhotosSection}>
               <button
                 type="button"
@@ -663,6 +834,24 @@ export default function PhotoGalleryPage() {
             </div>
             <Field label="Date" type="date" value={photoForm.date}
                    onChange={(e) => setPhotoForm({ ...photoForm, date: e.target.value })} />
+            <div className={styles.poseRow}>
+              <div className={styles.poseRowLabel}>Pose</div>
+              <div className={styles.poseOptions}>
+                {POSES.map(pose => (
+                  <button
+                    key={pose}
+                    type="button"
+                    className={[
+                      styles.poseOption,
+                      photoForm.pose === pose ? styles.poseOptionActive : '',
+                    ].join(' ')}
+                    onClick={() => setPhotoForm({ ...photoForm, pose })}
+                  >
+                    {POSE_LABEL[pose]}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Field label="Weight (kg, optional)" type="number" step="0.1" min="0" value={photoForm.weight}
                    onChange={(e) => setPhotoForm({ ...photoForm, weight: e.target.value })} />
             <Field label="Notes (optional)" type="text" value={photoForm.notes}
@@ -709,6 +898,48 @@ export default function PhotoGalleryPage() {
             <Button block onClick={handleAddMarker} disabled={savingMarker}>
               {savingMarker ? 'Saving…' : 'Save marker'}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Lightbox (open gallery view) ────────────────────────────────── */}
+      {lightboxPhoto && (
+        <div className={styles.lightbox} onClick={() => setLightboxId(null)}>
+          <button
+            type="button"
+            className={styles.lightboxClose}
+            aria-label="Close"
+            onClick={() => setLightboxId(null)}
+          >✕</button>
+          {galleryFlat.length > 1 && (
+            <button
+              type="button"
+              className={[styles.lightboxNav, styles.lightboxPrev].join(' ')}
+              aria-label="Previous"
+              onClick={(e) => { e.stopPropagation(); stepLightbox(-1); }}
+            >‹</button>
+          )}
+          {thumbs[lightboxPhoto.id]
+            ? <img
+                src={thumbs[lightboxPhoto.id]}
+                alt={lightboxPhoto.date}
+                className={styles.lightboxImg}
+                onClick={(e) => e.stopPropagation()}
+              />
+            : <div className={styles.slotPlaceholder} onClick={(e) => e.stopPropagation()}>Loading…</div>}
+          {galleryFlat.length > 1 && (
+            <button
+              type="button"
+              className={[styles.lightboxNav, styles.lightboxNext].join(' ')}
+              aria-label="Next"
+              onClick={(e) => { e.stopPropagation(); stepLightbox(1); }}
+            >›</button>
+          )}
+          <div className={styles.lightboxCaption}>
+            <strong>{POSE_LABEL[POSES.includes(lightboxPhoto.pose) ? lightboxPhoto.pose : 'FRONT']}</strong>
+            {' · '}{lightboxPhoto.date}
+            {lightboxPhoto.weight != null && ` · ${lightboxPhoto.weight} kg`}
+            {lightboxPhoto.notes && ` · ${lightboxPhoto.notes}`}
           </div>
         </div>
       )}

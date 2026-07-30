@@ -611,6 +611,42 @@
 }
 .successBack:hover { color: var(--color-text); }
 
+/* ── Preview / confirm before save ─────────────────────────────────────── */
+.previewScreen { display: flex; flex-direction: column; gap: var(--space-4); }
+.previewDate { font-size: 14px; color: var(--color-text-muted); font-weight: 600; }
+.previewHint { font-size: 14px; color: var(--color-text-muted); margin: 0; }
+.previewList { display: flex; flex-direction: column; gap: var(--space-3); }
+.previewCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.previewExName { font-size: 15px; font-weight: 700; color: var(--color-text); }
+.previewSets { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.previewSet {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}
+.previewEmpty { font-size: 13px; color: var(--color-text-muted); font-style: italic; }
+.previewBack {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: var(--space-2);
+}
+.previewBack:hover { color: var(--color-text); }
+
 .exportBtn {
   width: 100%;
   margin-top: var(--space-3);

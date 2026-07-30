@@ -4,6 +4,7 @@ import com.stoyandev.caloriecalculator.dto.ProgressPhotoDTO;
 import com.stoyandev.caloriecalculator.dto.ProgressPhotoRequestDTO;
 import com.stoyandev.caloriecalculator.entity.ProgressPhoto;
 import com.stoyandev.caloriecalculator.entity.Users;
+import com.stoyandev.caloriecalculator.entity.enums.Pose;
 import com.stoyandev.caloriecalculator.exception.ResourceNotFoundException;
 import com.stoyandev.caloriecalculator.repository.ProgressPhotoRepository;
 import com.stoyandev.caloriecalculator.repository.UserRepository;
@@ -44,6 +45,7 @@ public class ProgressPhotoController {
                 .user(user)
                 .driveFileId(req.driveFileId())
                 .date(req.date() != null ? req.date() : LocalDate.now())
+                .pose(req.pose() != null ? req.pose() : Pose.FRONT)
                 .weight(req.weight())
                 .notes(req.notes())
                 .build();
@@ -60,6 +62,7 @@ public class ProgressPhotoController {
     }
 
     private ProgressPhotoDTO toDTO(ProgressPhoto p) {
-        return new ProgressPhotoDTO(p.getId(), p.getDriveFileId(), p.getDate(), p.getWeight(), p.getNotes());
+        return new ProgressPhotoDTO(p.getId(), p.getDriveFileId(), p.getDate(),
+                p.getPose() != null ? p.getPose() : Pose.FRONT, p.getWeight(), p.getNotes());
     }
 }

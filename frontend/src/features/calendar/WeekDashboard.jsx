@@ -1,6 +1,87 @@
 import React from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale,
+  PointElement, LineElement, Tooltip, Legend,
+} from 'chart.js';
 import { computeWeeklySummary } from './weeklySummary';
 import styles from './WeekDashboard.module.css';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+
+/** Read a CSS custom property off :root, with a fallback. */
+function readCssVar(name, fallback) {
+  if (typeof window === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/**
+ * 7-day macro trend: one line each for protein / carbs / fat, using the app's
+ * macro color tokens. `days` is the 7 CalendarDayDTO-shaped objects for the
+ * visible week (some may be undefined for unlogged days). Unlogged days are
+ * left as gaps (null) so the line doesn't dip to zero on a missed day.
+ */
+function MacroChart({ days }) {
+  const protein = readCssVar('--color-protein', '#22d3ee');
+  const carbs = readCssVar('--color-carbs', '#f59e0b');
+  const fat = readCssVar('--color-fat', '#a78bfa');
+  const grid = readCssVar('--color-border', '#243049');
+  const ink = readCssVar('--color-text-muted', '#94a3b8');
+
+  // A day is plotted only if food was actually logged that day. The backend
+  // returns a row for EVERY day in range — including unlogged and future days —
+  // with calories/macros = 0, so we must gap on `calories > 0` rather than on
+  // the object's presence. Gaps (null) + spanGaps make the line stop at the
+  // last logged day instead of dropping to zero across unlogged/future days.
+  const macroOf = (d, key) => (d && (d.calories || 0) > 0 && d[key] != null ? Math.round(d[key]) : null);
+  const list = days || [];
+  const hasAny = list.some((d) => d && (d.calories || 0) > 0);
+
+  const lineFor = (label, key, color) => ({
+    label,
+    data: list.map((d) => macroOf(d, key)),
+    borderColor: color,
+    backgroundColor: color + '33',
+    borderWidth: 2,
+    pointRadius: 3,
+    tension: 0.3,
+    spanGaps: true,
+  });
+
+  const data = {
+    labels: DAY_LABELS,
+    datasets: [
+      lineFor('Protein', 'protein', protein),
+      lineFor('Carbs', 'carbs', carbs),
+      lineFor('Fat', 'fat', fat),
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12, color: ink, font: { size: 11 } } },
+      tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} g` } },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: ink, font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: grid }, ticks: { color: ink, font: { size: 11 } }, title: { display: true, text: 'grams', color: ink } },
+    },
+  };
+
+  return (
+    <div className={styles.chartCard}>
+      <div className={styles.chartTitle}>Macros this week</div>
+      {hasAny
+        ? <div className={styles.chartBox}><Line data={data} options={options} /></div>
+        : <p className={styles.chartEmpty}>No macros logged this week yet.</p>}
+    </div>
+  );
+}
 
 /**
  * Stat tile. `color` picks a categorical accent (see CSS); `size` is 'wide',
@@ -60,18 +141,13 @@ export default function WeekDashboard({ days }) {
         />
         {/* Two squares */}
         <Tile
-          size="sq" color="violet"
-          label="Avg protein"
-          value={s.avgProtein != null ? `${s.avgProtein}g` : '—'}
-          sub={s.avgProtein != null ? 'per logged day' : 'not logged'}
-        />
-        <Tile
           size="sq" color="magenta"
           label="Supplements"
           value={s.suppTakenPct != null ? `${s.suppTakenPct}%` : '—'}
           sub={s.suppTakenPct != null ? 'taken' : 'no routine'}
         />
       </div>
+      <MacroChart days={days} />
       {s.insight && <p className={styles.insight}>{s.insight}</p>}
     </div>
   );

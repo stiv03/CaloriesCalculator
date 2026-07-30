@@ -293,6 +293,7 @@ export default function WorkoutPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [openExercise, setOpenExercise] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
 
   /**
    * Per-exercise lookup of the most recent PAST session's sets for the template
@@ -742,6 +743,7 @@ export default function WorkoutPage() {
       const done = selectedTemplate;
       setSelectedTemplate(null);
       setSets({});
+      setPreviewing(false);
       setSavedTemplate(done);
     } catch (e) {
       const msg = e.message || 'Failed to save';
@@ -1033,13 +1035,13 @@ export default function WorkoutPage() {
         </div>
       )}
 
-      {tab === 'plan' && selectedTemplate && (
+      {tab === 'plan' && selectedTemplate && !previewing && (
         <div className={styles.logForm} onTouchStart={unlockAudio} onClick={unlockAudio}>
           {/* Global rest timer bar removed - shown inline per exercise */}
 
           <div className={styles.logHeader}>
             <div className={styles.logHeaderTop}>
-              <button className={styles.backBtn} onClick={() => { setSelectedTemplate(null); setSets({}); }}>‹</button>
+              <button className={styles.backBtn} onClick={() => { setSelectedTemplate(null); setSets({}); setPreviewing(false); }}>‹</button>
               <div className={styles.logTitle}>New {displayName(selectedTemplate)} Workout</div>
             </div>
             <div className={styles.logHeaderBottom}>
@@ -1205,9 +1207,51 @@ export default function WorkoutPage() {
             );
           })}
 
-          <Button block disabled={saving} onClick={handleSave}>
-            {saving ? 'Saving…' : 'Save workout'}
+          <Button block disabled={saving} onClick={() => setPreviewing(true)}>
+            Save workout
           </Button>
+        </div>
+      )}
+
+      {/* ── PREVIEW / CONFIRM (before actually saving) ──────────────────── */}
+      {tab === 'plan' && selectedTemplate && previewing && (
+        <div className={styles.previewScreen}>
+          <div className={styles.logHeader}>
+            <div className={styles.logHeaderTop}>
+              <button className={styles.backBtn} onClick={() => setPreviewing(false)}>‹</button>
+              <div className={styles.logTitle}>Review {displayName(selectedTemplate)} Workout</div>
+            </div>
+            <div className={styles.previewDate}>{logDate}</div>
+          </div>
+
+          <p className={styles.previewHint}>Check everything looks right before saving.</p>
+
+          <div className={styles.previewList}>
+            {selectedTemplate.exercises.map(ex => {
+              const exSets = (sets[ex.exerciseName] || []).filter(s => s.weight && s.reps);
+              return (
+                <div key={ex.exerciseName} className={styles.previewCard}>
+                  <div className={styles.previewExName}>{ex.exerciseName}</div>
+                  {exSets.length === 0 ? (
+                    <div className={styles.previewEmpty}>No sets — won&rsquo;t be saved</div>
+                  ) : (
+                    <div className={styles.previewSets}>
+                      {exSets.map((s, i) => (
+                        <span key={i} className={styles.previewSet}>{s.weight}×{s.reps}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <Button block disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving…' : 'Confirm & save'}
+          </Button>
+          <button className={styles.previewBack} onClick={() => setPreviewing(false)}>
+            Back to editing
+          </button>
         </div>
       )}
 

@@ -88,6 +88,29 @@
   color: var(--color-text);
 }
 
+/* ── Weekly macros line chart ── */
+.chartCard {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md, 14px);
+}
+.chartTitle {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.chartBox { height: 220px; }
+.chartEmpty {
+  margin: 0;
+  padding: var(--space-3) 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
 /* ── Categorical accents (validated palette). --accent drives the bar/tint,
    --accent-text is the value color (a readable step on the surface). ── */
 .c_blue    { --accent: #2a78d6; --accent-text: #256abf; }
