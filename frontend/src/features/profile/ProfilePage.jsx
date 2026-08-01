@@ -7,9 +7,8 @@ import ErrorBanner from '../../components/ErrorBanner';
 import {
   getUser, getGoal,
   updateStatus, updateActivity, setGoal as apiSetGoal, autoSetGoal, updateGoalWeight, updateStartWeight, updateWaterGoal,
-  updateWeight,
 } from '../../api/profile';
-import * as googleHealth from '../../integrations/googleHealth';
+import { getAuthUrl, getHealthStatus, syncHealthNow, disconnectHealth } from '../../api/health';
 import { changePassword } from '../../api/auth';
 import { getAllNotes } from '../../api/notes';
 import { getTheme, setTheme } from '../../utils/theme';
@@ -49,7 +48,8 @@ export default function ProfilePage() {
   const [notes, setNotes] = useState([]);
   const [theme, setThemeState] = useState(() => getTheme() || 'system');
 
-  const [healthConnected, setHealthConnected] = useState(() => googleHealth.isConnected());
+  const [healthConnected, setHealthConnected] = useState(false);
+  const [healthLastSync, setHealthLastSync] = useState(null);
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthMsg, setHealthMsg] = useState('');
 
@@ -68,7 +68,32 @@ export default function ProfilePage() {
     catch (_e) { /* may not be set */ }
   }, [userId]);
 
-  useEffect(() => { refreshUser(); refreshGoal(); }, [refreshUser, refreshGoal]);
+  const refreshHealthStatus = useCallback(async () => {
+    try {
+      const s = await getHealthStatus(userId);
+      setHealthConnected(!!s.connected);
+      setHealthLastSync(s.lastSyncAt || null);
+    } catch (_) { /* leave defaults */ }
+  }, [userId]);
+
+  useEffect(() => { refreshUser(); refreshGoal(); refreshHealthStatus(); }, [refreshUser, refreshGoal, refreshHealthStatus]);
+
+  // Surface the result of the Google OAuth round-trip (?health=connected|error|…).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const h = params.get('health');
+    if (!h) return;
+    const msgs = {
+      connected: 'Google Health connected.',
+      error: 'Google Health connection failed. Please try again.',
+      invalid: 'Connection link expired. Please try again.',
+      no_refresh_token: 'Google did not return a refresh token. Remove app access at myaccount.google.com/permissions, then reconnect.',
+    };
+    setHealthMsg(msgs[h] || '');
+    if (h === 'connected') refreshHealthStatus();
+    // Clean the query string so the message doesn't persist on reload.
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [refreshHealthStatus]);
 
   const handleNotesToggle = async () => {
     const opening = !notesOpen;
@@ -131,29 +156,37 @@ export default function ProfilePage() {
   const handleHealthConnect = async () => {
     setError(''); setHealthMsg(''); setHealthBusy(true);
     try {
-      await googleHealth.connect();
-      setHealthConnected(true);
-      setHealthMsg('Connected to Google Health.');
+      const url = await getAuthUrl(userId);
+      // Hand off to Google; the backend callback finishes and redirects back here.
+      window.location.href = url;
     } catch (e) {
-      setError(e.message || 'Could not connect to Google Health');
-    } finally { setHealthBusy(false); }
+      setError(e.message || 'Could not start Google Health connection');
+      setHealthBusy(false);
+    }
   };
 
-  const handleHealthDisconnect = () => {
-    googleHealth.disconnect();
-    setHealthConnected(false);
-    setHealthMsg('Disconnected.');
+  const handleHealthDisconnect = async () => {
+    setError(''); setHealthMsg(''); setHealthBusy(true);
+    try {
+      await disconnectHealth(userId);
+      setHealthConnected(false);
+      setHealthLastSync(null);
+      setHealthMsg('Disconnected.');
+    } catch (e) {
+      setError(e.message || 'Could not disconnect');
+    } finally { setHealthBusy(false); }
   };
 
   const handleHealthSyncWeight = async () => {
     setError(''); setHealthMsg(''); setHealthBusy(true);
     try {
-      const latest = await googleHealth.getLatestWeight(30);
-      setHealthConnected(googleHealth.isConnected());
-      if (!latest) { setHealthMsg('No weight readings found in the last 30 days.'); return; }
-      await updateWeight(userId, latest.kg, null);
-      await refreshUser();
-      setHealthMsg(`Synced ${latest.kg} kg from Google Health.`);
+      const res = await syncHealthNow(userId);
+      if (!res.synced) {
+        setHealthMsg(res.reason === 'not_connected' ? 'Not connected.' : 'Sync did not run.');
+      } else {
+        setHealthMsg(`Synced — ${res.recordsImported ?? 0} record(s) imported.`);
+        await Promise.all([refreshUser(), refreshHealthStatus()]);
+      }
     } catch (e) {
       setError(e.message || 'Google Health sync failed');
     } finally { setHealthBusy(false); }
@@ -299,11 +332,12 @@ export default function ProfilePage() {
         {healthConnected ? (
           <>
             <p className={styles.muted} style={{ marginTop: 0 }}>
-              Connected (this session). Import data synced from Fitbit / Google Health.
+              Connected. Weight syncs automatically every day.
+              {healthLastSync ? ` Last sync: ${new Date(healthLastSync).toLocaleString()}.` : ' Not synced yet.'}
             </p>
             <div className={styles.actions}>
               <Button block onClick={handleHealthSyncWeight} disabled={healthBusy}>
-                {healthBusy ? 'Syncing…' : 'Sync weight now'}
+                {healthBusy ? 'Syncing…' : 'Sync now'}
               </Button>
               <Button block variant="secondary" onClick={handleHealthDisconnect} disabled={healthBusy}>
                 Disconnect
@@ -313,7 +347,7 @@ export default function ProfilePage() {
         ) : (
           <>
             <p className={styles.muted} style={{ marginTop: 0 }}>
-              Connect your Google Health account to import weight (and later steps &amp; activity)
+              Connect your Google Health account to auto-import weight (and later steps &amp; activity)
               synced from your Fitbit.
             </p>
             <div className={styles.actions}>

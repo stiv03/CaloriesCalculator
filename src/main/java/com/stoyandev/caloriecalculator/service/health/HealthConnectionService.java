@@ -1,0 +1,187 @@
+package com.stoyandev.caloriecalculator.service.health;
+
+import com.stoyandev.caloriecalculator.entity.GoogleHealthConnection;
+import com.stoyandev.caloriecalculator.repository.GoogleHealthConnectionRepository;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Orchestrates the Google Health connection: OAuth handshake, encrypted
+ * refresh-token storage, and running all {@link HealthImporter}s (manually or
+ * on a daily schedule). Adding a new metric = add an importer bean; this class
+ * is unchanged.
+ */
+@Service
+@RequiredArgsConstructor
+public class HealthConnectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(HealthConnectionService.class);
+    private static final long STATE_TTL_MS = 10 * 60 * 1000; // 10 min to complete consent
+
+    private final GoogleHealthClient client;
+    private final GoogleHealthConnectionRepository connectionRepo;
+    private final TokenCipher cipher;
+    private final List<HealthImporter> importers;
+    private final NutritionExporter nutritionExporter;
+    private final com.stoyandev.caloriecalculator.repository.NutritionExportRepository nutritionExportRepo;
+
+    @Value("${google.health.token-enc-key}")
+    private String stateKeyBase64; // reuse the enc key as the HMAC key for state signing
+
+    @Value("${google.health.post-connect-redirect}")
+    private String postConnectRedirect;
+
+    // ---- Connect flow ----
+
+    public String buildAuthUrl(Long userId) {
+        if (!client.isConfigured()) {
+            throw new IllegalStateException("Google Health is not configured on the server.");
+        }
+        return client.buildAuthUrl(signState(userId));
+    }
+
+    @Transactional
+    public String handleCallback(String code, String state, String error) {
+        try {
+            if (error != null && !error.isBlank()) {
+                return postConnectRedirect + "?health=error";
+            }
+            Long userId = verifyState(state);
+            if (userId == null || code == null || code.isBlank()) {
+                return postConnectRedirect + "?health=invalid";
+            }
+            GoogleHealthClient.TokenResponse tokens = client.exchangeCode(code);
+            if (tokens == null || tokens.refreshToken() == null || tokens.refreshToken().isBlank()) {
+                // No refresh token (e.g. user previously consented without offline) — signal retry.
+                return postConnectRedirect + "?health=no_refresh_token";
+            }
+            GoogleHealthConnection conn = connectionRepo.findByUserId(userId)
+                    .orElseGet(() -> GoogleHealthConnection.builder().userId(userId).build());
+            conn.setRefreshTokenEnc(cipher.encrypt(tokens.refreshToken()));
+            conn.setScopes(tokens.scope());
+            conn.setConnectedAt(Instant.now());
+            connectionRepo.save(conn);
+            return postConnectRedirect + "?health=connected";
+        } catch (Exception e) {
+            log.warn("Health OAuth callback failed: {}", e.getMessage());
+            return postConnectRedirect + "?health=error";
+        }
+    }
+
+    // ---- Status / manual sync / disconnect ----
+
+    public Map<String, Object> status(Long userId) {
+        Map<String, Object> out = new HashMap<>();
+        var conn = connectionRepo.findByUserId(userId).orElse(null);
+        out.put("connected", conn != null);
+        out.put("configured", client.isConfigured());
+        out.put("lastSyncAt", conn != null && conn.getLastSyncAt() != null ? conn.getLastSyncAt().toString() : null);
+        return out;
+    }
+
+    @Transactional
+    public Map<String, Object> syncNow(Long userId) {
+        var conn = connectionRepo.findByUserId(userId).orElse(null);
+        Map<String, Object> out = new HashMap<>();
+        if (conn == null) {
+            out.put("synced", false);
+            out.put("reason", "not_connected");
+            return out;
+        }
+        int total = runImporters(conn);
+        out.put("synced", true);
+        out.put("recordsImported", total);
+        return out;
+    }
+
+    @Transactional
+    public void disconnect(Long userId) {
+        connectionRepo.deleteByUserId(userId);
+        // Forget export tracking so a future reconnect re-exports cleanly.
+        nutritionExportRepo.deleteByUserId(userId);
+    }
+
+    // ---- Scheduled daily sync (07:13 to avoid the top-of-hour crowd) ----
+
+    @Scheduled(cron = "0 13 7 * * *")
+    @Transactional
+    public void scheduledSync() {
+        if (!client.isConfigured()) return;
+        for (GoogleHealthConnection conn : connectionRepo.findAll()) {
+            try {
+                runImporters(conn);
+            } catch (Exception e) {
+                log.warn("Scheduled health sync failed for user {}: {}", conn.getUserId(), e.getMessage());
+            }
+        }
+    }
+
+    // ---- Core: refresh token, run every importer since lastSyncAt ----
+
+    private int runImporters(GoogleHealthConnection conn) {
+        String refreshToken = cipher.decrypt(conn.getRefreshTokenEnc());
+        GoogleHealthClient.TokenResponse refreshed = client.refresh(refreshToken);
+        if (refreshed == null || refreshed.accessToken() == null) {
+            throw new IllegalStateException("Could not refresh Google access token");
+        }
+        int total = 0;
+        for (HealthImporter importer : importers) {
+            total += importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
+        }
+        // App → Google: push recent meals as nutrition entries (duplicate-safe).
+        total += nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7);
+        conn.setLastSyncAt(Instant.now());
+        connectionRepo.save(conn);
+        return total;
+    }
+
+    // ---- Signed state (HMAC) so the stateless callback can trust the userId ----
+
+    private String signState(Long userId) {
+        String payload = userId + ":" + Instant.now().toEpochMilli();
+        String sig = hmac(payload);
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString((payload + ":" + sig).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Long verifyState(String state) {
+        try {
+            String decoded = new String(Base64.getUrlDecoder().decode(state), StandardCharsets.UTF_8);
+            int lastColon = decoded.lastIndexOf(':');
+            String payload = decoded.substring(0, lastColon);
+            String sig = decoded.substring(lastColon + 1);
+            if (!hmac(payload).equals(sig)) return null;
+            String[] parts = payload.split(":");
+            long ts = Long.parseLong(parts[1]);
+            if (Instant.now().toEpochMilli() - ts > STATE_TTL_MS) return null; // expired
+            return Long.parseLong(parts[0]);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String hmac(String data) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(Base64.getDecoder().decode(stateKeyBase64.trim()), "HmacSHA256"));
+            return Base64.getUrlEncoder().withoutPadding()
+                    .encodeToString(mac.doFinal(data.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException("state signing failed", e);
+        }
+    }
+}
