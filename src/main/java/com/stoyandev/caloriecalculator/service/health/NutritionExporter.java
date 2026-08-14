@@ -125,16 +125,18 @@ public class NutritionExporter {
         // Represent the meal as an interval on that date (noon, arbitrary but stable).
         String start = date.atTime(12, 0).atZone(java.time.ZoneOffset.UTC).toInstant().toString();
         String end = date.atTime(12, 30).atZone(java.time.ZoneOffset.UTC).toInstant().toString();
+        // Google Health quantities use unit-named numeric fields, NOT {unit,value}:
+        // EnergyQuantity → "kcal"; WeightQuantity (fat/carbs/protein) → "grams".
         return Map.of("nutritionLog", Map.of(
                 "interval", Map.of("startTime", start, "endTime", end),
                 "mealType", googleMealType(type),
                 "foodDisplayName", type.name().charAt(0) + type.name().substring(1).toLowerCase(),
-                "energy", Map.of("unit", "kcal", "value", round(m.kcal)),
-                "totalCarbohydrate", Map.of("unit", "g", "value", round(m.carbs)),
-                "totalFat", Map.of("unit", "g", "value", round(m.fat)),
+                "energy", Map.of("kcal", round(m.kcal)),
+                "totalCarbohydrate", Map.of("grams", round(m.carbs)),
+                "totalFat", Map.of("grams", round(m.fat)),
                 "nutrients", List.of(Map.of(
                         "nutrient", "PROTEIN",
-                        "quantity", Map.of("unit", "g", "value", round(m.protein))))
+                        "quantity", Map.of("grams", round(m.protein))))
         ));
     }
 

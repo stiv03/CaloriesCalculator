@@ -102,13 +102,22 @@ public class HealthConnectionService {
             out.put("reason", "not_connected");
             return out;
         }
-        var result = runImporters(conn);
-        out.put("synced", true);
-        out.put("recordsImported", result.getTotal());
-        out.put("weightImported", result.getWeightImported());
-        out.put("nutritionExported", result.getNutritionExported());
-        out.put("nutritionSkipped", result.getNutritionSkipped());
-        out.put("errors", result.getErrors());
+        try {
+            var result = runImporters(conn);
+            out.put("synced", true);
+            out.put("recordsImported", result.getTotal());
+            out.put("weightImported", result.getWeightImported());
+            out.put("nutritionExported", result.getNutritionExported());
+            out.put("nutritionSkipped", result.getNutritionSkipped());
+            out.put("errors", result.getErrors());
+        } catch (Exception e) {
+            // Never let a sync failure bubble up as a 500/401 that logs the user
+            // out — surface it in the result so the UI can show what went wrong.
+            log.warn("Manual sync failed for user {}: {}", userId, e.getMessage());
+            out.put("synced", false);
+            out.put("reason", "sync_failed");
+            out.put("errors", java.util.List.of(String.valueOf(e.getMessage())));
+        }
         return out;
     }
 

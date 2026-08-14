@@ -52,6 +52,19 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, "Authentication failed");
     }
 
+    /**
+     * Catch-all for anything not handled above. Without this, an unhandled
+     * exception falls through to the default /error dispatch, which (being an
+     * authenticated route) can surface as a spurious 401 and log the user out.
+     * Map it to a clean 500 instead. Security auth/access exceptions are handled
+     * by their specific handlers above and are unaffected.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        return build(HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage() == null ? "Unexpected error" : ex.getMessage());
+    }
+
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(baseBody(status, message));
     }
