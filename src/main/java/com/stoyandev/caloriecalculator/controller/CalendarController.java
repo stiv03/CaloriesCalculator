@@ -26,6 +26,7 @@ public class CalendarController {
     private final WorkoutRepository workoutRepository;
     private final SupplementRepository supplementRepository;
     private final SupplementIntakeRepository supplementIntakeRepository;
+    private final StepRecordRepository stepRecordRepository;
 
     @GetMapping("/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
@@ -72,6 +73,9 @@ public class CalendarController {
                 .collect(Collectors.groupingBy(m -> m.getConsumedAt().toLocalDate()));
         Map<LocalDate, Double> weightByDay = weights.stream()
                 .collect(Collectors.toMap(WeightRecord::getDate, WeightRecord::getWeight, (a, b) -> a));
+        Map<LocalDate, Integer> stepsByDay = stepRecordRepository.findByUserIdOrderByDateAsc(userId).stream()
+                .filter(s -> !s.getDate().isBefore(from) && !s.getDate().isAfter(to))
+                .collect(Collectors.toMap(s -> s.getDate(), s -> s.getSteps(), (a, b) -> a));
         Set<LocalDate> noteDays = notes.stream().map(DailyNote::getDate).collect(Collectors.toSet());
         Map<LocalDate, Workout> workoutByDay = workouts.stream()
                 .collect(Collectors.toMap(Workout::getDate, w -> w, (a, b) -> a));
@@ -125,10 +129,26 @@ public class CalendarController {
                     dayTotalSupps,
                     intakesByDay.getOrDefault(day, 0L).intValue(),
                     totalSupplements > 0,
-                    isRest
+                    isRest,
+                    stepsByDay.get(day)
             ));
             cur = cur.plusDays(1);
         }
         return ResponseEntity.ok(result);
+    }
+
+    /** Daily step history for the Progress chart: [{date, steps}] ascending. */
+    @GetMapping("/{userId}/steps")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<List<Map<String, Object>>> getSteps(@PathVariable Long userId) {
+        List<Map<String, Object>> out = stepRecordRepository.findByUserIdOrderByDateAsc(userId).stream()
+                .map(s -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("date", s.getDate().toString());
+                    m.put("steps", s.getSteps());
+                    return m;
+                })
+                .toList();
+        return ResponseEntity.ok(out);
     }
 }

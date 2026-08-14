@@ -10,12 +10,16 @@ import java.util.List;
  */
 public class HealthSyncResultDTO {
     private int weightImported;      // Google Health → app
+    private int stepsImported;       // Google Health → app (days)
     private int nutritionExported;   // app → Google Health (written/updated)
     private int nutritionSkipped;    // unchanged, nothing to do
     private final List<String> errors = new ArrayList<>();
 
     public int getWeightImported() { return weightImported; }
     public void addWeightImported(int n) { this.weightImported += n; }
+
+    public int getStepsImported() { return stepsImported; }
+    public void addStepsImported(int n) { this.stepsImported += n; }
 
     public int getNutritionExported() { return nutritionExported; }
     public void addNutritionExported(int n) { this.nutritionExported += n; }
@@ -27,5 +31,5 @@ public class HealthSyncResultDTO {
     public void addError(String e) { this.errors.add(e); }
 
     /** Grand total of records that changed (for the headline count). */
-    public int getTotal() { return weightImported + nutritionExported; }
+    public int getTotal() { return weightImported + stepsImported + nutritionExported; }
 }

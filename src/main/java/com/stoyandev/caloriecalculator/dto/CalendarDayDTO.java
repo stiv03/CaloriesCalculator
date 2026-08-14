@@ -18,5 +18,6 @@ public record CalendarDayDTO(
         int supplementsTotal,
         int supplementsTaken,
         boolean hasSupplementRoutine,
-        boolean isRestDay
+        boolean isRestDay,
+        Integer steps
 ) {}

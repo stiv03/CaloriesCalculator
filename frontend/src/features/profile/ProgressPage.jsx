@@ -6,14 +6,17 @@ import {
   getUser, getWeightRecords, getMeasurements, getLatestMeasurement,
 } from '../../api/profile';
 import { getAllMacros } from '../../api/meals';
+import { getStepHistory } from '../../api/calendar';
 import { getUserId } from '../../auth/storage';
 import WeightTab from './tabs/WeightTab';
 import BodyTab from './tabs/BodyTab';
+import StepsTab from './tabs/StepsTab';
 import styles from './ProfilePage.module.css';
 
 const TABS = [
   { id: 'weight', label: 'Weight' },
   { id: 'body', label: 'Body' },
+  { id: 'steps', label: 'Steps' },
 ];
 
 export default function ProgressPage() {
@@ -25,6 +28,7 @@ export default function ProgressPage() {
   const [allMacros, setAllMacros] = useState([]);
   const [measurements, setMeasurements] = useState([]);
   const [latestMeasurement, setLatestMeasurement] = useState(null);
+  const [steps, setSteps] = useState([]);
   const [error, setError] = useState('');
 
   const refreshUser = useCallback(async () => {
@@ -55,12 +59,18 @@ export default function ProgressPage() {
     catch (_e) { setLatestMeasurement(null); }
   }, [userId]);
 
+  const refreshSteps = useCallback(async () => {
+    try { setSteps(await getStepHistory(userId)); }
+    catch (_e) { /* empty list shows the connect prompt */ }
+  }, [userId]);
+
   useEffect(() => {
     refreshUser();
     refreshWeights();
     refreshMacros();
     refreshMeasurements();
-  }, [refreshUser, refreshWeights, refreshMacros, refreshMeasurements]);
+    refreshSteps();
+  }, [refreshUser, refreshWeights, refreshMacros, refreshMeasurements, refreshSteps]);
 
   return (
     <div className={styles.page}>
@@ -96,6 +106,9 @@ export default function ProgressPage() {
             weightRecords={weightRecords}
             onRefreshMeasurements={refreshMeasurements}
           />
+        )}
+        {activeTab === 'steps' && (
+          <StepsTab steps={steps} />
         )}
       </section>
     </div>

@@ -107,6 +107,7 @@ public class HealthConnectionService {
             out.put("synced", true);
             out.put("recordsImported", result.getTotal());
             out.put("weightImported", result.getWeightImported());
+            out.put("stepsImported", result.getStepsImported());
             out.put("nutritionExported", result.getNutritionExported());
             out.put("nutritionSkipped", result.getNutritionSkipped());
             out.put("errors", result.getErrors());
@@ -153,8 +154,12 @@ public class HealthConnectionService {
             throw new IllegalStateException("Could not refresh Google access token");
         }
         for (HealthImporter importer : importers) {
-            result.addWeightImported(
-                    importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt()));
+            int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
+            if ("steps".equals(importer.dataType())) {
+                result.addStepsImported(n);
+            } else {
+                result.addWeightImported(n);
+            }
         }
         // App → Google: push recent meals as nutrition entries (duplicate-safe).
         nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);

@@ -1,13 +1,13 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
-  PointElement, LineElement, Tooltip, Legend,
+  PointElement, LineElement, BarElement, Tooltip, Legend,
 } from 'chart.js';
 import { computeWeeklySummary } from './weeklySummary';
 import styles from './WeekDashboard.module.css';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend);
 
 /** Read a CSS custom property off :root, with a fallback. */
 function readCssVar(name, fallback) {
@@ -83,6 +83,46 @@ function MacroChart({ days }) {
   );
 }
 
+/** 7-day steps bar chart. `stepsByDay` is a 7-length array (null where no data). */
+function StepsChart({ stepsByDay }) {
+  const accent = readCssVar('--color-accent', '#3b82f6');
+  const grid = readCssVar('--color-border', '#243049');
+  const ink = readCssVar('--color-text-muted', '#94a3b8');
+  const list = stepsByDay || [];
+  const hasAny = list.some((v) => v != null && v > 0);
+
+  const data = {
+    labels: DAY_LABELS,
+    datasets: [{
+      label: 'Steps',
+      data: list.map((v) => (v != null ? v : 0)),
+      backgroundColor: accent,
+      borderRadius: 3,
+    }],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: (c) => `${c.parsed.y.toLocaleString()} steps` } },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: ink, font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: grid }, ticks: { color: ink, font: { size: 11 } } },
+    },
+  };
+
+  return (
+    <div className={styles.chartCard}>
+      <div className={styles.chartTitle}>Steps this week</div>
+      {hasAny
+        ? <div className={styles.chartBox}><Bar data={data} options={options} /></div>
+        : <p className={styles.chartEmpty}>No step data this week.</p>}
+    </div>
+  );
+}
+
 /**
  * Stat tile. `color` picks a categorical accent (see CSS); `size` is 'wide',
  * 'sq' (square), or 'tall'. The accent shows as a left bar + colored value, so
@@ -146,8 +186,15 @@ export default function WeekDashboard({ days }) {
           value={s.suppTakenPct != null ? `${s.suppTakenPct}%` : '—'}
           sub={s.suppTakenPct != null ? 'taken' : 'no routine'}
         />
+        <Tile
+          size="sq" color="violet"
+          label="Avg steps / day"
+          value={s.avgSteps != null ? s.avgSteps.toLocaleString() : '—'}
+          sub={s.avgSteps != null ? 'from Google Health' : 'not synced'}
+        />
       </div>
       <MacroChart days={days} />
+      <StepsChart stepsByDay={s.stepsByDay} />
       {s.insight && <p className={styles.insight}>{s.insight}</p>}
     </div>
   );

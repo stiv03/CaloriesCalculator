@@ -56,12 +56,21 @@ export function computeWeeklySummary(days) {
   const suppTaken = suppDays.reduce((s, d) => s + d.supplementsTaken, 0);
   const suppTakenPct = suppTotal > 0 ? round((suppTaken / suppTotal) * 100) : null;
 
+  // Steps — average over days that have step data. `stepsByDay` preserves the
+  // 7-day order (null for days without data) for the mini chart.
+  const stepDays = list.filter((d) => d.steps != null);
+  const avgSteps = stepDays.length
+    ? round(stepDays.reduce((s, d) => s + d.steps, 0) / stepDays.length)
+    : null;
+  const stepsByDay = (days || []).map((d) => (d && d.steps != null ? d.steps : null));
+
   return {
     avgCalories, calorieGoal, daysLogged,
     weightChange, weighIns,
     workouts, restDays,
     avgProtein,
     suppTakenPct,
+    avgSteps, stepsByDay,
     insight: buildInsight({
       daysLogged, avgCalories, calorieGoal, weightChange, workouts,
     }),
