@@ -153,19 +153,37 @@ public class HealthConnectionService {
         if (refreshed == null || refreshed.accessToken() == null) {
             throw new IllegalStateException("Could not refresh Google access token");
         }
+        // Each importer/exporter is isolated: one failing (e.g. a bad endpoint)
+        // must not abort the others, and its error is recorded in the breakdown.
         for (HealthImporter importer : importers) {
-            int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
-            if ("steps".equals(importer.dataType())) {
-                result.addStepsImported(n);
-            } else {
-                result.addWeightImported(n);
+            try {
+                int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
+                if ("steps".equals(importer.dataType())) {
+                    result.addStepsImported(n);
+                } else {
+                    result.addWeightImported(n);
+                }
+            } catch (Exception e) {
+                result.addError(importer.dataType() + " import: " + shortMsg(e.getMessage()));
+                log.warn("{} import failed for user {}: {}", importer.dataType(), conn.getUserId(), e.getMessage());
             }
         }
         // App → Google: push recent meals as nutrition entries (duplicate-safe).
-        nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
+        try {
+            nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
+        } catch (Exception e) {
+            result.addError("nutrition export: " + shortMsg(e.getMessage()));
+        }
         conn.setLastSyncAt(Instant.now());
         connectionRepo.save(conn);
         return result;
+    }
+
+    /** Trim long/HTML error bodies to a readable snippet for the UI. */
+    private static String shortMsg(String msg) {
+        if (msg == null) return "unknown error";
+        String m = msg.replaceAll("\\s+", " ").trim();
+        return m.length() > 200 ? m.substring(0, 200) + "…" : m;
     }
 
     // ---- Signed state (HMAC) so the stateless callback can trust the userId ----
