@@ -9,20 +9,23 @@ import com.stoyandev.caloriecalculator.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Imports step counts from Google Health into StepRecord. Google returns steps
- * as intra-day intervals, so we SUM them per calendar day and upsert one row
- * per day. Same import mechanism as WeightImporter (Google → app).
+ * Imports daily step totals from Google Health into StepRecord (one row/day).
+ *
+ * Uses Google's DAILY ROLLUP query, not the raw interval dataPoints: the rollup
+ * is reconciled/deduplicated across all sources (Fitbit, phone, etc.) and keyed
+ * by civil (local) date — so it matches the number shown in the Google Health
+ * app. Summing raw per-source buckets double-counted overlapping sources and
+ * inflated totals.
  */
 @Component
 @AllArgsConstructor
@@ -45,87 +48,97 @@ public class StepImporter implements HealthImporter {
         Users user = userRepository.findById(userId).orElse(null);
         if (user == null) return 0;
 
-        // Steps are minute-level buckets we sum per day, and re-imports OVERWRITE
-        // the day's total. So we must always re-fetch WHOLE days — never just
-        // "since last sync", or a mid-day re-sync would replace today's full
-        // total with a tiny partial slice. Always fetch from the start of the
-        // look-back window (a fresh sync uses 30 days; a same-day re-sync still
-        // re-totals today in full). `since` is intentionally ignored here.
-        int lookbackDays = DEFAULT_LOOKBACK_DAYS;
-        Instant from = LocalDate.now().minusDays(lookbackDays).atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant to = Instant.now();
-        String filter = "steps.interval.start_time >= \"" + from + "\" AND "
-                + "steps.interval.start_time < \"" + to + "\"";
+        // Always re-roll whole days over the look-back (ignore narrow `since`) so
+        // a same-day re-sync re-totals today completely rather than partially.
+        LocalDate today = LocalDate.now();
+        LocalDate start = today.minusDays(DEFAULT_LOOKBACK_DAYS);
 
-        // Steps arrive as many minute-level buckets; the API paginates. Follow
-        // nextPageToken and sum ALL pages, or we'd only total the first page
-        // (which produced wildly low daily totals).
-        Map<LocalDate, Integer> byDay = new HashMap<>();
+        Map<String, Object> body = Map.of(
+                "range", Map.of(
+                        "startDate", civil(start),
+                        "endDate", civil(today.plusDays(1))),  // endDate exclusive-ish; +1 to include today
+                "pageSize", 100,
+                "windowSizeDays", 1);
+
+        int daysWritten = 0;
         String pageToken = null;
         int pages = 0;
         do {
-            final String tok = pageToken;
-            OffResponse resp = rest.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .scheme("https").host("health.googleapis.com")
-                            .path("/v4/users/me/dataTypes/steps/dataPoints")
-                            .queryParam("filter", filter)
-                            .queryParam("pageSize", 1000)
-                            .queryParamIfPresent("pageToken",
-                                    java.util.Optional.ofNullable(tok))
-                            .build())
+            Map<String, Object> req = new java.util.HashMap<>(body);
+            if (pageToken != null) req.put("pageToken", pageToken);
+
+            String raw = rest.post()
+                    .uri("https://health.googleapis.com/v4/users/me/dataTypes/steps/dailyRollupDataPoints:query")
                     .header("Authorization", "Bearer " + accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(req)
                     .retrieve()
-                    .body(OffResponse.class);
+                    .body(String.class);
+            if (pages == 0) {
+                log.info("[steps-rollup] raw response user {}: {}", userId,
+                        raw == null ? "null" : raw.substring(0, Math.min(raw.length(), 1200)));
+            }
+            RollupResponse resp;
+            try {
+                resp = new com.fasterxml.jackson.databind.ObjectMapper().readValue(raw, RollupResponse.class);
+            } catch (Exception e) {
+                resp = null;
+            }
 
             if (resp == null) break;
-            if (resp.dataPoints() != null) {
-                for (DataPoint dp : resp.dataPoints()) {
-                    Integer count = dp.stepCount();
-                    Instant when = dp.startTime();
-                    if (count == null || when == null) continue;
-                    LocalDate date = when.atZone(ZoneOffset.UTC).toLocalDate();
-                    byDay.merge(date, count, Integer::sum);
+            if (resp.rollupDataPoints() != null) {
+                for (RollupPoint p : resp.rollupDataPoints()) {
+                    LocalDate date = p.localDate();
+                    Integer count = p.stepCount();
+                    if (date == null || count == null) continue;
+                    final LocalDate d = date;
+                    StepRecord rec = stepRepository.findByUserIdAndDate(userId, d)
+                            .orElseGet(() -> { var s = new StepRecord(); s.setUser(user); s.setDate(d); return s; });
+                    rec.setSteps(count);
+                    stepRepository.save(rec);
+                    daysWritten++;
                 }
             }
             pageToken = resp.nextPageToken();
             pages++;
-        } while (pageToken != null && !pageToken.isBlank() && pages < 100); // safety cap
+        } while (pageToken != null && !pageToken.isBlank() && pages < 50);
 
-        int daysWritten = 0;
-        for (Map.Entry<LocalDate, Integer> e : byDay.entrySet()) {
-            LocalDate date = e.getKey();
-            StepRecord rec = stepRepository.findByUserIdAndDate(userId, date)
-                    .orElseGet(() -> { var s = new StepRecord(); s.setUser(user); s.setDate(date); return s; });
-            rec.setSteps(e.getValue());
-            stepRepository.save(rec);
-            daysWritten++;
-        }
-        log.info("Steps import for user {}: {} day-records over {} page(s)", userId, daysWritten, pages);
+        log.info("Steps rollup import for user {}: {} day-records over {} page(s)", userId, daysWritten, pages);
         return daysWritten;
     }
 
-    // --- Google Health steps JSON (verified shape):
-    //   dataPoints[].steps.count            = string count, e.g. "3"
-    //   dataPoints[].steps.interval.startTime = RFC-3339
+    /** Google CivilDate {year, month, day}. */
+    private static Map<String, Object> civil(LocalDate d) {
+        return Map.of("year", d.getYear(), "month", d.getMonthValue(), "day", d.getDayOfMonth());
+    }
+
+    // --- Daily rollup response (verified shape):
+    //   rollupDataPoints[].date = {year,month,day}
+    //   rollupDataPoints[].stepsRollupValue.countSum = "8432" (string)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record OffResponse(List<DataPoint> dataPoints, @JsonProperty("nextPageToken") String nextPageToken) {}
+    record RollupResponse(List<RollupPoint> rollupDataPoints,
+                          @JsonProperty("nextPageToken") String nextPageToken) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record DataPoint(Steps steps) {
-        Integer stepCount() {
-            if (steps == null || steps.count() == null) return null;
-            try { return (int) Math.round(Double.parseDouble(steps.count())); }
-            catch (NumberFormatException e) { return null; }
+    record RollupPoint(CivilDate date,
+                       @JsonProperty("stepsRollupValue") StepsRollup stepsRollupValue) {
+        LocalDate localDate() {
+            return date != null ? date.toLocalDate() : null;
         }
-        Instant startTime() {
-            return steps != null && steps.interval() != null ? steps.interval().startTime() : null;
+        Integer stepCount() {
+            if (stepsRollupValue == null || stepsRollupValue.countSum() == null) return null;
+            try { return (int) Math.round(Double.parseDouble(stepsRollupValue.countSum())); }
+            catch (NumberFormatException e) { return null; }
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Steps(@JsonProperty("count") String count, Interval interval) {}
+    record CivilDate(Integer year, Integer month, Integer day) {
+        LocalDate toLocalDate() {
+            return (year != null && month != null && day != null) ? LocalDate.of(year, month, day) : null;
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Interval(@JsonProperty("startTime") Instant startTime) {}
+    record StepsRollup(@JsonProperty("countSum") String countSum) {}
 }
