@@ -50,22 +50,11 @@ public class StepImporter implements HealthImporter {
         String filter = "steps.interval.start_time >= \"" + from + "\" AND "
                 + "steps.interval.start_time < \"" + to + "\"";
 
-        // Fetch raw first so we can see the real shape even if our record mapping
-        // finds nothing (one-time diagnostic, like we did for weight).
-        String raw = rest.get()
+        OffResponse resp = rest.get()
                 .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/steps/dataPoints?filter={f}", filter)
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
-                .body(String.class);
-        log.info("[steps] raw response for user {}: {}", userId,
-                raw == null ? "null" : raw.substring(0, Math.min(raw.length(), 1500)));
-
-        OffResponse resp;
-        try {
-            resp = new com.fasterxml.jackson.databind.ObjectMapper().readValue(raw, OffResponse.class);
-        } catch (Exception e) {
-            resp = null;
-        }
+                .body(OffResponse.class);
 
         if (resp == null || resp.dataPoints() == null) return 0;
 
@@ -92,23 +81,26 @@ public class StepImporter implements HealthImporter {
         return daysWritten;
     }
 
-    // --- Google Health steps JSON. Parse defensively: value or rollup countSum. ---
+    // --- Google Health steps JSON (verified shape):
+    //   dataPoints[].steps.count            = string count, e.g. "3"
+    //   dataPoints[].steps.interval.startTime = RFC-3339
     @JsonIgnoreProperties(ignoreUnknown = true)
     record OffResponse(List<DataPoint> dataPoints) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record DataPoint(Steps steps, Interval interval) {
+    record DataPoint(Steps steps) {
         Integer stepCount() {
-            if (steps == null) return null;
-            if (steps.value() != null) return steps.value();
-            if (steps.countSum() != null) return steps.countSum();
-            return null;
+            if (steps == null || steps.count() == null) return null;
+            try { return (int) Math.round(Double.parseDouble(steps.count())); }
+            catch (NumberFormatException e) { return null; }
         }
-        Instant startTime() { return interval != null ? interval.startTime() : null; }
+        Instant startTime() {
+            return steps != null && steps.interval() != null ? steps.interval().startTime() : null;
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Steps(@JsonProperty("value") Integer value, @JsonProperty("countSum") Integer countSum) {}
+    record Steps(@JsonProperty("count") String count, Interval interval) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Interval(@JsonProperty("startTime") Instant startTime) {}
