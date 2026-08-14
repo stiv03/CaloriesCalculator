@@ -49,23 +49,23 @@ public class NutritionExporter {
     }
 
     /**
-     * Export the last `lookbackDays` of meals for a user. Returns the number of
-     * nutrition entries written or updated.
+     * Export the last `lookbackDays` of meals for a user into the given result
+     * (nutritionExported / nutritionSkipped / errors).
      */
-    public int export(Long userId, String accessToken, int lookbackDays) {
+    public void export(Long userId, String accessToken, int lookbackDays,
+                       com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO result) {
         int days = lookbackDays > 0 ? lookbackDays : DEFAULT_LOOKBACK_DAYS;
-        int written = 0;
         LocalDate today = LocalDate.now();
         for (int i = 0; i < days; i++) {
-            written += exportDay(userId, accessToken, today.minusDays(i));
+            exportDay(userId, accessToken, today.minusDays(i), result);
         }
-        return written;
     }
 
-    private int exportDay(Long userId, String accessToken, LocalDate date) {
+    private void exportDay(Long userId, String accessToken, LocalDate date,
+                           com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO result) {
         List<UserMeals> meals = mealsRepository.findAllByUserIdAndConsumedAtRange(
                 userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
-        if (meals.isEmpty()) return 0;
+        if (meals.isEmpty()) return;
 
         // Aggregate macros per meal type.
         Map<MealType, Macros> byMeal = new EnumMap<>(MealType.class);
@@ -80,21 +80,20 @@ public class NutritionExporter {
             acc.fat += p.getFatPer100Grams() * q / PER_100G;
         }
 
-        int written = 0;
         for (Map.Entry<MealType, Macros> e : byMeal.entrySet()) {
-            if (exportMeal(userId, accessToken, date, e.getKey(), e.getValue())) written++;
+            exportMeal(userId, accessToken, date, e.getKey(), e.getValue(), result);
         }
-        return written;
     }
 
-    /** Returns true if it wrote (new or changed), false if skipped as unchanged. */
-    private boolean exportMeal(Long userId, String token, LocalDate date, MealType type, Macros macros) {
+    private void exportMeal(Long userId, String token, LocalDate date, MealType type, Macros macros,
+                            com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO result) {
         String sig = macros.signature();
         NutritionExport existing = exportRepository
                 .findByUserIdAndDateAndMealType(userId, date, type)
                 .orElse(null);
         if (existing != null && sig.equals(existing.getContentSig())) {
-            return false; // unchanged → nothing to do
+            result.addNutritionSkipped(1); // unchanged → nothing to do
+            return;
         }
 
         Map<String, Object> body = buildNutritionBody(date, type, macros);
@@ -114,10 +113,11 @@ public class NutritionExporter {
             rec.setContentSig(sig);
             rec.setExportedAt(Instant.now());
             exportRepository.save(rec);
-            return true;
+            result.addNutritionExported(1);
         } catch (Exception ex) {
-            log.warn("Nutrition export failed for user {} {} {}: {}", userId, date, type, ex.getMessage());
-            return false;
+            String msg = date + " " + type + ": " + ex.getMessage();
+            log.warn("Nutrition export failed for user {} {}", userId, msg);
+            result.addError(msg);
         }
     }
 

@@ -48,6 +48,45 @@
 
 .muted { color: var(--color-text-muted); font-size: 0.9rem; }
 
+.syncResult { margin-top: var(--space-3); }
+
+.syncResultToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.syncChevron { color: var(--color-text-muted); }
+
+.syncDetail {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md, 12px);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.syncErrors { margin-top: var(--space-2); }
+.syncErrorsTitle { font-weight: 600; color: var(--color-danger, #dc2626); }
+.syncErrorLine {
+  color: var(--color-danger, #dc2626);
+  font-family: monospace;
+  font-size: 0.78rem;
+  word-break: break-word;
+}
+
 .success {
   background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
   color: var(--color-success);

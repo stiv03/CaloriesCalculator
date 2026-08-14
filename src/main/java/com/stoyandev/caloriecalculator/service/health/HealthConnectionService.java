@@ -102,9 +102,13 @@ public class HealthConnectionService {
             out.put("reason", "not_connected");
             return out;
         }
-        int total = runImporters(conn);
+        var result = runImporters(conn);
         out.put("synced", true);
-        out.put("recordsImported", total);
+        out.put("recordsImported", result.getTotal());
+        out.put("weightImported", result.getWeightImported());
+        out.put("nutritionExported", result.getNutritionExported());
+        out.put("nutritionSkipped", result.getNutritionSkipped());
+        out.put("errors", result.getErrors());
         return out;
     }
 
@@ -130,23 +134,24 @@ public class HealthConnectionService {
         }
     }
 
-    // ---- Core: refresh token, run every importer since lastSyncAt ----
+    // ---- Core: refresh token, run every importer + nutrition export ----
 
-    private int runImporters(GoogleHealthConnection conn) {
+    private com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO runImporters(GoogleHealthConnection conn) {
+        var result = new com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO();
         String refreshToken = cipher.decrypt(conn.getRefreshTokenEnc());
         GoogleHealthClient.TokenResponse refreshed = client.refresh(refreshToken);
         if (refreshed == null || refreshed.accessToken() == null) {
             throw new IllegalStateException("Could not refresh Google access token");
         }
-        int total = 0;
         for (HealthImporter importer : importers) {
-            total += importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
+            result.addWeightImported(
+                    importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt()));
         }
         // App → Google: push recent meals as nutrition entries (duplicate-safe).
-        total += nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7);
+        nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
         conn.setLastSyncAt(Instant.now());
         connectionRepo.save(conn);
-        return total;
+        return result;
     }
 
     // ---- Signed state (HMAC) so the stateless callback can trust the userId ----

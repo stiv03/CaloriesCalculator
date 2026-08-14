@@ -52,6 +52,8 @@ export default function ProfilePage() {
   const [healthLastSync, setHealthLastSync] = useState(null);
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthMsg, setHealthMsg] = useState('');
+  const [healthResult, setHealthResult] = useState(null); // last sync breakdown
+  const [healthDetailOpen, setHealthDetailOpen] = useState(false);
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ newPassword: '', confirm: '' });
@@ -178,13 +180,14 @@ export default function ProfilePage() {
   };
 
   const handleHealthSyncWeight = async () => {
-    setError(''); setHealthMsg(''); setHealthBusy(true);
+    setError(''); setHealthMsg(''); setHealthResult(null); setHealthDetailOpen(false); setHealthBusy(true);
     try {
       const res = await syncHealthNow(userId);
       if (!res.synced) {
         setHealthMsg(res.reason === 'not_connected' ? 'Not connected.' : 'Sync did not run.');
       } else {
-        setHealthMsg(`Synced — ${res.recordsImported ?? 0} record(s) imported.`);
+        setHealthResult(res);
+        setHealthMsg('');
         await Promise.all([refreshUser(), refreshHealthStatus()]);
       }
     } catch (e) {
@@ -343,6 +346,38 @@ export default function ProfilePage() {
                 Disconnect
               </Button>
             </div>
+            {healthResult && (
+              <div className={styles.syncResult}>
+                <button
+                  type="button"
+                  className={styles.syncResultToggle}
+                  onClick={() => setHealthDetailOpen((o) => !o)}
+                  aria-expanded={healthDetailOpen}
+                >
+                  <span>
+                    Synced {healthResult.recordsImported ?? 0} record(s)
+                    {healthResult.errors && healthResult.errors.length > 0
+                      ? ` · ${healthResult.errors.length} error(s)` : ''}
+                  </span>
+                  <span className={styles.syncChevron}>{healthDetailOpen ? '⌃' : '⌄'}</span>
+                </button>
+                {healthDetailOpen && (
+                  <div className={styles.syncDetail}>
+                    <div>Weight imported: {healthResult.weightImported ?? 0}</div>
+                    <div>Meals exported: {healthResult.nutritionExported ?? 0}</div>
+                    <div>Meals unchanged (skipped): {healthResult.nutritionSkipped ?? 0}</div>
+                    {healthResult.errors && healthResult.errors.length > 0 && (
+                      <div className={styles.syncErrors}>
+                        <div className={styles.syncErrorsTitle}>Errors:</div>
+                        {healthResult.errors.map((er, i) => (
+                          <div key={i} className={styles.syncErrorLine}>{er}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <>
