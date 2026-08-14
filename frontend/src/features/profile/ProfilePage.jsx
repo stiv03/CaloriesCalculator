@@ -364,6 +364,7 @@ export default function ProfilePage() {
                 {healthDetailOpen && (
                   <div className={styles.syncDetail}>
                     <div>Weight imported: {healthResult.weightImported ?? 0}</div>
+                    <div>Steps imported (days): {healthResult.stepsImported ?? 0}</div>
                     <div>Meals exported: {healthResult.nutritionExported ?? 0}</div>
                     <div>Meals unchanged (skipped): {healthResult.nutritionSkipped ?? 0}</div>
                     {healthResult.errors && healthResult.errors.length > 0 && (
