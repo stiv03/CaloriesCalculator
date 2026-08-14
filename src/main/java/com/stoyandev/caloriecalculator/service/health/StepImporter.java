@@ -50,11 +50,22 @@ public class StepImporter implements HealthImporter {
         String filter = "steps.interval.start_time >= \"" + from + "\" AND "
                 + "steps.interval.start_time < \"" + to + "\"";
 
-        OffResponse resp = rest.get()
+        // Fetch raw first so we can see the real shape even if our record mapping
+        // finds nothing (one-time diagnostic, like we did for weight).
+        String raw = rest.get()
                 .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/steps/dataPoints?filter={f}", filter)
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
-                .body(OffResponse.class);
+                .body(String.class);
+        log.info("[steps] raw response for user {}: {}", userId,
+                raw == null ? "null" : raw.substring(0, Math.min(raw.length(), 1500)));
+
+        OffResponse resp;
+        try {
+            resp = new com.fasterxml.jackson.databind.ObjectMapper().readValue(raw, OffResponse.class);
+        } catch (Exception e) {
+            resp = null;
+        }
 
         if (resp == null || resp.dataPoints() == null) return 0;
 
