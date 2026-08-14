@@ -99,7 +99,7 @@ public class NutritionExporter {
         Map<String, Object> body = buildNutritionBody(date, type, macros);
         try {
             var resp = rest.post()
-                    .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/nutrition/dataPoints")
+                    .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/nutrition-log/dataPoints")
                     .header("Authorization", "Bearer " + token)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
