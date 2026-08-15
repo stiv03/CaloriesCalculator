@@ -132,6 +132,46 @@ export default function SleepDetail({ userId, date, day }) {
     };
   }, [segments]);
 
+  // Time-banded hypnogram: each segment is a colored block on a real clock
+  // axis, one row per stage (Awake/REM/Light/Deep, top→bottom). Positions are
+  // percentages of the night span so the rows stay in lock-step. ASLEEP/RESTLESS
+  // fold into Light/Awake for placement, matching the totals normalization.
+  const bands = useMemo(() => {
+    if (!Array.isArray(segments) || segments.length === 0) return null;
+    const times = [];
+    for (const seg of segments) {
+      if (seg.start) times.push(new Date(seg.start).getTime());
+      if (seg.end) times.push(new Date(seg.end).getTime());
+    }
+    if (times.length === 0) return null;
+    const t0 = Math.min(...times);
+    const t1 = Math.max(...times);
+    const span = t1 - t0;
+    if (span <= 0) return null;
+
+    const blocks = [];
+    for (const seg of segments) {
+      const key = STAGE_BY_TYPE[seg.type];
+      if (!key || !seg.start || !seg.end) continue;
+      const s = new Date(seg.start).getTime();
+      const e = new Date(seg.end).getTime();
+      const left = ((s - t0) / span) * 100;
+      const width = Math.max(0, ((e - s) / span) * 100);
+      if (width <= 0) continue;
+      blocks.push({ key, left, width, color: COLOR_BY_KEY[key], label: seg.type });
+    }
+    if (blocks.length === 0) return null;
+
+    // ~4 evenly spaced clock ticks across the night (inclusive of both ends).
+    const TICK_COUNT = 4;
+    const ticks = [];
+    for (let i = 0; i <= TICK_COUNT; i++) {
+      const at = t0 + (span * i) / TICK_COUNT;
+      ticks.push({ left: (i / TICK_COUNT) * 100, label: fmtClock(new Date(at).toISOString()) });
+    }
+    return { blocks, ticks };
+  }, [segments]);
+
   const bed = detail?.startTime || day.sleepStart;
   const wake = detail?.endTime || day.sleepEnd;
 
@@ -177,6 +217,35 @@ export default function SleepDetail({ userId, date, day }) {
       {hypnogram && (
         <div className={styles.sleepChart}>
           <Line data={hypnogram.data} options={hypnogram.options} />
+        </div>
+      )}
+
+      {bands && (
+        <div className={styles.sleepBands}>
+          {STAGES.map((s) => (
+            <div key={s.key} className={styles.sleepBandRow}>
+              <span className={styles.sleepBandLabel}>{s.label}</span>
+              <span className={styles.sleepBandTrack}>
+                {bands.blocks
+                  .filter((b) => b.key === s.key)
+                  .map((b, i) => (
+                    <span
+                      key={i}
+                      className={styles.sleepBandBlock}
+                      style={{ left: `${b.left}%`, width: `${b.width}%`, background: s.color }}
+                      title={`${s.label}`}
+                    />
+                  ))}
+              </span>
+            </div>
+          ))}
+          <div className={styles.sleepBandAxis}>
+            {bands.ticks.map((t, i) => (
+              <span key={i} className={styles.sleepBandTick} style={{ left: `${t.left}%` }}>
+                {t.label}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>
