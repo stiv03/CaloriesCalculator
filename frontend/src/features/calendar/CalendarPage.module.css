@@ -225,6 +225,8 @@
 }
 .pillMeasure { background: color-mix(in srgb, var(--color-accent) 20%, var(--color-surface)); color: var(--color-accent); }
 .pillPhoto   { background: color-mix(in srgb, var(--color-carbs) 22%, var(--color-surface)); color: var(--color-carbs); }
+/* Workout type (Push/Pull/Legs…) — matches the workout dot color. */
+.pillWorkout { background: color-mix(in srgb, var(--color-protein) 20%, var(--color-surface)); color: var(--color-protein); }
 /* Logged this week → mute the pill so it reads as done rather than pending. */
 .pillDone { background: var(--color-surface-2); color: var(--color-text-muted); }
 

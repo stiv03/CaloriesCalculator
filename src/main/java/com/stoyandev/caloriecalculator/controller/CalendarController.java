@@ -98,9 +98,10 @@ public class CalendarController {
         // Weekly check-in reminders (measurements + progress photos). The user's
         // checkInDay is an ISO weekday (1=Mon … 7=Sun); default to Sunday when unset.
         // "logged" = a record of that type exists on that exact day. "due" = the day
-        // is the check-in weekday, is not in the future, and no record of that type
+        // is the check-in weekday (past, today, or upcoming) and no record of that type
         // exists in that week's 7-day window (anchor day + prior 6) — so once you log
-        // one that week the reminder auto-resolves.
+        // one that week the reminder auto-resolves. Future check-in days always show as
+        // due, surfacing them as upcoming scheduled reminders.
         int checkInDay = userRepository.findById(userId)
                 .map(Users::getCheckInDay).filter(d -> d >= 1 && d <= 7).orElse(7);
         Set<LocalDate> measurementDays = measurementsRecordRepository.findByUserId(userId).stream()
@@ -142,11 +143,11 @@ public class CalendarController {
                     : (isRest ? dailyCount : dailyCount + trainingCount);
 
             // Check-in reminders: a record on this exact day marks it logged; the day
-            // is "due" only on the check-in weekday, not in the future, and only if
-            // nothing was logged in that week's 7-day window (this day + prior 6).
+            // is "due" on the check-in weekday (including upcoming days) whenever nothing
+            // was logged in that week's 7-day window (this day + prior 6).
             boolean measurementLogged = measurementDays.contains(day);
             boolean photoLogged = photoDays.contains(day);
-            boolean isCheckInDay = day.getDayOfWeek().getValue() == checkInDay && !day.isAfter(today);
+            boolean isCheckInDay = day.getDayOfWeek().getValue() == checkInDay;
             boolean measurementDue = isCheckInDay && !loggedInWindow(measurementDays, day);
             boolean photoDue = isCheckInDay && !loggedInWindow(photoDays, day);
 

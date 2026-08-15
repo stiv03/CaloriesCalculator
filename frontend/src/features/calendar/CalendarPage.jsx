@@ -16,6 +16,12 @@ const displayWorkout = (day) => {
   const type = TYPE_LABELS[day.workoutType] || day.workoutType;
   return day.workoutLabel ? `${type} ${day.workoutLabel}` : type;
 };
+// Just the training type, for the compact month-cell pill (no label suffix — it
+// would overflow the tiny square; the full text still shows in the day drawer).
+const workoutPillText = (day) => {
+  if (!day?.workoutType || day.isRestDay) return null;
+  return TYPE_LABELS[day.workoutType] || day.workoutType;
+};
 const DAY_NAMES = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const DAY_NAMES_FULL = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -198,16 +204,21 @@ export default function CalendarPage() {
                   {data?.sleepTotalMinutes != null && <span className={styles.dot + ' ' + styles.dotSleep} title="Sleep" />}
                   {data?.hasNote && <span className={styles.dot + ' ' + styles.dotNote} title="Note" />}
                 </div>
-                {(data?.measurementDue || data?.measurementLogged || data?.photoDue || data?.photoLogged) && (
+                {((data?.hasWorkout && !data?.isRestDay) || data?.measurementDue || data?.measurementLogged || data?.photoDue || data?.photoLogged) && (
                   <div className={styles.cellPills}>
+                    {data?.hasWorkout && !data?.isRestDay && workoutPillText(data) && (
+                      <span className={[styles.eventPill, styles.pillWorkout].join(' ')} title={displayWorkout(data)}>
+                        {workoutPillText(data)}
+                      </span>
+                    )}
                     {(data?.measurementDue || data?.measurementLogged) && (
                       <span className={[styles.eventPill, styles.pillMeasure, data.measurementLogged ? styles.pillDone : ''].join(' ')} title={data.measurementLogged ? 'Measurements logged' : 'Measurements due'}>
-                        {data.measurementLogged ? '✓' : '📏'} Measure
+                        {data.measurementLogged ? '✓ ' : ''}Measure
                       </span>
                     )}
                     {(data?.photoDue || data?.photoLogged) && (
                       <span className={[styles.eventPill, styles.pillPhoto, data.photoLogged ? styles.pillDone : ''].join(' ')} title={data.photoLogged ? 'Progress photo taken' : 'Progress photo due'}>
-                        {data.photoLogged ? '✓' : '📷'} Photo
+                        {data.photoLogged ? '✓ ' : ''}Photo
                       </span>
                     )}
                   </div>
@@ -411,13 +422,13 @@ export default function CalendarPage() {
                     <div className={styles.checkInList}>
                       {(selected.day.measurementDue || selected.day.measurementLogged) && (
                         <div className={[styles.checkInItem, selected.day.measurementLogged ? styles.checkInDone : ''].join(' ')}>
-                          <span className={styles.checkInIcon}>{selected.day.measurementLogged ? '✓' : '📏'}</span>
+                          <span className={styles.checkInIcon}>{selected.day.measurementLogged ? '✓' : '•'}</span>
                           <span>{selected.day.measurementLogged ? 'Measurements logged' : 'Log measurements'}</span>
                         </div>
                       )}
                       {(selected.day.photoDue || selected.day.photoLogged) && (
                         <div className={[styles.checkInItem, selected.day.photoLogged ? styles.checkInDone : ''].join(' ')}>
-                          <span className={styles.checkInIcon}>{selected.day.photoLogged ? '✓' : '📷'}</span>
+                          <span className={styles.checkInIcon}>{selected.day.photoLogged ? '✓' : '•'}</span>
                           <span>{selected.day.photoLogged ? 'Progress photo taken' : 'Take a progress photo'}</span>
                         </div>
                       )}
