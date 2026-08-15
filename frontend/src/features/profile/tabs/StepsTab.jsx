@@ -40,7 +40,9 @@ export default function StepsTab({ steps = [] }) {
       label: 'Steps',
       data: visible.map((r) => r.steps),
       backgroundColor: accent,
-      borderRadius: 3,
+      borderRadius: 999,
+      borderSkipped: false,
+      maxBarThickness: 24,
     }],
   };
   const options = {

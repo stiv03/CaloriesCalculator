@@ -938,7 +938,7 @@ export default function WorkoutPage() {
                     setExpandedDay(expandedDay === t.id ? null : t.id);
                   }}>
                     <span className={styles.dayTypeBig}>{displayName(t)}</span>
-                    {t.id === upNextId && <span className={styles.nextPill}>Up next</span>}
+                    {t.id === upNextId && <span className={styles.nextPill}>Next</span>}
                     <span className={styles.dayExCount}>{t.exercises.length} exercises</span>
                     <span className={styles.chev}>{expandedDay === t.id ? '⌃' : '⌄'}</span>
                   </button>
