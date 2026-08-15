@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -140,6 +140,57 @@ function Tile({ label, value, sub, color, size = 'sq', tone }) {
   );
 }
 
+/** Minutes → "7h 12m" / "45m". Null-safe: returns em dash. */
+function fmtSleep(mins) {
+  if (mins == null) return '—';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+/**
+ * Square sleep tile showing avg total sleep, with a chevron that expands an
+ * inline panel breaking out avg deep + avg REM. Owns its own open/closed state.
+ * When there's no sleep data (`nights === 0`), the tile shows "not synced" and
+ * the chevron/panel are hidden.
+ */
+function SleepTile({ avgSleep, avgDeep, avgRem, nights }) {
+  const [open, setOpen] = useState(false);
+  const hasData = nights > 0;
+
+  return (
+    <div className={[styles.tile, styles.size_sq, styles.c_indigo].join(' ')}>
+      <button
+        type="button"
+        className={styles.sleepTileHead}
+        onClick={() => hasData && setOpen((o) => !o)}
+        disabled={!hasData}
+      >
+        <div className={styles.sleepTileHeadText}>
+          <div className={styles.tileLabel}>Avg sleep / night</div>
+          <div className={styles.tileValue}>{fmtSleep(avgSleep)}</div>
+          <div className={styles.tileSub}>
+            {hasData ? `${nights} night${nights === 1 ? '' : 's'}` : 'not synced'}
+          </div>
+        </div>
+        {hasData && <span className={styles.sleepChevron}>{open ? '▾' : '▸'}</span>}
+      </button>
+      {hasData && open && (
+        <div className={styles.sleepBreakdown}>
+          <div className={styles.sleepStatRow}>
+            <span className={styles.sleepStatLabel}>Deep</span>
+            <span className={styles.sleepStatValue}>{fmtSleep(avgDeep)}</span>
+          </div>
+          <div className={styles.sleepStatRow}>
+            <span className={styles.sleepStatLabel}>REM</span>
+            <span className={styles.sleepStatValue}>{fmtSleep(avgRem)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Weekly progress summary rendered below the week grid. `days` is the 7
  * CalendarDayDTO-shaped objects for the visible week (some may be undefined).
@@ -193,6 +244,12 @@ export default function WeekDashboard({ days }) {
           label="Avg steps / day"
           value={s.avgSteps != null ? s.avgSteps.toLocaleString() : '—'}
           sub={s.avgSteps != null ? 'from Google Health' : 'not synced'}
+        />
+        <SleepTile
+          avgSleep={s.avgSleepMinutes}
+          avgDeep={s.avgDeepMinutes}
+          avgRem={s.avgRemMinutes}
+          nights={s.sleepNights}
         />
       </div>
       <MacroChart days={days} />

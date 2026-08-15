@@ -17,6 +17,8 @@ function round(n, d = 0) {
  *   workouts: number, restDays: number,
  *   avgProtein: number|null,
  *   suppTakenPct: number|null,
+ *   avgSleepMinutes: number|null, avgDeepMinutes: number|null,
+ *   avgRemMinutes: number|null, sleepNights: number,
  *   insight: string|null
  * }}
  */
@@ -64,6 +66,18 @@ export function computeWeeklySummary(days) {
     : null;
   const stepsByDay = (days || []).map((d) => (d && d.steps != null ? d.steps : null));
 
+  // Sleep — average over nights that have a sleep record (sleepTotalMinutes set).
+  // Deep/REM averages are taken over the same nights so the breakdown lines up
+  // with the headline average.
+  const sleepNightsList = list.filter((d) => d.sleepTotalMinutes != null);
+  const sleepNights = sleepNightsList.length;
+  const avgOf = (key) => (sleepNights
+    ? round(sleepNightsList.reduce((s, d) => s + (d[key] || 0), 0) / sleepNights)
+    : null);
+  const avgSleepMinutes = avgOf('sleepTotalMinutes');
+  const avgDeepMinutes = avgOf('sleepDeep');
+  const avgRemMinutes = avgOf('sleepRem');
+
   return {
     avgCalories, calorieGoal, daysLogged,
     weightChange, weighIns,
@@ -71,6 +85,7 @@ export function computeWeeklySummary(days) {
     avgProtein,
     suppTakenPct,
     avgSteps, stepsByDay,
+    avgSleepMinutes, avgDeepMinutes, avgRemMinutes, sleepNights,
     insight: buildInsight({
       daysLogged, avgCalories, calorieGoal, weightChange, workouts,
     }),

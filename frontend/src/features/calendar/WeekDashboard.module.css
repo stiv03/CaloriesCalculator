@@ -79,6 +79,50 @@
 .tone_good { color: #0ca30c; }
 .tone_warn { color: #d97706; }
 
+/* ── Sleep tile: a tap target (head) plus an expandable deep/REM panel. The
+   tile itself keeps the accent bar/tint; the head is a reset button so the
+   whole card is clickable, and the breakdown sits below it. ── */
+.sleepTileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.sleepTileHead:disabled { cursor: default; }
+.sleepTileHeadText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sleepChevron {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+.sleepBreakdown {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sleepStatRow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.sleepStatLabel {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.sleepStatValue { font-size: 0.95rem; font-weight: 700; color: var(--accent-text); }
+
 .insight {
   margin: var(--space-3) 0 0;
   padding: var(--space-3) var(--space-4);
@@ -118,6 +162,9 @@
 .c_orange  { --accent: #eb6834; --accent-text: #c74e1f; }
 .c_violet  { --accent: #4a3aa7; --accent-text: #4a3aa7; }
 .c_magenta { --accent: #e87ba4; --accent-text: #c14e79; }
+.c_indigo  { --accent: #6d5cd6; --accent-text: #5344bf; }
+/* The sleep tile grows downward when expanded, so top-align its content. */
+.c_indigo { justify-content: flex-start; }
 
 /* Dark mode — brighter accents + brighter value text for the dark surface.
    Mirrors tokens.css: both the explicit [data-theme="dark"] and the OS-media
@@ -127,6 +174,7 @@
 [data-theme="dark"] .c_orange  { --accent: #d95926; --accent-text: #f0855b; }
 [data-theme="dark"] .c_violet  { --accent: #9085e9; --accent-text: #b0a8f2; }
 [data-theme="dark"] .c_magenta { --accent: #d55181; --accent-text: #e88bb0; }
+[data-theme="dark"] .c_indigo  { --accent: #8b7cf0; --accent-text: #a99ef5; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .c_blue    { --accent: #3987e5; --accent-text: #6da7ec; }
@@ -134,4 +182,5 @@
   :root:not([data-theme="light"]) .c_orange  { --accent: #d95926; --accent-text: #f0855b; }
   :root:not([data-theme="light"]) .c_violet  { --accent: #9085e9; --accent-text: #b0a8f2; }
   :root:not([data-theme="light"]) .c_magenta { --accent: #d55181; --accent-text: #e88bb0; }
+  :root:not([data-theme="light"]) .c_indigo  { --accent: #8b7cf0; --accent-text: #a99ef5; }
 }
