@@ -1,19 +1,12 @@
 // frontend/src/features/calendar/SleepDetail.jsx
 // Sleep section for the calendar day drawer: a CSS stacked stage bar (from the
-// per-stage totals already in the day payload) plus a chart.js hypnogram drawn
-// from the raw stage segments, which are lazy-fetched when the day opens.
+// per-stage totals already in the day payload) plus a time-banded hypnogram
+// drawn from the raw stage segments, which are lazy-fetched when the day opens.
 import React, { useEffect, useMemo, useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS, LinearScale, PointElement, LineElement, Tooltip,
-} from 'chart.js';
 import { getSleepDay } from '../../api/calendar';
 import styles from './CalendarPage.module.css';
 
-ChartJS.register(LinearScale, PointElement, LineElement, Tooltip);
-
-// Stage → vertical position on the hypnogram (higher = lighter/more awake) and
-// the colour used for both the stacked bar and the timeline.
+// Stage → colour used for both the stacked bar and the time-banded hypnogram.
 const STAGES = [
   { key: 'awake', label: 'Awake', level: 4, color: 'var(--color-calories)' },
   { key: 'rem',   label: 'REM',   level: 3, color: 'var(--color-carbs)' },
@@ -21,14 +14,7 @@ const STAGES = [
   { key: 'deep',  label: 'Deep',  level: 1, color: 'var(--color-fat)' },
 ];
 const STAGE_BY_TYPE = { AWAKE: 'awake', REM: 'rem', LIGHT: 'light', DEEP: 'deep' };
-const LEVEL_BY_KEY = Object.fromEntries(STAGES.map((s) => [s.key, s.level]));
 const COLOR_BY_KEY = Object.fromEntries(STAGES.map((s) => [s.key, s.color]));
-
-function readCssVar(name) {
-  if (typeof window === 'undefined') return name;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || name;
-}
 
 function fmtDuration(mins) {
   if (mins == null) return '';
@@ -66,71 +52,6 @@ export default function SleepDetail({ userId, date, day }) {
   }, [userId, date]);
 
   const segments = detail?.segments;
-  const hypnogram = useMemo(() => {
-    if (!Array.isArray(segments) || segments.length === 0) return null;
-    // A stepped line: two points per segment (start, end) at that stage's level.
-    const points = [];
-    for (const seg of segments) {
-      const key = STAGE_BY_TYPE[seg.type];
-      const level = LEVEL_BY_KEY[key];
-      if (level == null || !seg.start || !seg.end) continue;
-      points.push({ x: new Date(seg.start).getTime(), y: level });
-      points.push({ x: new Date(seg.end).getTime(), y: level });
-    }
-    if (points.length === 0) return null;
-    const line = readCssVar('--color-text-muted');
-    return {
-      data: {
-        datasets: [{
-          data: points,
-          stepped: true,
-          borderColor: line,
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const s = STAGES.find((st) => st.level === ctx.parsed.y);
-                return s ? s.label : '';
-              },
-              title: (items) => (items.length ? fmtClock(new Date(items[0].parsed.x).toISOString()) : ''),
-            },
-          },
-        },
-        scales: {
-          x: {
-            type: 'linear',
-            ticks: {
-              maxTicksLimit: 5,
-              callback: (v) => fmtClock(new Date(v).toISOString()),
-              color: line,
-              font: { size: 10 },
-            },
-            grid: { display: false },
-          },
-          y: {
-            min: 0.5,
-            max: 4.5,
-            ticks: {
-              stepSize: 1,
-              callback: (v) => (STAGES.find((s) => s.level === v)?.label) || '',
-              color: line,
-              font: { size: 10 },
-            },
-            grid: { color: 'color-mix(in srgb, var(--color-border) 60%, transparent)' },
-          },
-        },
-      },
-    };
-  }, [segments]);
 
   // Time-banded hypnogram: each segment is a colored block on a real clock
   // axis, one row per stage (Awake/REM/Light/Deep, top→bottom). Positions are
@@ -212,12 +133,6 @@ export default function SleepDetail({ userId, date, day }) {
             ))}
           </div>
         </>
-      )}
-
-      {hypnogram && (
-        <div className={styles.sleepChart}>
-          <Line data={hypnogram.data} options={hypnogram.options} />
-        </div>
       )}
 
       {bands && (
