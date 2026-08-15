@@ -18,6 +18,7 @@ import {
 } from '../../api/workouts';
 import { getCalendarMonth } from '../../api/calendar';
 import { getUserId } from '../../auth/storage';
+import { getActivityForDate } from '../../api/health';
 import { nextUpTemplateId } from './nextUp';
 import styles from './WorkoutPage.module.css';
 
@@ -192,6 +193,19 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
     }
   }, []); // only on mount
 
+  const [activity, setActivity] = React.useState(null); // { date, loading, data, error }
+  const userId = getUserId();
+
+  const openActivity = async (date) => {
+    setActivity({ date, loading: true, data: null, error: null });
+    try {
+      const data = await getActivityForDate(userId, date);
+      setActivity({ date, loading: false, data, error: null });
+    } catch (e) {
+      setActivity({ date, loading: false, data: null, error: e.message || 'Failed to load' });
+    }
+  };
+
   // All-time best (estimated 1RM) session per exercise — its PR cell gets a star.
   const prSessions = React.useMemo(
     () => computePrSessions(sessions, exercises),
@@ -211,7 +225,9 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
               <th className={styles.prevExCol}>Exercise</th>
               {sessions.map(w => (
                 <th key={w.id} className={[styles.prevSessionCol, w.id === highlightId ? styles.prevNewest : ''].join(' ')}>
-                  {w.date}
+                  <button type="button" className={styles.dateBtn} onClick={() => openActivity(w.date)}>
+                    {w.date}
+                  </button>
                 </th>
               ))}
             </tr>
@@ -254,6 +270,39 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
           </tbody>
         </table>
       </div>
+      {activity && (
+        <div className={styles.activityPanel}>
+          <button type="button" className={styles.activityClose} onClick={() => setActivity(null)}>×</button>
+          <div className={styles.activityTitle}>Google Health · {activity.date}</div>
+          {activity.loading && <div className={styles.activityMuted}>Loading…</div>}
+          {activity.error && <div className={styles.activityMuted}>Couldn't load Google data.</div>}
+          {activity.data && !activity.data.found && (
+            <div className={styles.activityMuted}>
+              {activity.data.reason === 'not_connected'
+                ? 'Connect Google Health in Profile to see session data.'
+                : 'No Google workout found for this date.'}
+            </div>
+          )}
+          {activity.data && activity.data.found && (
+            <div className={styles.activityBody}>
+              <div className={styles.activityRow}>
+                <strong>{activity.data.exerciseType}</strong>
+                {activity.data.durationMin != null && <span> · {activity.data.durationMin} min</span>}
+              </div>
+              {activity.data.avgHr != null && (
+                <div className={styles.activityRow}>
+                  HR avg {activity.data.avgHr} · min {activity.data.minHr} · max {activity.data.maxHr}
+                </div>
+              )}
+              {activity.data.zones && activity.data.zones.length > 0 && (
+                <div className={styles.activityRow}>
+                  {activity.data.zones.map((z) => `${z.name} ${z.minutes}m`).join(' · ')}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
