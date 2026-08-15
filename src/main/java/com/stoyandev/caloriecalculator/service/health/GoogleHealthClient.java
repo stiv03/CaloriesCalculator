@@ -22,10 +22,11 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class GoogleHealthClient {
 
-    // Read weight/body metrics + steps/activity, write nutrition. Space-delimited.
+    // Read weight/body metrics + steps/activity + sleep, write nutrition. Space-delimited.
     public static final String SCOPE =
             "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly"
             + " https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly"
+            + " https://www.googleapis.com/auth/googlehealth.sleep.readonly"
             + " https://www.googleapis.com/auth/googlehealth.nutrition.writeonly";
     private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
