@@ -59,15 +59,16 @@ public class SleepImporter implements HealthImporter {
         ZoneId zone = ZoneId.systemDefault();
 
         // Always re-fetch whole days over the look-back so a same-day re-sync
-        // re-totals cleanly. Filter on the session's physical interval start time
-        // (nested, snake_case member — see the dataPoints.list filter grammar).
-        // We attribute nights by wake (endTime); pad the window a day on each side
-        // so a session that starts just outside it but wakes inside is still seen.
-        Instant from = LocalDate.now(zone).minusDays(DEFAULT_LOOKBACK_DAYS + 1)
+        // re-totals cleanly. Sleep carries a SessionTimeInterval, which the
+        // dataPoints.list filter grammar only exposes by END time (snake_case,
+        // nested) — filtering by sleep.interval.start_time is rejected with
+        // INVALID_DATA_POINT_FILTER_DATA_TYPE_MEMBER. This aligns with how we
+        // attribute a night to its wake (endTime) day anyway.
+        Instant from = LocalDate.now(zone).minusDays(DEFAULT_LOOKBACK_DAYS)
                 .atStartOfDay(zone).toInstant();
         Instant to = Instant.now().plus(Duration.ofDays(1));
-        String filter = "sleep.interval.start_time >= \"" + from + "\" AND "
-                + "sleep.interval.start_time < \"" + to + "\"";
+        String filter = "sleep.interval.end_time >= \"" + from + "\" AND "
+                + "sleep.interval.end_time < \"" + to + "\"";
 
         List<Session> all = new ArrayList<>();
         String pageToken = null;
