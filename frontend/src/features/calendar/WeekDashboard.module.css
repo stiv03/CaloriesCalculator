@@ -163,6 +163,7 @@
 .c_violet  { --accent: #4a3aa7; --accent-text: #4a3aa7; }
 .c_magenta { --accent: #e87ba4; --accent-text: #c14e79; }
 .c_indigo  { --accent: #6d5cd6; --accent-text: #5344bf; }
+.c_teal    { --accent: #0d9aa5; --accent-text: #0a7a83; }
 /* The sleep tile grows downward when expanded, so top-align its content. */
 .c_indigo { justify-content: flex-start; }
 
@@ -175,6 +176,7 @@
 [data-theme="dark"] .c_violet  { --accent: #9085e9; --accent-text: #b0a8f2; }
 [data-theme="dark"] .c_magenta { --accent: #d55181; --accent-text: #e88bb0; }
 [data-theme="dark"] .c_indigo  { --accent: #8b7cf0; --accent-text: #a99ef5; }
+[data-theme="dark"] .c_teal    { --accent: #17b4c0; --accent-text: #45cfd9; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .c_blue    { --accent: #3987e5; --accent-text: #6da7ec; }
@@ -183,4 +185,5 @@
   :root:not([data-theme="light"]) .c_violet  { --accent: #9085e9; --accent-text: #b0a8f2; }
   :root:not([data-theme="light"]) .c_magenta { --accent: #d55181; --accent-text: #e88bb0; }
   :root:not([data-theme="light"]) .c_indigo  { --accent: #8b7cf0; --accent-text: #a99ef5; }
+  :root:not([data-theme="light"]) .c_teal    { --accent: #17b4c0; --accent-text: #45cfd9; }
 }

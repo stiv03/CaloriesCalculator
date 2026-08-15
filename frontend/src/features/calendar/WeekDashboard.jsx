@@ -240,7 +240,7 @@ export default function WeekDashboard({ days }) {
           sub={s.suppTakenPct != null ? 'taken' : 'no routine'}
         />
         <Tile
-          size="sq" color="violet"
+          size="sq" color="teal"
           label="Avg steps / day"
           value={s.avgSteps != null ? s.avgSteps.toLocaleString() : '—'}
           sub={s.avgSteps != null ? 'from Google Health' : 'not synced'}
