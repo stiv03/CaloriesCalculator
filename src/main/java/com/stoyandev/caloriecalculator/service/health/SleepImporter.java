@@ -59,12 +59,15 @@ public class SleepImporter implements HealthImporter {
         ZoneId zone = ZoneId.systemDefault();
 
         // Always re-fetch whole days over the look-back so a same-day re-sync
-        // re-totals cleanly (filter on the session start time).
-        Instant from = LocalDate.now(zone).minusDays(DEFAULT_LOOKBACK_DAYS)
+        // re-totals cleanly. Filter on the session's physical interval start time
+        // (nested, snake_case member — see the dataPoints.list filter grammar).
+        // We attribute nights by wake (endTime); pad the window a day on each side
+        // so a session that starts just outside it but wakes inside is still seen.
+        Instant from = LocalDate.now(zone).minusDays(DEFAULT_LOOKBACK_DAYS + 1)
                 .atStartOfDay(zone).toInstant();
-        Instant to = Instant.now();
-        String filter = "sleep.startTime >= \"" + from + "\" AND "
-                + "sleep.startTime < \"" + to + "\"";
+        Instant to = Instant.now().plus(Duration.ofDays(1));
+        String filter = "sleep.interval.start_time >= \"" + from + "\" AND "
+                + "sleep.interval.start_time < \"" + to + "\"";
 
         List<Session> all = new ArrayList<>();
         String pageToken = null;
@@ -95,8 +98,9 @@ public class SleepImporter implements HealthImporter {
 
         Map<LocalDate, Night> byDay = new HashMap<>();
         for (Session s : all) {
-            if (s.endTime() == null) continue;
-            LocalDate day = s.endTime().atZone(zone).toLocalDate();
+            Instant end = s.interval() != null ? s.interval().endTime() : null;
+            if (end == null) continue;
+            LocalDate day = end.atZone(zone).toLocalDate();
             byDay.computeIfAbsent(day, d -> new Night()).add(s);
         }
 
@@ -138,17 +142,21 @@ public class SleepImporter implements HealthImporter {
         final List<Seg> segments = new ArrayList<>();
 
         void add(Session s) {
-            if (s.startTime() != null && (start == null || s.startTime().isBefore(start))) start = s.startTime();
-            if (s.endTime() != null && (end == null || s.endTime().isAfter(end))) end = s.endTime();
-            if (s.sleepStages() == null) return;
-            for (Stage st : s.sleepStages()) {
+            Instant sStart = s.interval() != null ? s.interval().startTime() : null;
+            Instant sEnd = s.interval() != null ? s.interval().endTime() : null;
+            if (sStart != null && (start == null || sStart.isBefore(start))) start = sStart;
+            if (sEnd != null && (end == null || sEnd.isAfter(end))) end = sEnd;
+            if (s.stages() == null) return;
+            for (Stage st : s.stages()) {
                 if (st.startTime() == null || st.endTime() == null || st.type() == null) continue;
                 int mins = (int) Math.max(0, Duration.between(st.startTime(), st.endTime()).toMinutes());
                 switch (st.type().toUpperCase()) {
                     case "REM" -> rem += mins;
                     case "DEEP" -> deep += mins;
-                    case "LIGHT" -> light += mins;
-                    case "AWAKE" -> awake += mins;
+                    // LIGHT and generic ASLEEP (unstaged sleep) both count as light.
+                    case "LIGHT", "ASLEEP" -> light += mins;
+                    // AWAKE and RESTLESS are time in bed but not asleep.
+                    case "AWAKE", "RESTLESS" -> awake += mins;
                     default -> { /* unknown stage type — ignore for totals */ }
                 }
                 segments.add(new Seg(st.startTime(), st.endTime(), st.type().toUpperCase()));
@@ -159,10 +167,10 @@ public class SleepImporter implements HealthImporter {
     /** Serialised segment for the hypnogram (JSON stored on SleepRecord). */
     public record Seg(Instant start, Instant end, String type) {}
 
-    // --- Google Health sleep JSON (per docs):
-    //   dataPoints[].sleep.startTime / endTime  (ISO 8601)
-    //   dataPoints[].sleep.sleepType             ("STAGES")
-    //   dataPoints[].sleep.sleepStages[] = { startTime, endTime, type: LIGHT|DEEP|REM|AWAKE }
+    // --- Google Health sleep JSON (per the dataPoints reference, #sleep):
+    //   dataPoints[].sleep.interval.{startTime,endTime}   (ISO 8601, under interval)
+    //   dataPoints[].sleep.stages[] = { startTime, endTime, type }
+    //   type ∈ AWAKE | LIGHT | DEEP | REM | ASLEEP | RESTLESS
     @JsonIgnoreProperties(ignoreUnknown = true)
     record SleepResponse(List<DataPoint> dataPoints, @JsonProperty("nextPageToken") String nextPageToken) {}
 
@@ -170,10 +178,12 @@ public class SleepImporter implements HealthImporter {
     record DataPoint(Session sleep) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Session(@JsonProperty("startTime") Instant startTime,
-                   @JsonProperty("endTime") Instant endTime,
-                   @JsonProperty("sleepType") String sleepType,
-                   @JsonProperty("sleepStages") List<Stage> sleepStages) {}
+    record Session(@JsonProperty("interval") Interval interval,
+                   @JsonProperty("stages") List<Stage> stages) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Interval(@JsonProperty("startTime") Instant startTime,
+                    @JsonProperty("endTime") Instant endTime) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Stage(@JsonProperty("startTime") Instant startTime,
