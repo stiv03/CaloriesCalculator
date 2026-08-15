@@ -35,6 +35,7 @@
 .dotRest    { background: transparent; box-shadow: inset 0 0 0 1px var(--color-protein); }
 .dotSupp    { background: var(--color-carbs); }
 .dotWeight  { background: var(--color-fat); }
+.dotSleep   { background: #7c6cf0; }
 .dotNote    { background: var(--color-text-muted); }
 
 .monthScroll { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -211,6 +212,14 @@
 .macroP { font-size: 13px; font-weight: 600; color: var(--color-protein); }
 .macroC { font-size: 13px; font-weight: 600; color: var(--color-carbs); }
 .macroF { font-size: 13px; font-weight: 600; color: var(--color-fat); }
+
+/* Sleep detail (day drawer) */
+.sleepBar { display: flex; width: 100%; height: 14px; border-radius: var(--radius-pill); overflow: hidden; margin-top: var(--space-1); background: var(--color-surface-2); }
+.sleepBarSeg { height: 100%; }
+.sleepLegend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); margin-top: var(--space-1); font-size: 11px; color: var(--color-text-muted); }
+.sleepLegendItem { display: flex; align-items: center; gap: 4px; }
+.sleepSwatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+.sleepChart { height: 150px; margin-top: var(--space-2); }
 
 /* Rest day */
 .restBadge {

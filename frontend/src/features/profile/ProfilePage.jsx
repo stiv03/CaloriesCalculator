@@ -55,7 +55,7 @@ export default function ProfilePage() {
   const [healthResult, setHealthResult] = useState(null); // last sync breakdown
   const [healthDetailOpen, setHealthDetailOpen] = useState(false);
   // Which data types to sync. Steps/weight are imported from Google, food is exported.
-  const [syncPrefs, setSyncPrefs] = useState({ syncSteps: true, syncWeight: true, syncFood: true });
+  const [syncPrefs, setSyncPrefs] = useState({ syncSteps: true, syncWeight: true, syncFood: true, syncSleep: true });
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ newPassword: '', confirm: '' });
@@ -81,6 +81,7 @@ export default function ProfilePage() {
         syncSteps: s.syncSteps !== false,
         syncWeight: s.syncWeight !== false,
         syncFood: s.syncFood !== false,
+        syncSleep: s.syncSleep !== false,
       });
     } catch (_) { /* leave defaults */ }
   }, [userId]);
@@ -371,7 +372,12 @@ export default function ProfilePage() {
               <label className={styles.syncPref}>
                 <input type="checkbox" checked={syncPrefs.syncFood}
                        onChange={() => handleTogglePref('syncFood')} disabled={healthBusy} />
-                <span>Food <em className={styles.muted}>(meals → Google)</em></span>
+                <span>Food</span>
+              </label>
+              <label className={styles.syncPref}>
+                <input type="checkbox" checked={syncPrefs.syncSleep}
+                       onChange={() => handleTogglePref('syncSleep')} disabled={healthBusy} />
+                <span>Sleep</span>
               </label>
             </div>
             <div className={styles.actions}>
@@ -401,6 +407,7 @@ export default function ProfilePage() {
                   <div className={styles.syncDetail}>
                     <div>Weight imported: {healthResult.weightImported ?? 0}</div>
                     <div>Steps imported (days): {healthResult.stepsImported ?? 0}</div>
+                    <div>Sleep imported (nights): {healthResult.sleepImported ?? 0}</div>
                     <div>Meals exported: {healthResult.nutritionExported ?? 0}</div>
                     <div>Meals unchanged (skipped): {healthResult.nutritionSkipped ?? 0}</div>
                     {healthResult.errors && healthResult.errors.length > 0 && (

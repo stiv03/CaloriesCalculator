@@ -27,6 +27,7 @@ public class CalendarController {
     private final SupplementRepository supplementRepository;
     private final SupplementIntakeRepository supplementIntakeRepository;
     private final StepRecordRepository stepRecordRepository;
+    private final SleepRecordRepository sleepRecordRepository;
 
     @GetMapping("/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
@@ -76,6 +77,9 @@ public class CalendarController {
         Map<LocalDate, Integer> stepsByDay = stepRecordRepository.findByUserIdOrderByDateAsc(userId).stream()
                 .filter(s -> !s.getDate().isBefore(from) && !s.getDate().isAfter(to))
                 .collect(Collectors.toMap(s -> s.getDate(), s -> s.getSteps(), (a, b) -> a));
+        Map<LocalDate, SleepRecord> sleepByDay = sleepRecordRepository.findByUserIdOrderByDateAsc(userId).stream()
+                .filter(s -> !s.getDate().isBefore(from) && !s.getDate().isAfter(to))
+                .collect(Collectors.toMap(SleepRecord::getDate, s -> s, (a, b) -> a));
         Set<LocalDate> noteDays = notes.stream().map(DailyNote::getDate).collect(Collectors.toSet());
         Map<LocalDate, Workout> workoutByDay = workouts.stream()
                 .collect(Collectors.toMap(Workout::getDate, w -> w, (a, b) -> a));
@@ -110,6 +114,7 @@ public class CalendarController {
 
             Workout w = workoutByDay.get(day);
             boolean isRest = w != null && w.isRestDay();
+            SleepRecord sleep = sleepByDay.get(day);
             // Today is scored against the current supplement list; past days are scored
             // against what was tracked that day, so historical scores don't shift when
             // supplements are added or removed later. PREWORKOUT supps are only due on
@@ -130,7 +135,12 @@ public class CalendarController {
                     intakesByDay.getOrDefault(day, 0L).intValue(),
                     totalSupplements > 0,
                     isRest,
-                    stepsByDay.get(day)
+                    stepsByDay.get(day),
+                    sleep != null ? sleep.getTotalMinutes() : null,
+                    sleep != null ? sleep.getRemMinutes() : null,
+                    sleep != null ? sleep.getDeepMinutes() : null,
+                    sleep != null ? sleep.getLightMinutes() : null,
+                    sleep != null ? sleep.getAwakeMinutes() : null
             ));
             cur = cur.plusDays(1);
         }
@@ -149,6 +159,41 @@ public class CalendarController {
                     return m;
                 })
                 .toList();
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * Sleep detail for one day (wake date): duration, bed/wake times, and the
+     * raw stage segments for the hypnogram. 204 when no sleep that day. Kept off
+     * the month payload so that response stays small.
+     */
+    @GetMapping("/{userId}/sleep/{date}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<Map<String, Object>> getSleep(
+            @PathVariable Long userId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        var recOpt = sleepRecordRepository.findByUserIdAndDate(userId, date);
+        if (recOpt.isEmpty()) return ResponseEntity.noContent().build();
+        SleepRecord s = recOpt.get();
+        Map<String, Object> out = new HashMap<>();
+        out.put("date", s.getDate().toString());
+        out.put("startTime", s.getStartTime() != null ? s.getStartTime().toString() : null);
+        out.put("endTime", s.getEndTime() != null ? s.getEndTime().toString() : null);
+        out.put("totalMinutes", s.getTotalMinutes());
+        out.put("rem", s.getRemMinutes());
+        out.put("deep", s.getDeepMinutes());
+        out.put("light", s.getLightMinutes());
+        out.put("awake", s.getAwakeMinutes());
+        // Parse the stored JSON back to real JSON so the client gets an array,
+        // not an escaped string. Empty on parse failure — totals still returned.
+        Object segments = List.of();
+        if (s.getSegments() != null && !s.getSegments().isBlank()) {
+            try {
+                segments = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(s.getSegments(), Object.class);
+            } catch (Exception ignored) { /* keep empty */ }
+        }
+        out.put("segments", segments);
         return ResponseEntity.ok(out);
     }
 }

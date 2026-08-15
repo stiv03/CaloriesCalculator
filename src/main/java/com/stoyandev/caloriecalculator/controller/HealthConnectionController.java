@@ -56,15 +56,16 @@ public class HealthConnectionController {
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Void> preferences(@PathVariable Long userId,
                                             @RequestBody SyncPreferences prefs) {
-        service.updatePreferences(userId, prefs.steps(), prefs.weight(), prefs.food());
+        service.updatePreferences(userId, prefs.steps(), prefs.weight(), prefs.food(), prefs.sleep());
         return ResponseEntity.noContent().build();
     }
 
     /** Body for the preferences endpoint. Absent fields default to true. */
-    public record SyncPreferences(Boolean syncSteps, Boolean syncWeight, Boolean syncFood) {
+    public record SyncPreferences(Boolean syncSteps, Boolean syncWeight, Boolean syncFood, Boolean syncSleep) {
         boolean steps()  { return syncSteps  == null || syncSteps; }
         boolean weight() { return syncWeight == null || syncWeight; }
         boolean food()   { return syncFood   == null || syncFood; }
+        boolean sleep()  { return syncSleep  == null || syncSleep; }
     }
 
     /** Manual "sync now" — runs the same importers the scheduler uses. */

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getCalendarMonth } from '../../api/calendar';
 import { getNote } from '../../api/notes';
 import WeekDashboard from './WeekDashboard';
+import SleepDetail from './SleepDetail';
 import { setRestDay as apiSetRestDay } from '../../api/workouts';
 import { getUserId } from '../../auth/storage';
 import styles from './CalendarPage.module.css';
@@ -194,6 +195,7 @@ export default function CalendarPage() {
                   {data?.isRestDay && <span className={styles.dot + ' ' + styles.dotRest} title="Rest day" />}
                   {data?.supplementsTaken > 0 && <span className={styles.dot + ' ' + styles.dotSupp} title="Supplements" />}
                   {data?.weight != null && <span className={styles.dot + ' ' + styles.dotWeight} title="Weight" />}
+                  {data?.sleepTotalMinutes != null && <span className={styles.dot + ' ' + styles.dotSleep} title="Sleep" />}
                   {data?.hasNote && <span className={styles.dot + ' ' + styles.dotNote} title="Note" />}
                 </div>
               </button>
@@ -233,6 +235,7 @@ export default function CalendarPage() {
                   {data?.isRestDay && <span className={styles.dot + ' ' + styles.dotRest} title="Rest day" />}
                   {data?.supplementsTaken > 0 && <span className={styles.dot + ' ' + styles.dotSupp} />}
                   {data?.weight != null && <span className={styles.dot + ' ' + styles.dotWeight} />}
+                  {data?.sleepTotalMinutes != null && <span className={styles.dot + ' ' + styles.dotSleep} />}
                   {data?.hasNote && <span className={styles.dot + ' ' + styles.dotNote} />}
                 </div>
                 {data?.hasWorkout && <div className={styles.weekWorkout}>{displayWorkout(data)}</div>}
@@ -288,6 +291,7 @@ export default function CalendarPage() {
           <span><span className={styles.dot + ' ' + styles.dotWorkout} /> Workout</span>
           <span><span className={styles.dot + ' ' + styles.dotSupp} /> Supps</span>
           <span><span className={styles.dot + ' ' + styles.dotWeight} /> Weight</span>
+          <span><span className={styles.dot + ' ' + styles.dotSleep} /> Sleep</span>
           <span><span className={styles.dot + ' ' + styles.dotNote} /> Note</span>
         </div>
       </div>
@@ -381,13 +385,16 @@ export default function CalendarPage() {
                     </div>
                   </div>
                 )}
+                {selected.day.sleepTotalMinutes != null && (
+                  <SleepDetail userId={userId} date={selected.day.date} day={selected.day} />
+                )}
                 {selected.note && (
                   <div className={styles.summarySection}>
                     <div className={styles.summaryLabel}>Note</div>
                     <div className={styles.summaryNote}>{selected.note}</div>
                   </div>
                 )}
-                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && (
+                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && selected.day.sleepTotalMinutes == null && (
                   <p className={styles.muted}>No other data logged for this day.</p>
                 )}
               </div>

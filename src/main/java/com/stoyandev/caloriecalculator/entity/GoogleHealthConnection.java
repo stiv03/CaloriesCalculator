@@ -60,4 +60,8 @@ public class GoogleHealthConnection {
     @Builder.Default
     @Column(name = "sync_food", nullable = false, columnDefinition = "boolean default true")
     private boolean syncFood = true;
+
+    @Builder.Default
+    @Column(name = "sync_sleep", nullable = false, columnDefinition = "boolean default true")
+    private boolean syncSleep = true;
 }

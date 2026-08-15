@@ -38,6 +38,7 @@ public class HealthConnectionService {
     private final List<HealthImporter> importers;
     private final NutritionExporter nutritionExporter;
     private final com.stoyandev.caloriecalculator.repository.NutritionExportRepository nutritionExportRepo;
+    private final com.stoyandev.caloriecalculator.repository.SleepRecordRepository sleepRecordRepo;
 
     @Value("${google.health.token-enc-key}")
     private String stateKeyBase64; // reuse the enc key as the HMAC key for state signing
@@ -95,17 +96,19 @@ public class HealthConnectionService {
         out.put("syncSteps", conn == null || conn.isSyncSteps());
         out.put("syncWeight", conn == null || conn.isSyncWeight());
         out.put("syncFood", conn == null || conn.isSyncFood());
+        out.put("syncSleep", conn == null || conn.isSyncSleep());
         return out;
     }
 
     /** Persist which data types to sync. No-op if the user isn't connected. */
     @Transactional
-    public void updatePreferences(Long userId, boolean syncSteps, boolean syncWeight, boolean syncFood) {
+    public void updatePreferences(Long userId, boolean syncSteps, boolean syncWeight, boolean syncFood, boolean syncSleep) {
         var conn = connectionRepo.findByUserId(userId).orElse(null);
         if (conn == null) return;
         conn.setSyncSteps(syncSteps);
         conn.setSyncWeight(syncWeight);
         conn.setSyncFood(syncFood);
+        conn.setSyncSleep(syncSleep);
         connectionRepo.save(conn);
     }
 
@@ -124,6 +127,7 @@ public class HealthConnectionService {
             out.put("recordsImported", result.getTotal());
             out.put("weightImported", result.getWeightImported());
             out.put("stepsImported", result.getStepsImported());
+            out.put("sleepImported", result.getSleepImported());
             out.put("nutritionExported", result.getNutritionExported());
             out.put("nutritionSkipped", result.getNutritionSkipped());
             out.put("errors", result.getErrors());
@@ -143,6 +147,8 @@ public class HealthConnectionService {
         connectionRepo.deleteByUserId(userId);
         // Forget export tracking so a future reconnect re-exports cleanly.
         nutritionExportRepo.deleteByUserId(userId);
+        // Drop imported sleep so a reconnect re-imports from a clean slate.
+        sleepRecordRepo.deleteAllByUserId(userId);
     }
 
     // ---- Scheduled daily sync (07:13 to avoid the top-of-hour crowd) ----
@@ -176,10 +182,10 @@ public class HealthConnectionService {
             if (!isEnabled(conn, importer.dataType())) continue;
             try {
                 int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
-                if ("steps".equals(importer.dataType())) {
-                    result.addStepsImported(n);
-                } else {
-                    result.addWeightImported(n);
+                switch (importer.dataType()) {
+                    case "steps" -> result.addStepsImported(n);
+                    case "sleep" -> result.addSleepImported(n);
+                    default -> result.addWeightImported(n);
                 }
             } catch (Exception e) {
                 result.addError(importer.dataType() + " import: " + shortMsg(e.getMessage()));
@@ -205,6 +211,7 @@ public class HealthConnectionService {
             case "steps" -> conn.isSyncSteps();
             case "weight" -> conn.isSyncWeight();
             case "food" -> conn.isSyncFood();
+            case "sleep" -> conn.isSyncSleep();
             default -> true;
         };
     }
