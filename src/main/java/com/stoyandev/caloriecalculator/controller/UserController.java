@@ -69,6 +69,13 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PutMapping("/update/check-in-day/{id}")
+    @PreAuthorize("@userAccessService.hasAccess(#id)")
+    public ResponseEntity<UserDTO> updateCheckInDay(@PathVariable Long id, @RequestBody UpdateUserCheckInDayRequestDTO req) {
+        var updatedUser = userService.updateCheckInDay(id, req.checkInDay());
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @PutMapping("/update/status/{id}")
     @PreAuthorize("@userAccessService.hasAccess(#id)")
     public ResponseEntity<UserDTO> updateStatus(@PathVariable Long id, @RequestBody int statusCode) {

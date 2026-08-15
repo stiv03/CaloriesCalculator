@@ -3,6 +3,20 @@
 .h3 { margin-bottom: var(--space-3); }
 .muted { color: var(--color-text-muted); }
 
+/* Weekly check-in day picker */
+.checkInRow { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.checkInSelect {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #d0d0d0);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface-2, #f7f7f7);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+.checkInHint { margin-top: var(--space-2); font-size: 0.85rem; }
+
 .toggleBtn {
   width: 100%;
   display: flex;

@@ -208,6 +208,38 @@
 .summaryMuted { font-size: 13px; color: var(--color-text-muted); }
 .summaryNote { font-size: 14px; color: var(--color-text); line-height: 1.5; white-space: pre-wrap; background: var(--color-surface-2); border-radius: var(--radius-sm); padding: var(--space-3); }
 
+/* ── Check-in event pills (month cells) — Apple-Calendar-style event chips.
+   Compact, single line; due = colored + solid tint, logged = muted + strikeless
+   check. Truncate rather than wrap so the tiny square cell stays tidy. ── */
+.cellPills { display: flex; flex-direction: column; gap: 1px; width: 100%; margin-top: 1px; }
+.eventPill {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 1px 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.pillMeasure { background: color-mix(in srgb, var(--color-accent) 20%, var(--color-surface)); color: var(--color-accent); }
+.pillPhoto   { background: color-mix(in srgb, var(--color-carbs) 22%, var(--color-surface)); color: var(--color-carbs); }
+/* Logged this week → mute the pill so it reads as done rather than pending. */
+.pillDone { background: var(--color-surface-2); color: var(--color-text-muted); }
+
+/* ── Check-in list (day drawer) ── */
+.checkInList { display: flex; flex-direction: column; gap: var(--space-2); }
+.checkInItem {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: 14px; font-weight: 600; color: var(--color-text);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.checkInDone { color: var(--color-text-muted); }
+.checkInIcon { font-size: 15px; line-height: 1; }
+
 .macroRow { display: flex; gap: var(--space-3); }
 .macroP { font-size: 13px; font-weight: 600; color: var(--color-protein); }
 .macroC { font-size: 13px; font-weight: 600; color: var(--color-carbs); }

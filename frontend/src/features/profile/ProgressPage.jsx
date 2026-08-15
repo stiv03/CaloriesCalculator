@@ -101,10 +101,12 @@ export default function ProgressPage() {
         )}
         {activeTab === 'body' && (
           <BodyTab
+            user={user}
             measurements={measurements}
             latestMeasurement={latestMeasurement}
             weightRecords={weightRecords}
             onRefreshMeasurements={refreshMeasurements}
+            onRefreshUser={refreshUser}
           />
         )}
         {activeTab === 'steps' && (

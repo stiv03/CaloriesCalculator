@@ -198,6 +198,20 @@ export default function CalendarPage() {
                   {data?.sleepTotalMinutes != null && <span className={styles.dot + ' ' + styles.dotSleep} title="Sleep" />}
                   {data?.hasNote && <span className={styles.dot + ' ' + styles.dotNote} title="Note" />}
                 </div>
+                {(data?.measurementDue || data?.measurementLogged || data?.photoDue || data?.photoLogged) && (
+                  <div className={styles.cellPills}>
+                    {(data?.measurementDue || data?.measurementLogged) && (
+                      <span className={[styles.eventPill, styles.pillMeasure, data.measurementLogged ? styles.pillDone : ''].join(' ')} title={data.measurementLogged ? 'Measurements logged' : 'Measurements due'}>
+                        {data.measurementLogged ? '✓' : '📏'} Measure
+                      </span>
+                    )}
+                    {(data?.photoDue || data?.photoLogged) && (
+                      <span className={[styles.eventPill, styles.pillPhoto, data.photoLogged ? styles.pillDone : ''].join(' ')} title={data.photoLogged ? 'Progress photo taken' : 'Progress photo due'}>
+                        {data.photoLogged ? '✓' : '📷'} Photo
+                      </span>
+                    )}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -391,6 +405,25 @@ export default function CalendarPage() {
                     </div>
                   </div>
                 )}
+                {(selected.day.measurementDue || selected.day.measurementLogged || selected.day.photoDue || selected.day.photoLogged) && (
+                  <div className={styles.summarySection}>
+                    <div className={styles.summaryLabel}>Weekly check-in</div>
+                    <div className={styles.checkInList}>
+                      {(selected.day.measurementDue || selected.day.measurementLogged) && (
+                        <div className={[styles.checkInItem, selected.day.measurementLogged ? styles.checkInDone : ''].join(' ')}>
+                          <span className={styles.checkInIcon}>{selected.day.measurementLogged ? '✓' : '📏'}</span>
+                          <span>{selected.day.measurementLogged ? 'Measurements logged' : 'Log measurements'}</span>
+                        </div>
+                      )}
+                      {(selected.day.photoDue || selected.day.photoLogged) && (
+                        <div className={[styles.checkInItem, selected.day.photoLogged ? styles.checkInDone : ''].join(' ')}>
+                          <span className={styles.checkInIcon}>{selected.day.photoLogged ? '✓' : '📷'}</span>
+                          <span>{selected.day.photoLogged ? 'Progress photo taken' : 'Take a progress photo'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {selected.day.sleepTotalMinutes != null && (
                   <SleepDetail userId={userId} date={selected.day.date} day={selected.day} />
                 )}
@@ -400,7 +433,7 @@ export default function CalendarPage() {
                     <div className={styles.summaryNote}>{selected.note}</div>
                   </div>
                 )}
-                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && selected.day.sleepTotalMinutes == null && selected.day.steps == null && (
+                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && selected.day.sleepTotalMinutes == null && selected.day.steps == null && !selected.day.measurementDue && !selected.day.measurementLogged && !selected.day.photoDue && !selected.day.photoLogged && (
                   <p className={styles.muted}>No other data logged for this day.</p>
                 )}
               </div>

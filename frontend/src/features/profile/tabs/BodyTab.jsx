@@ -1,8 +1,8 @@
 // frontend/src/features/profile/tabs/BodyTab.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatHumanDate } from '../../today/dateFormat';
-import { addMeasurement } from '../../../api/profile';
+import { addMeasurement, updateCheckInDay } from '../../../api/profile';
 import { getUserId } from '../../../auth/storage';
 import { needsMeasurementReminder } from '../reminders';
 import Field from '../../../components/Field';
@@ -15,6 +15,17 @@ const PARTS = ['shoulder', 'chest', 'biceps', 'waist', 'hips', 'thigh', 'calf'];
 const EMPTY_MEAS = {
   shoulder: '', chest: '', biceps: '', waist: '', hips: '', thigh: '', calf: '',
 };
+
+// ISO day-of-week (1=Mon … 7=Sun) → label, for the check-in day picker.
+const WEEKDAYS = [
+  { value: 1, label: 'Monday' },
+  { value: 2, label: 'Tuesday' },
+  { value: 3, label: 'Wednesday' },
+  { value: 4, label: 'Thursday' },
+  { value: 5, label: 'Friday' },
+  { value: 6, label: 'Saturday' },
+  { value: 7, label: 'Sunday' },
+];
 
 /** Format date as DD/MM/YYYY (zero-padded). */
 function formatNumericDate(d) {
@@ -41,14 +52,22 @@ function weeklyAvgForDate(weightsAsc, dateStr) {
 }
 
 export default function BodyTab({
-  measurements, latestMeasurement, weightRecords = [], onRefreshMeasurements,
+  user, measurements, latestMeasurement, weightRecords = [], onRefreshMeasurements, onRefreshUser,
 }) {
   const userId = getUserId();
   const navigate = useNavigate();
   const [measForm, setMeasForm] = useState(EMPTY_MEAS);
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState('');
+  // Default to Sunday (7) until the user picks a day; mirror the backend default.
+  const savedCheckInDay = user?.checkInDay;
+  const [checkInDay, setCheckInDay] = useState(savedCheckInDay ?? 7);
   const showMeasReminder = needsMeasurementReminder(latestMeasurement?.date);
+
+  // Keep the picker in sync once the user object loads/refreshes.
+  useEffect(() => {
+    if (savedCheckInDay != null) setCheckInDay(savedCheckInDay);
+  }, [savedCheckInDay]);
 
   // Sort weights ascending once so findWeightOnOrBefore can short-circuit.
   const weightsAsc = useMemo(() => (
@@ -64,6 +83,15 @@ export default function BodyTab({
       setMeasForm(EMPTY_MEAS);
       await onRefreshMeasurements?.();
     } catch (e) { setError(e.message); }
+  };
+
+  const handleCheckInChange = async (e) => {
+    const value = Number(e.target.value);
+    setCheckInDay(value); // optimistic
+    try {
+      await updateCheckInDay(userId, value);
+      await onRefreshUser?.();
+    } catch (err) { setError(err.message); }
   };
 
   return (
@@ -95,6 +123,25 @@ export default function BodyTab({
             <Button block onClick={handleMeasSubmit}>Save measurements</Button>
           </>
         )}
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.h3}>Weekly check-in day</h3>
+        <div className={styles.checkInRow}>
+          <select
+            className={styles.checkInSelect}
+            value={checkInDay}
+            onChange={handleCheckInChange}
+            aria-label="Weekly check-in day"
+          >
+            {WEEKDAYS.map((d) => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
+          </select>
+        </div>
+        <p className={[styles.muted, styles.checkInHint].join(' ')}>
+          The calendar reminds you to log measurements and take progress photos on this day each week.
+        </p>
       </div>
 
       <div className={styles.card}>

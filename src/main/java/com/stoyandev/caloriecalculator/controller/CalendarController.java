@@ -28,6 +28,9 @@ public class CalendarController {
     private final SupplementIntakeRepository supplementIntakeRepository;
     private final StepRecordRepository stepRecordRepository;
     private final SleepRecordRepository sleepRecordRepository;
+    private final MeasurementsRecordRepository measurementsRecordRepository;
+    private final ProgressPhotoRepository progressPhotoRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
@@ -92,6 +95,19 @@ public class CalendarController {
         Map<LocalDate, Long> trackedByDay = intakes.stream()
                 .collect(Collectors.groupingBy(SupplementIntake::getDate, Collectors.counting()));
 
+        // Weekly check-in reminders (measurements + progress photos). The user's
+        // checkInDay is an ISO weekday (1=Mon … 7=Sun); default to Sunday when unset.
+        // "logged" = a record of that type exists on that exact day. "due" = the day
+        // is the check-in weekday, is not in the future, and no record of that type
+        // exists in that week's 7-day window (anchor day + prior 6) — so once you log
+        // one that week the reminder auto-resolves.
+        int checkInDay = userRepository.findById(userId)
+                .map(Users::getCheckInDay).filter(d -> d >= 1 && d <= 7).orElse(7);
+        Set<LocalDate> measurementDays = measurementsRecordRepository.findByUserId(userId).stream()
+                .map(MeasurementsRecord::getDate).collect(Collectors.toSet());
+        Set<LocalDate> photoDays = progressPhotoRepository.findByUserIdOrderByDateDescIdDesc(userId).stream()
+                .map(ProgressPhoto::getDate).collect(Collectors.toSet());
+
         LocalDate today = LocalDate.now();
 
         List<CalendarDayDTO> result = new ArrayList<>();
@@ -124,6 +140,16 @@ public class CalendarController {
             int dayTotalSupps = day.isBefore(today)
                     ? trackedByDay.getOrDefault(day, 0L).intValue()
                     : (isRest ? dailyCount : dailyCount + trainingCount);
+
+            // Check-in reminders: a record on this exact day marks it logged; the day
+            // is "due" only on the check-in weekday, not in the future, and only if
+            // nothing was logged in that week's 7-day window (this day + prior 6).
+            boolean measurementLogged = measurementDays.contains(day);
+            boolean photoLogged = photoDays.contains(day);
+            boolean isCheckInDay = day.getDayOfWeek().getValue() == checkInDay && !day.isAfter(today);
+            boolean measurementDue = isCheckInDay && !loggedInWindow(measurementDays, day);
+            boolean photoDue = isCheckInDay && !loggedInWindow(photoDays, day);
+
             result.add(new CalendarDayDTO(
                     day, calories, calorieGoal, protein, carbs, fat,
                     weightByDay.get(day),
@@ -140,11 +166,25 @@ public class CalendarController {
                     sleep != null ? sleep.getRemMinutes() : null,
                     sleep != null ? sleep.getDeepMinutes() : null,
                     sleep != null ? sleep.getLightMinutes() : null,
-                    sleep != null ? sleep.getAwakeMinutes() : null
+                    sleep != null ? sleep.getAwakeMinutes() : null,
+                    measurementDue,
+                    measurementLogged,
+                    photoDue,
+                    photoLogged
             ));
             cur = cur.plusDays(1);
         }
         return ResponseEntity.ok(result);
+    }
+
+    /** True if any date in the 7-day window ending on {@code anchor} (anchor and the
+     *  prior 6 days) is present in {@code dates} — i.e. the check-in was already met
+     *  that week, so its reminder should not fire. */
+    private static boolean loggedInWindow(Set<LocalDate> dates, LocalDate anchor) {
+        for (int i = 0; i < 7; i++) {
+            if (dates.contains(anchor.minusDays(i))) return true;
+        }
+        return false;
     }
 
     /** Daily step history for the Progress chart: [{date, steps}] ascending. */

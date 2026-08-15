@@ -65,6 +65,12 @@ public class Users implements UserDetails {
     @Column(name = "water_goal_ml")
     private Integer waterGoalMl;
 
+    /** Weekly check-in day (ISO day-of-week: 1=Mon … 7=Sun) on which the calendar
+        surfaces "log measurements" / "take a progress photo" events. Nullable →
+        treated as Sunday(7) until the user picks one. */
+    @Column(name = "check_in_day")
+    private Integer checkInDay;
+
     @Column(name = "username", length = 100, nullable = false, unique = true)
     private String username;
 
