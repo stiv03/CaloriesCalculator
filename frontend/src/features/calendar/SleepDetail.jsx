@@ -82,15 +82,7 @@ export default function SleepDetail({ userId, date, day }) {
       blocks.push({ key, left, width, color: COLOR_BY_KEY[key], label: seg.type });
     }
     if (blocks.length === 0) return null;
-
-    // ~4 evenly spaced clock ticks across the night (inclusive of both ends).
-    const TICK_COUNT = 4;
-    const ticks = [];
-    for (let i = 0; i <= TICK_COUNT; i++) {
-      const at = t0 + (span * i) / TICK_COUNT;
-      ticks.push({ left: (i / TICK_COUNT) * 100, label: fmtClock(new Date(at).toISOString()) });
-    }
-    return { blocks, ticks };
+    return { blocks };
   }, [segments]);
 
   const bed = detail?.startTime || day.sleepStart;
@@ -154,13 +146,6 @@ export default function SleepDetail({ userId, date, day }) {
               </span>
             </div>
           ))}
-          <div className={styles.sleepBandAxis}>
-            {bands.ticks.map((t, i) => (
-              <span key={i} className={styles.sleepBandTick} style={{ left: `${t.left}%` }}>
-                {t.label}
-              </span>
-            ))}
-          </div>
         </div>
       )}
     </div>
