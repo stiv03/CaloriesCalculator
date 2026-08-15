@@ -18,9 +18,11 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 /**
- * Imports body weight from Google Health into WeightRecord. Upserts by
- * (user, date) — re-imports overwrite that day's row, so running repeatedly is
- * safe. Weight arrives as p.weight.weightGrams (÷1000 = kg).
+ * Imports body weight from Google Health into WeightRecord. Fills empty days
+ * only — a day that already has a record (manual entry or a prior sync) is left
+ * untouched, so the sync never overwrites a weight you've already recorded. The
+ * Users.weight snapshot still tracks Google's most-recent reading. Weight
+ * arrives as p.weight.weightGrams (÷1000 = kg).
  */
 @Component
 @AllArgsConstructor
@@ -56,7 +58,9 @@ public class WeightImporter implements HealthImporter {
 
         if (resp == null || resp.dataPoints() == null) return 0;
 
-        // Keep the last reading per calendar day (WeightRecord is one-per-day).
+        // Fill empty days only: a day that already has a WeightRecord (manually
+        // entered, or written by a previous sync) is never overwritten. Google
+        // only fills in days we have nothing for — first value for a day wins.
         int written = 0;
         for (DataPoint dp : resp.dataPoints()) {
             if (dp.weight() == null || dp.weight().weightGrams() == null
@@ -66,11 +70,14 @@ public class WeightImporter implements HealthImporter {
             double kg = Math.round((dp.weight().weightGrams() / 1000.0) * 10) / 10.0;
             LocalDate date = dp.weight().sampleTime().physicalTime().atZone(ZoneOffset.UTC).toLocalDate();
 
-            WeightRecord record = weightRepository.findByUserIdAndDate(userId, date)
-                    .orElseGet(() -> { var w = new WeightRecord(); w.setUser(user); w.setDate(date); return w; });
+            if (weightRepository.findByUserIdAndDate(userId, date).isPresent()) {
+                continue; // day already has a weight — leave it untouched
+            }
+            WeightRecord record = new WeightRecord();
+            record.setUser(user);
+            record.setDate(date);
             record.setWeight(kg);
             weightRepository.save(record);
-            // Also keep the user's snapshot weight in step with the newest reading.
             written++;
         }
         // Sync the Users snapshot to the most-recent reading, if any.
