@@ -22,6 +22,7 @@ import java.util.Map;
 public class HealthConnectionController {
 
     private final HealthConnectionService service;
+    private final com.stoyandev.caloriecalculator.service.health.ActivityService activityService;
 
     /** Returns the Google consent URL the frontend should open. */
     @GetMapping("/oauth/authorize/{userId}")
@@ -80,5 +81,14 @@ public class HealthConnectionController {
     public ResponseEntity<Void> disconnect(@PathVariable Long userId) {
         service.disconnect(userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /** On-demand read of a day's Google WEIGHTLIFTING session. Never persists. */
+    @GetMapping("/activity/{userId}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<com.stoyandev.caloriecalculator.dto.ActivityDTO> activity(
+            @PathVariable Long userId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        return ResponseEntity.ok(activityService.forDate(userId, date));
     }
 }
