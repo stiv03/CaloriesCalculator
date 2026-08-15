@@ -40,7 +40,11 @@ public class SleepImporter implements HealthImporter {
 
     private static final Logger log = LoggerFactory.getLogger(SleepImporter.class);
     private static final int DEFAULT_LOOKBACK_DAYS = 30;
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // findAndRegisterModules() picks up jackson-datatype-jsr310 (on the classpath
+    // via spring-boot-starter-web) so the Instant fields in Seg serialize. Without
+    // it a plain ObjectMapper throws on java.time.Instant and writeSegments()
+    // silently returns null — the totals still save but the hypnogram gets no data.
+    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     private final SleepRecordRepository sleepRepository;
     private final UserRepository userRepository;
