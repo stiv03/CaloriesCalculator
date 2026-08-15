@@ -272,6 +272,7 @@ export default function CalendarPage() {
               setView('week');
               const to = new Date(now); to.setDate(now.getDate() + 6);
               loadRange(now, to);
+              window.scrollTo({ top: 0, behavior: 'instant' });
             }}>Week</button>
           </div>
         </div>

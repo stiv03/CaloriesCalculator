@@ -18,6 +18,7 @@ import {
 } from '../../api/workouts';
 import { getCalendarMonth } from '../../api/calendar';
 import { getUserId } from '../../auth/storage';
+import { nextUpTemplateId } from './nextUp';
 import styles from './WorkoutPage.module.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
@@ -322,6 +323,13 @@ export default function WorkoutPage() {
     }
     return map;
   }, [history, selectedTemplate, logDate]);
+
+  // Which plan day is "up next" — the day following the most recently logged
+  // one in the rotation (wraps after the last day). See features/workout/nextUp.
+  const upNextId = React.useMemo(
+    () => nextUpTemplateId(templates, history),
+    [templates, history],
+  );
 
   const [restTimer, setRestTimer] = useState(null); // { exerciseName, remaining, total }
   const [restDefaults, setRestDefaults] = useState({}); // { exerciseName: seconds }
@@ -911,7 +919,7 @@ export default function WorkoutPage() {
           )}
 
           {templates.map(t => (
-            <div key={t.id} className={styles.dayCard}>
+            <div key={t.id} className={[styles.dayCard, t.id === upNextId ? styles.dayCardNext : ''].join(' ')}>
               {editingDay?.id === t.id ? (
                 <div className={styles.editDayForm}>
                   <Field as="select" label="Type" value={editingDay.exerciseType}
@@ -930,6 +938,7 @@ export default function WorkoutPage() {
                     setExpandedDay(expandedDay === t.id ? null : t.id);
                   }}>
                     <span className={styles.dayTypeBig}>{displayName(t)}</span>
+                    {t.id === upNextId && <span className={styles.nextPill}>Up next</span>}
                     <span className={styles.dayExCount}>{t.exercises.length} exercises</span>
                     <span className={styles.chev}>{expandedDay === t.id ? '⌃' : '⌄'}</span>
                   </button>

@@ -19,6 +19,27 @@
   overflow: hidden;
 }
 
+/* The day that's up next in the rotation — accent left border + tinted card. */
+.dayCardNext {
+  border-left: 3px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+}
+.dayCardNext .dayCardHeader { background: transparent; }
+
+.nextPill {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1.4;
+}
+
 .dayCardHeader {
   display: flex;
   align-items: center;
@@ -194,8 +215,8 @@
   font-size: 17px;
   font-weight: 700;
   color: var(--color-accent);
-  flex: 1;
 }
+.dayExCount { margin-left: auto; }
 .logDayType {
   font-size: 20px;
   font-weight: 700;
