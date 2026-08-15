@@ -29,3 +29,12 @@ export async function syncHealthNow(userId) {
 export async function disconnectHealth(userId) {
   await client.delete(`/health/disconnect/${userId}`);
 }
+
+/**
+ * On-demand Google WEIGHTLIFTING session for a date (read-only, not stored).
+ * Returns { found, exerciseType, durationMin, avgHr, minHr, maxHr, zones, reason }.
+ */
+export async function getActivityForDate(userId, date) {
+  const { data } = await client.get(`/health/activity/${userId}?date=${date}`);
+  return data;
+}

@@ -864,3 +864,37 @@
   background: var(--color-surface-2);
   border-color: var(--color-text);
 }
+
+/* Clickable session date → Google Health panel */
+.dateBtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent, #3b82f6);
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+.activityPanel {
+  position: relative;
+  margin-top: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  background: var(--color-surface-2, #1a2233);
+  border: 1px solid var(--color-border, #243049);
+  border-radius: var(--radius-md, 12px);
+}
+.activityClose {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  background: none;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-text-muted, #94a3b8);
+  cursor: pointer;
+}
+.activityTitle { font-size: 13px; color: var(--color-text-muted, #94a3b8); margin-bottom: 6px; }
+.activityBody { display: flex; flex-direction: column; gap: 4px; }
+.activityRow { font-size: 14px; color: var(--color-text, #e2e8f0); }
+.activityMuted { font-size: 14px; color: var(--color-text-muted, #94a3b8); }
