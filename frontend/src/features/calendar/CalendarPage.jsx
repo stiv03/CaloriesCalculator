@@ -341,6 +341,12 @@ export default function CalendarPage() {
                     <div className={styles.summaryVal}>{selected.day.weight} kg</div>
                   </div>
                 )}
+                {selected.day.steps != null && (
+                  <div className={styles.summarySection}>
+                    <div className={styles.summaryLabel}>Steps</div>
+                    <div className={styles.summaryVal}>{selected.day.steps.toLocaleString()}</div>
+                  </div>
+                )}
                 {selected.day.hasWorkout && !selected.day.isRestDay && (
                   <div className={styles.summarySection}>
                     <div className={styles.summaryLabel}>Workout</div>
@@ -394,7 +400,7 @@ export default function CalendarPage() {
                     <div className={styles.summaryNote}>{selected.note}</div>
                   </div>
                 )}
-                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && selected.day.sleepTotalMinutes == null && (
+                {!selected.day.calories && !selected.day.hasWorkout && !selected.day.weight && !selected.note && !selected.day.supplementsTotal && selected.day.sleepTotalMinutes == null && selected.day.steps == null && (
                   <p className={styles.muted}>No other data logged for this day.</p>
                 )}
               </div>
