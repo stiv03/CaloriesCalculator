@@ -80,14 +80,15 @@ public class WeightImporter implements HealthImporter {
             weightRepository.save(record);
             written++;
         }
-        // Sync the Users snapshot to the most-recent reading, if any.
-        resp.dataPoints().stream()
-                .filter(d -> d.weight() != null && d.weight().weightGrams() != null && d.weight().sampleTime() != null)
-                .max((a, b) -> a.weight().sampleTime().physicalTime().compareTo(b.weight().sampleTime().physicalTime()))
-                .ifPresent(latest -> {
-                    user.setWeight(Math.round((latest.weight().weightGrams() / 1000.0) * 10) / 10.0);
-                    userRepository.save(user);
-                });
+        // Snapshot the user's current weight to the single most-recent record,
+        // whatever its source (manual or Google). Reading "latest record" rather
+        // than "latest Google reading" keeps current weight consistent — a newer
+        // manual entry won't be dragged back to an older synced value.
+        WeightRecord latest = weightRepository.findTopByUserIdOrderByDateDesc(userId);
+        if (latest != null) {
+            user.setWeight(latest.getWeight());
+            userRepository.save(user);
+        }
 
         log.info("Weight import for user {}: {} day-records upserted", userId, written);
         return written;
