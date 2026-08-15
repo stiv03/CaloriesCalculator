@@ -168,20 +168,31 @@ public class HealthConnectionService {
 
     // ---- Core: refresh token, run every importer + nutrition export ----
 
+    /**
+     * Mint a fresh Google access token for the connected user from the stored
+     * refresh token. Throws IllegalStateException (never returns null) so callers
+     * can map to a shaped "not connected"/"error" response.
+     */
+    public String mintAccessToken(Long userId) {
+        var conn = connectionRepo.findByUserId(userId).orElse(null);
+        if (conn == null) throw new IllegalStateException("not_connected");
+        GoogleHealthClient.TokenResponse refreshed = client.refresh(cipher.decrypt(conn.getRefreshTokenEnc()));
+        if (refreshed == null || refreshed.accessToken() == null) {
+            throw new IllegalStateException("token_refresh_failed");
+        }
+        return refreshed.accessToken();
+    }
+
     private com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO runImporters(GoogleHealthConnection conn) {
         var result = new com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO();
-        String refreshToken = cipher.decrypt(conn.getRefreshTokenEnc());
-        GoogleHealthClient.TokenResponse refreshed = client.refresh(refreshToken);
-        if (refreshed == null || refreshed.accessToken() == null) {
-            throw new IllegalStateException("Could not refresh Google access token");
-        }
+        String accessToken = mintAccessToken(conn.getUserId());
         // Each importer/exporter is isolated: one failing (e.g. a bad endpoint)
         // must not abort the others, and its error is recorded in the breakdown.
         // Per-user preferences gate which data types run.
         for (HealthImporter importer : importers) {
             if (!isEnabled(conn, importer.dataType())) continue;
             try {
-                int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
+                int n = importer.importSince(conn.getUserId(), accessToken, conn.getLastSyncAt());
                 switch (importer.dataType()) {
                     case "steps" -> result.addStepsImported(n);
                     case "sleep" -> result.addSleepImported(n);
@@ -195,7 +206,7 @@ public class HealthConnectionService {
         // App → Google: push recent meals as nutrition entries (duplicate-safe).
         if (isEnabled(conn, "food")) {
             try {
-                nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
+                nutritionExporter.export(conn.getUserId(), accessToken, 7, result);
             } catch (Exception e) {
                 result.addError("nutrition export: " + shortMsg(e.getMessage()));
             }
