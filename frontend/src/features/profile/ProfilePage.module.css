@@ -26,3 +26,20 @@
 
 .tabsBar { margin-bottom: var(--space-4); }
 .content { display: flex; flex-direction: column; gap: var(--space-5); }
+
+/* Google Health: which data types to sync. */
+.syncPrefs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+.syncPref {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 15px;
+  cursor: pointer;
+}
+.syncPref input { width: 18px; height: 18px; }
+.syncPref em { font-style: normal; font-size: 12px; }

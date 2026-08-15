@@ -90,7 +90,23 @@ public class HealthConnectionService {
         out.put("connected", conn != null);
         out.put("configured", client.isConfigured());
         out.put("lastSyncAt", conn != null && conn.getLastSyncAt() != null ? conn.getLastSyncAt().toString() : null);
+        // Sync preferences (default true when not yet connected, so the UI shows
+        // everything enabled before first connect).
+        out.put("syncSteps", conn == null || conn.isSyncSteps());
+        out.put("syncWeight", conn == null || conn.isSyncWeight());
+        out.put("syncFood", conn == null || conn.isSyncFood());
         return out;
+    }
+
+    /** Persist which data types to sync. No-op if the user isn't connected. */
+    @Transactional
+    public void updatePreferences(Long userId, boolean syncSteps, boolean syncWeight, boolean syncFood) {
+        var conn = connectionRepo.findByUserId(userId).orElse(null);
+        if (conn == null) return;
+        conn.setSyncSteps(syncSteps);
+        conn.setSyncWeight(syncWeight);
+        conn.setSyncFood(syncFood);
+        connectionRepo.save(conn);
     }
 
     @Transactional
@@ -155,7 +171,9 @@ public class HealthConnectionService {
         }
         // Each importer/exporter is isolated: one failing (e.g. a bad endpoint)
         // must not abort the others, and its error is recorded in the breakdown.
+        // Per-user preferences gate which data types run.
         for (HealthImporter importer : importers) {
+            if (!isEnabled(conn, importer.dataType())) continue;
             try {
                 int n = importer.importSince(conn.getUserId(), refreshed.accessToken(), conn.getLastSyncAt());
                 if ("steps".equals(importer.dataType())) {
@@ -169,14 +187,26 @@ public class HealthConnectionService {
             }
         }
         // App → Google: push recent meals as nutrition entries (duplicate-safe).
-        try {
-            nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
-        } catch (Exception e) {
-            result.addError("nutrition export: " + shortMsg(e.getMessage()));
+        if (isEnabled(conn, "food")) {
+            try {
+                nutritionExporter.export(conn.getUserId(), refreshed.accessToken(), 7, result);
+            } catch (Exception e) {
+                result.addError("nutrition export: " + shortMsg(e.getMessage()));
+            }
         }
         conn.setLastSyncAt(Instant.now());
         connectionRepo.save(conn);
         return result;
+    }
+
+    /** Whether a data type is enabled for this connection. Unknown types default on. */
+    static boolean isEnabled(GoogleHealthConnection conn, String dataType) {
+        return switch (dataType) {
+            case "steps" -> conn.isSyncSteps();
+            case "weight" -> conn.isSyncWeight();
+            case "food" -> conn.isSyncFood();
+            default -> true;
+        };
     }
 
     /** Trim long/HTML error bodies to a readable snippet for the UI. */

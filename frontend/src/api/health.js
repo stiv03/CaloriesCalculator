@@ -9,10 +9,15 @@ export async function getAuthUrl(userId) {
   return data.authUrl;
 }
 
-/** Connection status: { connected, configured, lastSyncAt }. */
+/** Connection status: { connected, configured, lastSyncAt, syncSteps, syncWeight, syncFood }. */
 export async function getHealthStatus(userId) {
   const { data } = await client.get(`/health/status/${userId}`);
   return data;
+}
+
+/** Save which data types to sync: { syncSteps, syncWeight, syncFood }. */
+export async function updateHealthPreferences(userId, prefs) {
+  await client.put(`/health/preferences/${userId}`, prefs);
 }
 
 /** Trigger a sync now: { synced, recordsImported? , reason? }. */

@@ -51,6 +51,22 @@ public class HealthConnectionController {
         return ResponseEntity.ok(service.status(userId));
     }
 
+    /** Save which data types to sync (steps/weight imported, food exported). */
+    @PutMapping("/preferences/{userId}")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<Void> preferences(@PathVariable Long userId,
+                                            @RequestBody SyncPreferences prefs) {
+        service.updatePreferences(userId, prefs.steps(), prefs.weight(), prefs.food());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Body for the preferences endpoint. Absent fields default to true. */
+    public record SyncPreferences(Boolean syncSteps, Boolean syncWeight, Boolean syncFood) {
+        boolean steps()  { return syncSteps  == null || syncSteps; }
+        boolean weight() { return syncWeight == null || syncWeight; }
+        boolean food()   { return syncFood   == null || syncFood; }
+    }
+
     /** Manual "sync now" — runs the same importers the scheduler uses. */
     @PostMapping("/sync/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")

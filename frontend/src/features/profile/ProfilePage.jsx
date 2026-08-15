@@ -8,7 +8,7 @@ import {
   getUser, getGoal,
   updateStatus, updateActivity, setGoal as apiSetGoal, autoSetGoal, updateGoalWeight, updateStartWeight, updateWaterGoal,
 } from '../../api/profile';
-import { getAuthUrl, getHealthStatus, syncHealthNow, disconnectHealth } from '../../api/health';
+import { getAuthUrl, getHealthStatus, syncHealthNow, disconnectHealth, updateHealthPreferences } from '../../api/health';
 import { changePassword } from '../../api/auth';
 import { getAllNotes } from '../../api/notes';
 import { getTheme, setTheme } from '../../utils/theme';
@@ -54,6 +54,8 @@ export default function ProfilePage() {
   const [healthMsg, setHealthMsg] = useState('');
   const [healthResult, setHealthResult] = useState(null); // last sync breakdown
   const [healthDetailOpen, setHealthDetailOpen] = useState(false);
+  // Which data types to sync. Steps/weight are imported from Google, food is exported.
+  const [syncPrefs, setSyncPrefs] = useState({ syncSteps: true, syncWeight: true, syncFood: true });
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ newPassword: '', confirm: '' });
@@ -75,6 +77,11 @@ export default function ProfilePage() {
       const s = await getHealthStatus(userId);
       setHealthConnected(!!s.connected);
       setHealthLastSync(s.lastSyncAt || null);
+      setSyncPrefs({
+        syncSteps: s.syncSteps !== false,
+        syncWeight: s.syncWeight !== false,
+        syncFood: s.syncFood !== false,
+      });
     } catch (_) { /* leave defaults */ }
   }, [userId]);
 
@@ -193,6 +200,18 @@ export default function ProfilePage() {
     } catch (e) {
       setError(e.message || 'Google Health sync failed');
     } finally { setHealthBusy(false); }
+  };
+
+  const handleTogglePref = async (key) => {
+    const next = { ...syncPrefs, [key]: !syncPrefs[key] };
+    setSyncPrefs(next); // optimistic
+    setError(''); setHealthMsg('');
+    try {
+      await updateHealthPreferences(userId, next);
+    } catch (e) {
+      setSyncPrefs(syncPrefs); // roll back on failure
+      setError(e.message || 'Could not save sync preferences');
+    }
   };
 
   const handleStatus = async (e) => {
@@ -335,9 +354,26 @@ export default function ProfilePage() {
         {healthConnected ? (
           <>
             <p className={styles.muted} style={{ marginTop: 0 }}>
-              Connected. Weight syncs automatically every day.
+              Connected. Selected data syncs automatically every day.
               {healthLastSync ? ` Last sync: ${new Date(healthLastSync).toLocaleString()}.` : ' Not synced yet.'}
             </p>
+            <div className={styles.syncPrefs}>
+              <label className={styles.syncPref}>
+                <input type="checkbox" checked={syncPrefs.syncSteps}
+                       onChange={() => handleTogglePref('syncSteps')} disabled={healthBusy} />
+                <span>Steps</span>
+              </label>
+              <label className={styles.syncPref}>
+                <input type="checkbox" checked={syncPrefs.syncWeight}
+                       onChange={() => handleTogglePref('syncWeight')} disabled={healthBusy} />
+                <span>Weight</span>
+              </label>
+              <label className={styles.syncPref}>
+                <input type="checkbox" checked={syncPrefs.syncFood}
+                       onChange={() => handleTogglePref('syncFood')} disabled={healthBusy} />
+                <span>Food <em className={styles.muted}>(meals → Google)</em></span>
+              </label>
+            </div>
             <div className={styles.actions}>
               <Button block onClick={handleHealthSyncWeight} disabled={healthBusy}>
                 {healthBusy ? 'Syncing…' : 'Sync now'}

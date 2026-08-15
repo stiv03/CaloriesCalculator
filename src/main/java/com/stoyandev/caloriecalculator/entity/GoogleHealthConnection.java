@@ -45,4 +45,19 @@ public class GoogleHealthConnection {
     /** Last successful sync (null until the first run). Drives incremental import. */
     @Column(name = "last_sync_at")
     private Instant lastSyncAt;
+
+    // ---- Per-user sync preferences. Default true so existing connections keep
+    // syncing everything until the user opts out. steps/weight are imported
+    // FROM Google; food (meals) is exported TO Google.
+    @Builder.Default
+    @Column(name = "sync_steps", nullable = false, columnDefinition = "boolean default true")
+    private boolean syncSteps = true;
+
+    @Builder.Default
+    @Column(name = "sync_weight", nullable = false, columnDefinition = "boolean default true")
+    private boolean syncWeight = true;
+
+    @Builder.Default
+    @Column(name = "sync_food", nullable = false, columnDefinition = "boolean default true")
+    private boolean syncFood = true;
 }
