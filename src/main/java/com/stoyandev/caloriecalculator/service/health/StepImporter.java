@@ -14,7 +14,8 @@ import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,14 @@ import java.util.Map;
  * Google returns steps as minute-level intervals from potentially MULTIPLE
  * sources (Fitbit, phone). Summing all of them double-counts overlapping
  * sources and inflates totals. To match the Fitbit Air, we keep only
- * FITBIT-platform buckets and sum those per (local) day. Follows pagination.
+ * FITBIT-platform buckets and sum those per day. Follows pagination.
+ *
+ * Day boundaries: we bucket every interval in the server's fixed local zone
+ * ({@link ZoneId#systemDefault()}), NOT each interval's reported UTC offset.
+ * Google's per-interval {@code startUtcOffset} is inconsistent (sometimes 0/UTC,
+ * sometimes absent), which used to shove late-night steps onto the adjacent day
+ * — making totals drift a bit up on one day and down on the next. A single fixed
+ * zone matches how the Fitbit/Google Health app draws the calendar day.
  */
 @Component
 @AllArgsConstructor
@@ -49,18 +57,22 @@ public class StepImporter implements HealthImporter {
         Users user = userRepository.findById(userId).orElse(null);
         if (user == null) return 0;
 
+        // Bucket everything in ONE fixed zone so day boundaries match the app.
+        ZoneId zone = ZoneId.systemDefault();
+
         // Always re-fetch whole days over the look-back (ignore narrow `since`)
         // so a same-day re-sync re-totals today completely, not partially.
-        Instant from = LocalDate.now().minusDays(DEFAULT_LOOKBACK_DAYS)
-                .atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant from = LocalDate.now(zone).minusDays(DEFAULT_LOOKBACK_DAYS)
+                .atStartOfDay(zone).toInstant();
         Instant to = Instant.now();
         String filter = "steps.interval.start_time >= \"" + from + "\" AND "
                 + "steps.interval.start_time < \"" + to + "\"";
 
-        // Sum per day using the user's local offset (from the response), so days
-        // line up with what the Fitbit/Google Health app shows.
-        Map<LocalDate, Integer> byDay = new HashMap<>();
-        boolean sawFitbit = false;
+        // Collect ALL data points across pages first — the source-preference
+        // decision (Fitbit-only vs everything) must be made over the whole
+        // result set, not page-by-page, or an early all-phone page gets counted
+        // before a later Fitbit page flips the rule (mixing sources per day).
+        List<DataPoint> all = new ArrayList<>();
         String pageToken = null;
         int pages = 0;
         do {
@@ -78,23 +90,23 @@ public class StepImporter implements HealthImporter {
                     .body(OffResponse.class);
 
             if (resp == null) break;
-            if (resp.dataPoints() != null) {
-                for (DataPoint dp : resp.dataPoints()) {
-                    if (PREFERRED_PLATFORM.equalsIgnoreCase(dp.platform())) sawFitbit = true;
-                }
-                for (DataPoint dp : resp.dataPoints()) {
-                    // If any Fitbit data exists, count ONLY Fitbit (avoid double-count).
-                    // If none does, fall back to counting everything.
-                    if (sawFitbit && !PREFERRED_PLATFORM.equalsIgnoreCase(dp.platform())) continue;
-                    Integer count = dp.stepCount();
-                    LocalDate date = dp.localDate();
-                    if (count == null || date == null) continue;
-                    byDay.merge(date, count, Integer::sum);
-                }
-            }
+            if (resp.dataPoints() != null) all.addAll(resp.dataPoints());
             pageToken = resp.nextPageToken();
             pages++;
         } while (pageToken != null && !pageToken.isBlank() && pages < 100);
+
+        // Prefer Fitbit if ANY Fitbit point exists anywhere; otherwise count all.
+        boolean fitbitOnly = all.stream()
+                .anyMatch(dp -> PREFERRED_PLATFORM.equalsIgnoreCase(dp.platform()));
+
+        Map<LocalDate, Integer> byDay = new HashMap<>();
+        for (DataPoint dp : all) {
+            if (fitbitOnly && !PREFERRED_PLATFORM.equalsIgnoreCase(dp.platform())) continue;
+            Integer count = dp.stepCount();
+            LocalDate date = dp.localDate(zone);
+            if (count == null || date == null) continue;
+            byDay.merge(date, count, Integer::sum);
+        }
 
         int daysWritten = 0;
         for (Map.Entry<LocalDate, Integer> e : byDay.entrySet()) {
@@ -105,8 +117,13 @@ public class StepImporter implements HealthImporter {
             stepRepository.save(rec);
             daysWritten++;
         }
-        log.info("Steps import for user {}: {} day-records ({} pages, fitbitOnly={})",
-                userId, daysWritten, pages, sawFitbit);
+        log.info("Steps import for user {}: {} day-records ({} pages, {} points, fitbitOnly={}, zone={})",
+                userId, daysWritten, pages, all.size(), fitbitOnly, zone);
+        // TEMP diagnostic: per-day totals to compare against the Fitbit/Google app.
+        // Remove once step totals are confirmed to match.
+        byDay.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> log.info("  steps[{}] = {}", e.getKey(), e.getValue()));
         return daysWritten;
     }
 
@@ -125,16 +142,14 @@ public class StepImporter implements HealthImporter {
             try { return (int) Math.round(Double.parseDouble(steps.count())); }
             catch (NumberFormatException e) { return null; }
         }
-        /** Local calendar day, using the interval's UTC offset so day boundaries match the app. */
-        LocalDate localDate() {
+        /**
+         * Local calendar day in a FIXED zone (not the interval's own reported
+         * offset, which Google fills inconsistently). Bucketing every interval
+         * in the same zone matches how the Fitbit/Google Health app groups days.
+         */
+        LocalDate localDate(ZoneId zone) {
             if (steps == null || steps.interval() == null || steps.interval().startTime() == null) return null;
-            long offsetSec = parseOffsetSeconds(steps.interval().startUtcOffset());
-            return steps.interval().startTime().atZone(ZoneOffset.ofTotalSeconds((int) offsetSec)).toLocalDate();
-        }
-        private static long parseOffsetSeconds(String off) {
-            if (off == null) return 0;
-            try { return Long.parseLong(off.replace("s", "").trim()); }
-            catch (NumberFormatException e) { return 0; }
+            return steps.interval().startTime().atZone(zone).toLocalDate();
         }
     }
 
@@ -145,6 +160,5 @@ public class StepImporter implements HealthImporter {
     record Steps(@JsonProperty("count") String count, Interval interval) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Interval(@JsonProperty("startTime") Instant startTime,
-                    @JsonProperty("startUtcOffset") String startUtcOffset) {}
+    record Interval(@JsonProperty("startTime") Instant startTime) {}
 }
