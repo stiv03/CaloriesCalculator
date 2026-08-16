@@ -866,9 +866,10 @@
 }
 
 /* Per-session "Session details" row → opens the Google Health panel */
-.detailsRow th {
-  padding-top: 2px;
-  padding-bottom: 6px;
+.detailsRow th,
+.detailsRow td {
+  padding-top: 6px;
+  padding-bottom: 2px;
   font-weight: 400;
 }
 .detailsBtn {

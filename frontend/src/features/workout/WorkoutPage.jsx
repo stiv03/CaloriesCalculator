@@ -229,22 +229,6 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
                 </th>
               ))}
             </tr>
-            <tr className={styles.detailsRow}>
-              <th className={styles.prevExCol} aria-hidden="true"></th>
-              {sessions.map(w => (
-                <th key={w.id} className={[styles.prevSessionCol, w.id === highlightId ? styles.prevNewest : ''].join(' ')}>
-                  <button type="button" className={styles.detailsBtn} onClick={() => openActivity(w.date)}
-                          title="View Google Health session data (heart rate, zones)">
-                    <svg className={styles.detailsBtnIcon} viewBox="0 0 24 24" width="13" height="13"
-                         fill="none" stroke="currentColor" strokeWidth="2"
-                         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 12h4l2 5 4-12 2 7h6" />
-                    </svg>
-                    <span>Session details</span>
-                  </button>
-                </th>
-              ))}
-            </tr>
           </thead>
           <tbody>
             {exercises.map(ex => (
@@ -282,6 +266,24 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className={styles.detailsRow}>
+              <td className={styles.prevExCol} aria-hidden="true"></td>
+              {sessions.map(w => (
+                <td key={w.id} className={[styles.prevSessionCol, w.id === highlightId ? styles.prevNewest : ''].join(' ')}>
+                  <button type="button" className={styles.detailsBtn} onClick={() => openActivity(w.date)}
+                          title="View Google Health session data (heart rate, zones)">
+                    <svg className={styles.detailsBtnIcon} viewBox="0 0 24 24" width="13" height="13"
+                         fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 12h4l2 5 4-12 2 7h6" />
+                    </svg>
+                    <span>Session details</span>
+                  </button>
+                </td>
+              ))}
+            </tr>
+          </tfoot>
         </table>
       </div>
       {activity && (
