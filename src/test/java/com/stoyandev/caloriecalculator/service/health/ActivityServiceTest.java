@@ -36,7 +36,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    void ignoresNonWeightliftingSessions() {
+    void ignoresNonStrengthSessions() {
         String exercise = """
             {"dataPoints":[
               {"exercise":{"exerciseType":"RUNNING",
@@ -44,9 +44,25 @@ class ActivityServiceTest {
             ]}""";
         ActivityDTO dto = ActivityService.parse(exercise, "{}", ZONE, DAY);
         assertThat(dto.found()).isFalse();
-        // The reason surfaces which types Google DID return, so a "no workout"
-        // result on the client still carries evidence of why.
-        assertThat(dto.reason()).isEqualTo("no_weightlifting; saw=[RUNNING]");
+        // Pure cardio is not enriched; the reason surfaces which types Google DID
+        // return, so a "no workout" result on the client still carries evidence of why.
+        assertThat(dto.reason()).isEqualTo("no_strength_session; saw=[RUNNING]");
+    }
+
+    @Test
+    void matchesGenericWorkoutTypeAndPreservesIt() {
+        // Fitbit exports a session its UI calls "Weightlifting" as the generic
+        // WORKOUT type (never WEIGHTLIFTING), so the allow-list must accept it and
+        // the DTO must report the actual type Google returned, not a hardcoded label.
+        String exercise = """
+            {"dataPoints":[
+              {"exercise":{"exerciseType":"WORKOUT",
+                "interval":{"startTime":"2026-08-14T12:15:00Z","endTime":"2026-08-14T13:50:00Z"}}}
+            ]}""";
+        ActivityDTO dto = ActivityService.parse(exercise, "{}", ZONE, DAY);
+        assertThat(dto.found()).isTrue();
+        assertThat(dto.exerciseType()).isEqualTo("WORKOUT");
+        assertThat(dto.durationMin()).isEqualTo(95);
     }
 
     @Test

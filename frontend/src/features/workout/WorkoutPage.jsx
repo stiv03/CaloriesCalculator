@@ -291,7 +291,7 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
           {activity.data && activity.data.found && (
             <div className={styles.activityBody}>
               <div className={styles.activityRow}>
-                <strong>{activity.data.exerciseType}</strong>
+                <strong>{prettyActivityType(activity.data.exerciseType)}</strong>
                 {activity.data.durationMin != null && <span> · {activity.data.durationMin} min</span>}
               </div>
               {activity.data.avgHr != null && (
@@ -321,6 +321,12 @@ const TABS = [
 const EXERCISE_TYPES = ['PUSH', 'PULL', 'LEGS', 'CHEST_AND_BACK', 'ARMS'];
 const TYPE_LABELS = { PUSH: 'Push', PULL: 'Pull', LEGS: 'Legs', CHEST_AND_BACK: 'Chest & Back', ARMS: 'Arms' };
 const displayName = (t) => t.label ? `${TYPE_LABELS[t.exerciseType] || t.exerciseType} ${t.label}` : (TYPE_LABELS[t.exerciseType] || t.exerciseType);
+
+// Google Health exerciseType enums (WEIGHTLIFTING, STRENGTH_TRAINING, WORKOUT,
+// CARDIO_WORKOUT, ...) → readable title case. Fitbit stamps most lifting sessions
+// as the generic WORKOUT, so this can be any of the accepted strength types.
+const prettyActivityType = (t) => !t ? 'Workout'
+  : t.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
 
 export default function WorkoutPage() {
   const userId = getUserId();

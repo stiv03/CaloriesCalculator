@@ -34,7 +34,13 @@ import java.util.List;
 public class ActivityService {
 
     private static final Logger log = LoggerFactory.getLogger(ActivityService.class);
-    private static final String WEIGHTLIFTING = "WEIGHTLIFTING";
+    // Strength/generic session types worth enriching. Fitbit exports a session its
+    // own UI labels "Weightlifting" as the generic WORKOUT (plus a paired
+    // CARDIO_WORKOUT), so matching only WEIGHTLIFTING misses real lifting days.
+    // Matched case-insensitively; pure-cardio types (RUNNING, WALKING, CYCLING) stay out.
+    private static final java.util.Set<String> STRENGTH_TYPES = java.util.Set.of(
+            "WEIGHTLIFTING", "STRENGTH_TRAINING", "WEIGHTS", "FREE_WEIGHTS",
+            "FUNCTIONAL_STRENGTH_TRAINING", "POWERLIFTING", "WORKOUT", "CARDIO_WORKOUT");
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -150,18 +156,21 @@ public class ActivityService {
                 .retrieve().body(String.class);
     }
 
-    /** Pure parse: keep WEIGHTLIFTING points on `date`, merge duration, compute HR stats. */
+    /** Pure parse: keep strength/workout points on `date`, merge duration, compute HR stats. */
     static ActivityDTO parse(String exerciseJson, String heartRateJson, ZoneId zone, LocalDate date) {
         ExResp ex = readExercise(exerciseJson);
         List<ExPoint> lifts = new ArrayList<>();
         List<String> seenTypesOnDate = new ArrayList<>();
+        String matchedType = null;
         if (ex != null && ex.dataPoints() != null) {
             for (ExPoint p : ex.dataPoints()) {
                 if (p.exercise() == null) continue;
                 LocalDate d = p.exercise().startLocalDate(zone);
                 if (d == null || !d.equals(date)) continue;
-                seenTypesOnDate.add(p.exercise().exerciseType());
-                if (!WEIGHTLIFTING.equalsIgnoreCase(p.exercise().exerciseType())) continue;
+                String type = p.exercise().exerciseType();
+                seenTypesOnDate.add(type);
+                if (type == null || !STRENGTH_TYPES.contains(type.toUpperCase())) continue;
+                if (matchedType == null) matchedType = type; // preserve the real type for display
                 lifts.add(p);
             }
         }
@@ -170,7 +179,7 @@ public class ActivityService {
             // client (visible in the network response), not just an empty result.
             String reason = seenTypesOnDate.isEmpty()
                     ? "no_exercise_points"
-                    : "no_weightlifting; saw=" + seenTypesOnDate;
+                    : "no_strength_session; saw=" + seenTypesOnDate;
             return ActivityDTO.notFound(reason);
         }
 
@@ -194,7 +203,7 @@ public class ActivityService {
             avg = Math.round((float) sum / bpms.size());
             min = mn; max = mx;
         }
-        return new ActivityDTO(true, WEIGHTLIFTING, (int) totalMin, avg, min, max, List.of(), null);
+        return new ActivityDTO(true, matchedType, (int) totalMin, avg, min, max, List.of(), null);
     }
 
     private static List<Integer> heartRatesInWindow(String json, Instant start, Instant end) {
