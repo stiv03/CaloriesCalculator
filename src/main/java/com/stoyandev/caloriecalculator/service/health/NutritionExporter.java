@@ -22,9 +22,12 @@ import java.util.Map;
  * Writes the user's logged meals into Google Health as nutrition entries — one
  * per (day, meal type), macros aggregated from the products in that slot.
  *
- * Duplicate-safe: each export is tracked in NutritionExport with a content
- * signature. Re-running skips unchanged meals and re-writes changed ones. This
- * is the app→Google direction (mirror of the WeightImporter's Google→app).
+ * Duplicate-safe in both directions: each export is tracked in NutritionExport
+ * with a content signature and the Google dataPoint's resource name (remoteId).
+ * Re-running skips unchanged meals; a changed meal is PATCHed in place (so the
+ * old Google point is updated, never orphaned); a meal slot that no longer has
+ * any food is deleted from Google via batchDelete and its tracking row removed.
+ * This is the app→Google direction (mirror of the WeightImporter's Google→app).
  */
 @Component
 @RequiredArgsConstructor
@@ -65,9 +68,8 @@ public class NutritionExporter {
                            com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO result) {
         List<UserMeals> meals = mealsRepository.findAllByUserIdAndConsumedAtRange(
                 userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
-        if (meals.isEmpty()) return;
 
-        // Aggregate macros per meal type.
+        // Aggregate macros per meal type (empty when a day has no food).
         Map<MealType, Macros> byMeal = new EnumMap<>(MealType.class);
         for (UserMeals m : meals) {
             MealType type = m.getMealType() != null ? m.getMealType() : MealType.SNACK;
@@ -78,6 +80,15 @@ public class NutritionExporter {
             acc.protein += p.getProteinPer100Grams() * q / PER_100G;
             acc.carbs += p.getCarbsPer100Grams() * q / PER_100G;
             acc.fat += p.getFatPer100Grams() * q / PER_100G;
+        }
+
+        // Delete Google points for slots we previously exported but that no longer
+        // have any food (a meal was removed in the app). Without this the deleted
+        // meal would linger in Google forever.
+        for (NutritionExport prev : exportRepository.findAllByUserIdAndDate(userId, date)) {
+            if (!byMeal.containsKey(prev.getMealType())) {
+                deleteMeal(userId, accessToken, prev, result);
+            }
         }
 
         for (Map.Entry<MealType, Macros> e : byMeal.entrySet()) {
@@ -97,15 +108,33 @@ public class NutritionExporter {
         }
 
         Map<String, Object> body = buildNutritionBody(date, type, macros);
+        boolean patchInPlace = existing != null && existing.getRemoteId() != null
+                && !existing.getRemoteId().isBlank();
         try {
-            var resp = rest.post()
-                    .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/nutrition-log/dataPoints")
-                    .header("Authorization", "Bearer " + token)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(body)
-                    .retrieve()
-                    .body(Map.class);
-            String remoteId = resp != null && resp.get("name") != null ? resp.get("name").toString() : null;
+            String remoteId;
+            if (patchInPlace) {
+                // Update the existing Google point rather than creating a new one,
+                // so a corrected meal doesn't leave the old macros orphaned.
+                // updateMask=* replaces the whole nutritionLog payload.
+                var resp = rest.method(org.springframework.http.HttpMethod.PATCH)
+                        .uri(GoogleHealthClient.HEALTH_BASE + "/" + existing.getRemoteId() + "?updateMask=*")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(body)
+                        .retrieve()
+                        .body(Map.class);
+                remoteId = resp != null && resp.get("name") != null
+                        ? resp.get("name").toString() : existing.getRemoteId();
+            } else {
+                var resp = rest.post()
+                        .uri(GoogleHealthClient.HEALTH_BASE + "/users/me/dataTypes/nutrition-log/dataPoints")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(body)
+                        .retrieve()
+                        .body(Map.class);
+                remoteId = resp != null && resp.get("name") != null ? resp.get("name").toString() : null;
+            }
 
             NutritionExport rec = existing != null ? existing
                     : NutritionExport.builder().userId(userId).date(date).mealType(type).build();
@@ -114,9 +143,45 @@ public class NutritionExporter {
             rec.setExportedAt(Instant.now());
             exportRepository.save(rec);
             result.addNutritionExported(1);
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound nf) {
+            // The tracked point is gone on Google's side (deleted elsewhere / stale
+            // id). Drop the stale mapping so the next run re-creates it cleanly.
+            if (existing != null) exportRepository.delete(existing);
+            log.warn("Nutrition point missing on patch for user {} {} {} — will re-create next run",
+                    userId, date, type);
+            result.addError(date + " " + type + ": remote point gone, re-creating next run");
         } catch (Exception ex) {
             String msg = date + " " + type + ": " + ex.getMessage();
             log.warn("Nutrition export failed for user {} {}", userId, msg);
+            result.addError(msg);
+        }
+    }
+
+    /**
+     * Delete a previously-exported meal slot from Google (the app no longer has
+     * any food in it) and forget the tracking row. A 404 means it's already gone,
+     * which is success — we just clear our row.
+     */
+    private void deleteMeal(Long userId, String token, NutritionExport prev,
+                            com.stoyandev.caloriecalculator.dto.HealthSyncResultDTO result) {
+        String remoteId = prev.getRemoteId();
+        try {
+            if (remoteId != null && !remoteId.isBlank()) {
+                rest.post()
+                        .uri(GoogleHealthClient.HEALTH_BASE
+                                + "/users/me/dataTypes/nutrition-log/dataPoints:batchDelete")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Map.of("names", List.of(remoteId)))
+                        .retrieve()
+                        .toBodilessEntity();
+            }
+            exportRepository.delete(prev);
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound nf) {
+            exportRepository.delete(prev); // already gone → clear our mapping
+        } catch (Exception ex) {
+            String msg = prev.getDate() + " " + prev.getMealType() + " delete: " + ex.getMessage();
+            log.warn("Nutrition delete failed for user {} {}", userId, msg);
             result.addError(msg);
         }
     }
