@@ -55,7 +55,7 @@ export default function ProfilePage() {
   const [healthResult, setHealthResult] = useState(null); // last sync breakdown
   const [healthDetailOpen, setHealthDetailOpen] = useState(false);
   // Which data types to sync. Steps/weight are imported from Google, food is exported.
-  const [syncPrefs, setSyncPrefs] = useState({ syncSteps: true, syncWeight: true, syncFood: true, syncSleep: true });
+  const [syncPrefs, setSyncPrefs] = useState({ syncSteps: true, syncWeight: true, syncFood: true, syncSleep: true, syncWorkouts: true });
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ newPassword: '', confirm: '' });
@@ -82,6 +82,7 @@ export default function ProfilePage() {
         syncWeight: s.syncWeight !== false,
         syncFood: s.syncFood !== false,
         syncSleep: s.syncSleep !== false,
+        syncWorkouts: s.syncWorkouts !== false,
       });
     } catch (_) { /* leave defaults */ }
   }, [userId]);
@@ -378,6 +379,11 @@ export default function ProfilePage() {
                 <input type="checkbox" checked={syncPrefs.syncSleep}
                        onChange={() => handleTogglePref('syncSleep')} disabled={healthBusy} />
                 <span>Sleep</span>
+              </label>
+              <label className={styles.syncPref}>
+                <input type="checkbox" checked={syncPrefs.syncWorkouts}
+                       onChange={() => handleTogglePref('syncWorkouts')} disabled={healthBusy} />
+                <span>Workouts</span>
               </label>
             </div>
             <div className={styles.actions}>

@@ -57,16 +57,17 @@ public class HealthConnectionController {
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<Void> preferences(@PathVariable Long userId,
                                             @RequestBody SyncPreferences prefs) {
-        service.updatePreferences(userId, prefs.steps(), prefs.weight(), prefs.food(), prefs.sleep());
+        service.updatePreferences(userId, prefs.steps(), prefs.weight(), prefs.food(), prefs.sleep(), prefs.workouts());
         return ResponseEntity.noContent().build();
     }
 
     /** Body for the preferences endpoint. Absent fields default to true. */
-    public record SyncPreferences(Boolean syncSteps, Boolean syncWeight, Boolean syncFood, Boolean syncSleep) {
-        boolean steps()  { return syncSteps  == null || syncSteps; }
-        boolean weight() { return syncWeight == null || syncWeight; }
-        boolean food()   { return syncFood   == null || syncFood; }
-        boolean sleep()  { return syncSleep  == null || syncSleep; }
+    public record SyncPreferences(Boolean syncSteps, Boolean syncWeight, Boolean syncFood, Boolean syncSleep, Boolean syncWorkouts) {
+        boolean steps()    { return syncSteps    == null || syncSteps; }
+        boolean weight()   { return syncWeight   == null || syncWeight; }
+        boolean food()     { return syncFood     == null || syncFood; }
+        boolean sleep()    { return syncSleep    == null || syncSleep; }
+        boolean workouts() { return syncWorkouts == null || syncWorkouts; }
     }
 
     /** Manual "sync now" — runs the same importers the scheduler uses. */
@@ -83,7 +84,11 @@ public class HealthConnectionController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    /** On-demand read of a day's Google WEIGHTLIFTING session. Never persists. */
+    /**
+     * On-demand read of a day's Google WEIGHTLIFTING session. Served from the DB
+     * when already saved; otherwise fetched live and persisted if the user has
+     * workout sync enabled.
+     */
     @GetMapping("/activity/{userId}")
     @PreAuthorize("@userAccessService.hasAccess(#userId)")
     public ResponseEntity<com.stoyandev.caloriecalculator.dto.ActivityDTO> activity(

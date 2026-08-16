@@ -88,7 +88,7 @@ class HealthConnectionServiceTest {
             public org.springframework.data.domain.Page<GoogleHealthConnection> findAll(org.springframework.data.domain.Pageable p) { return org.springframework.data.domain.Page.empty(); }
             public <S extends GoogleHealthConnection, R> R findBy(org.springframework.data.domain.Example<S> ex, java.util.function.Function<org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery<S>, R> q) { return null; }
         };
-        var svc = new HealthConnectionService(null, repo, null, java.util.List.of(), null, null, null);
+        var svc = new HealthConnectionService(null, repo, null, java.util.List.of(), null, null, null, null);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> svc.mintAccessToken(1L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not_connected");

@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stoyandev.caloriecalculator.dto.ActivityDTO;
+import com.stoyandev.caloriecalculator.entity.Users;
+import com.stoyandev.caloriecalculator.entity.WorkoutActivityRecord;
+import com.stoyandev.caloriecalculator.repository.UserRepository;
+import com.stoyandev.caloriecalculator.repository.WorkoutActivityRecordRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * On-demand, read-only lookup of a day's Google Health WEIGHTLIFTING session.
- * Nothing is persisted. Parsing ({@link #parse}) is pure and unit-tested with
- * canned JSON; the live fetch ({@link #forDate}) mints a token via
- * {@link HealthConnectionService#mintAccessToken} and calls Google v4.
+ * On-demand lookup of a day's Google Health WEIGHTLIFTING session, with a
+ * read-through DB cache. Parsing ({@link #parse}) is pure and unit-tested with
+ * canned JSON; the live fetch ({@link #forDate}) checks the DB first, then
+ * mints a token via {@link HealthConnectionService#mintAccessToken}, calls
+ * Google v4, and — when the user has workout sync enabled — persists the found
+ * session so later views load from the DB without re-fetching.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,10 +39,21 @@ public class ActivityService {
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     private final HealthConnectionService connections;
+    private final WorkoutActivityRecordRepository activityRepo;
+    private final UserRepository userRepository;
     private final RestClient rest = RestClient.create();
 
-    /** Live fetch for one local day. Never throws to the caller for API/connection issues. */
+    /**
+     * Look up one local day's WEIGHTLIFTING session. Reads a persisted record
+     * first; on a miss, fetches live and (if workout sync is on) saves the
+     * result. Never throws to the caller for API/connection issues.
+     */
     public ActivityDTO forDate(Long userId, LocalDate date) {
+        WorkoutActivityRecord cached = activityRepo.findByUserIdAndDate(userId, date).orElse(null);
+        if (cached != null) {
+            return toDto(cached);
+        }
+
         final String token;
         try {
             token = connections.mintAccessToken(userId);
@@ -52,10 +69,54 @@ public class ActivityService {
             // HR scoped to the same day window; parse() further scopes by session bounds.
             String hr = getDataPoints(token, "heartRate",
                     "heartRate.interval.start_time >= \"" + from + "\" AND heartRate.interval.start_time < \"" + to + "\"");
-            return parse(exercise, hr, zone, date);
+            ActivityDTO dto = parse(exercise, hr, zone, date);
+            if (dto.found() && connections.isWorkoutSyncEnabled(userId)) {
+                save(userId, date, dto);
+            }
+            return dto;
         } catch (Exception e) {
             log.warn("Activity lookup failed for user {} on {}: {}", userId, date, e.getMessage());
             return ActivityDTO.notFound("error");
+        }
+    }
+
+    /** Upsert the day's session for this user. Best-effort: a save failure never breaks the read. */
+    void save(Long userId, LocalDate date, ActivityDTO dto) {
+        try {
+            Users user = userRepository.findById(userId).orElse(null);
+            if (user == null) return;
+            WorkoutActivityRecord rec = activityRepo.findByUserIdAndDate(userId, date)
+                    .orElseGet(() -> { var r = new WorkoutActivityRecord(); r.setUser(user); r.setDate(date); return r; });
+            rec.setExerciseType(dto.exerciseType());
+            rec.setDurationMin(dto.durationMin());
+            rec.setAvgHr(dto.avgHr());
+            rec.setMinHr(dto.minHr());
+            rec.setMaxHr(dto.maxHr());
+            rec.setZonesJson(writeZones(dto.zones()));
+            rec.setSavedAt(Instant.now());
+            activityRepo.save(rec);
+        } catch (Exception e) {
+            log.warn("Failed to persist workout activity for user {} on {}: {}", userId, date, e.getMessage());
+        }
+    }
+
+    private static ActivityDTO toDto(WorkoutActivityRecord r) {
+        return new ActivityDTO(true, r.getExerciseType(), r.getDurationMin(),
+                r.getAvgHr(), r.getMinHr(), r.getMaxHr(), readZones(r.getZonesJson()), null);
+    }
+
+    private static String writeZones(List<ActivityDTO.Zone> zones) {
+        if (zones == null || zones.isEmpty()) return null;
+        try { return MAPPER.writeValueAsString(zones); } catch (Exception e) { return null; }
+    }
+
+    private static List<ActivityDTO.Zone> readZones(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return MAPPER.readValue(json, MAPPER.getTypeFactory()
+                    .constructCollectionType(List.class, ActivityDTO.Zone.class));
+        } catch (Exception e) {
+            return List.of();
         }
     }
 

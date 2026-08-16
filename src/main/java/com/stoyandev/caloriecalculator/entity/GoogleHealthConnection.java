@@ -64,4 +64,9 @@ public class GoogleHealthConnection {
     @Builder.Default
     @Column(name = "sync_sleep", nullable = false, columnDefinition = "boolean default true")
     private boolean syncSleep = true;
+
+    /** Whether viewed Google WEIGHTLIFTING sessions are persisted on-demand. */
+    @Builder.Default
+    @Column(name = "sync_workouts", nullable = false, columnDefinition = "boolean default true")
+    private boolean syncWorkouts = true;
 }

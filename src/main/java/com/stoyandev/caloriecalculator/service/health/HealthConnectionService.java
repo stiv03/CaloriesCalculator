@@ -39,6 +39,7 @@ public class HealthConnectionService {
     private final NutritionExporter nutritionExporter;
     private final com.stoyandev.caloriecalculator.repository.NutritionExportRepository nutritionExportRepo;
     private final com.stoyandev.caloriecalculator.repository.SleepRecordRepository sleepRecordRepo;
+    private final com.stoyandev.caloriecalculator.repository.WorkoutActivityRecordRepository workoutActivityRepo;
 
     @Value("${google.health.token-enc-key}")
     private String stateKeyBase64; // reuse the enc key as the HMAC key for state signing
@@ -97,18 +98,26 @@ public class HealthConnectionService {
         out.put("syncWeight", conn == null || conn.isSyncWeight());
         out.put("syncFood", conn == null || conn.isSyncFood());
         out.put("syncSleep", conn == null || conn.isSyncSleep());
+        out.put("syncWorkouts", conn == null || conn.isSyncWorkouts());
         return out;
+    }
+
+    /** Whether on-demand workout sessions should be persisted for this user. */
+    public boolean isWorkoutSyncEnabled(Long userId) {
+        var conn = connectionRepo.findByUserId(userId).orElse(null);
+        return conn != null && conn.isSyncWorkouts();
     }
 
     /** Persist which data types to sync. No-op if the user isn't connected. */
     @Transactional
-    public void updatePreferences(Long userId, boolean syncSteps, boolean syncWeight, boolean syncFood, boolean syncSleep) {
+    public void updatePreferences(Long userId, boolean syncSteps, boolean syncWeight, boolean syncFood, boolean syncSleep, boolean syncWorkouts) {
         var conn = connectionRepo.findByUserId(userId).orElse(null);
         if (conn == null) return;
         conn.setSyncSteps(syncSteps);
         conn.setSyncWeight(syncWeight);
         conn.setSyncFood(syncFood);
         conn.setSyncSleep(syncSleep);
+        conn.setSyncWorkouts(syncWorkouts);
         connectionRepo.save(conn);
     }
 
@@ -149,6 +158,8 @@ public class HealthConnectionService {
         nutritionExportRepo.deleteByUserId(userId);
         // Drop imported sleep so a reconnect re-imports from a clean slate.
         sleepRecordRepo.deleteAllByUserId(userId);
+        // Drop saved workout sessions so a reconnect re-fetches on demand.
+        workoutActivityRepo.deleteAllByUserId(userId);
     }
 
     // ---- Scheduled daily sync (07:13 to avoid the top-of-hour crowd) ----
