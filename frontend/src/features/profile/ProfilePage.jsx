@@ -356,7 +356,7 @@ export default function ProfilePage() {
         {healthConnected ? (
           <>
             <p className={styles.muted} style={{ marginTop: 0 }}>
-              Connected. Selected data syncs automatically every day.
+              Connected. Selected data syncs automatically every 2 hours during the day.
               {healthLastSync ? ` Last sync: ${new Date(healthLastSync).toLocaleString()}.` : ' Not synced yet.'}
             </p>
             <div className={styles.syncPrefs}>

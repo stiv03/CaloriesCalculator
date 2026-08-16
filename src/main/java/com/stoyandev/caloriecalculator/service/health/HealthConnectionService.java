@@ -162,9 +162,14 @@ public class HealthConnectionService {
         workoutActivityRepo.deleteAllByUserId(userId);
     }
 
-    // ---- Scheduled daily sync (07:13 to avoid the top-of-hour crowd) ----
+    // ---- Scheduled sync every 2 hours from 06:00 through midnight (at :13 to
+    // avoid the top-of-hour crowd): 06, 08, 10 … 22, and 00. The 02:00/04:00
+    // slots are skipped since nothing changes overnight. Imports are incremental
+    // (importSince(lastSyncAt)) and the nutrition push is duplicate-safe, so each
+    // run only picks up what changed — this keeps food logged through the day,
+    // and health data, fresh rather than stale until the next morning. ----
 
-    @Scheduled(cron = "0 13 7 * * *")
+    @Scheduled(cron = "0 13 0,6,8,10,12,14,16,18,20,22 * * *")
     @Transactional
     public void scheduledSync() {
         if (!client.isConfigured()) return;
