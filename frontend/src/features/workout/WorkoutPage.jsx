@@ -281,6 +281,11 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
               {activity.data.reason === 'not_connected'
                 ? 'Connect Google Health in Profile to see session data.'
                 : 'No Google workout found for this date.'}
+              {activity.data.reason && activity.data.reason !== 'not_connected' && (
+                <div className={styles.activityMuted} style={{ fontSize: '0.8em', opacity: 0.7 }}>
+                  ({activity.data.reason})
+                </div>
+              )}
             </div>
           )}
           {activity.data && activity.data.found && (
