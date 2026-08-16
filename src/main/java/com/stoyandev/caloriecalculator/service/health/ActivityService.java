@@ -196,6 +196,7 @@ public class ActivityService {
         }
 
         Integer avg = null, min = null, max = null;
+        int rawHrPoints = countHrPoints(heartRateJson);
         List<Integer> bpms = heartRatesInWindow(heartRateJson, windowStart, windowEnd);
         if (!bpms.isEmpty()) {
             int sum = 0; int mn = Integer.MAX_VALUE, mx = Integer.MIN_VALUE;
@@ -203,7 +204,24 @@ public class ActivityService {
             avg = Math.round((float) sum / bpms.size());
             min = mn; max = mx;
         }
-        return new ActivityDTO(true, matchedType, (int) totalMin, avg, min, max, List.of(), null);
+        // DIAGNOSTIC (temporary): when HR came back empty, surface why via reason so the
+        // client (on a different test machine) can see it — raw points fetched vs. how
+        // many fell inside the [windowStart,windowEnd) exercise window.
+        String hrDiag = (avg == null)
+                ? "hr_empty; raw=" + rawHrPoints + " inWindow=" + bpms.size()
+                    + " win=[" + windowStart + "," + windowEnd + ")"
+                : null;
+        return new ActivityDTO(true, matchedType, (int) totalMin, avg, min, max, List.of(), hrDiag);
+    }
+
+    private static int countHrPoints(String json) {
+        HrResp hr = readHeartRate(json);
+        if (hr == null || hr.dataPoints() == null) return 0;
+        int n = 0;
+        for (HrPoint p : hr.dataPoints()) {
+            if (p.heartRate() != null && p.heartRate().beatsPerMinute() != null) n++;
+        }
+        return n;
     }
 
     private static List<Integer> heartRatesInWindow(String json, Instant start, Instant end) {

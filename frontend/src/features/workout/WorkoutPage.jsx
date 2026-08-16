@@ -304,6 +304,11 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
                   {activity.data.zones.map((z) => `${z.name} ${z.minutes}m`).join(' · ')}
                 </div>
               )}
+              {activity.data.avgHr == null && activity.data.reason && (
+                <div className={styles.activityMuted} style={{ fontSize: '0.8em', opacity: 0.7 }}>
+                  ({activity.data.reason})
+                </div>
+              )}
             </div>
           )}
         </div>
