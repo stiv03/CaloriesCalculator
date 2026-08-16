@@ -62,17 +62,27 @@ public class ActivityService {
         }
         ZoneId zone = ZoneId.systemDefault();
         // Google v4 "exercise" is a SESSION type: filter by civil_start_time with a
-        // civil (local, no-Z) date literal — the RFC-3339 interval.start_time field
-        // used for interval types (steps) is not defined for sessions and returns
-        // nothing. Heart rate IS an interval type, so it keeps start_time + "Z".
+        // civil (local, no-Z) date literal. Heart rate is a SAMPLE type, filtered on
+        // sample_time.physical_time (RFC-3339, with Z) — it has no "interval" field.
+        // NOTE the id/field asymmetry Google enforces: the URL path uses the kebab-case
+        // data type id ("heart-rate") while the filter uses the snake_case union field
+        // name ("heart_rate"). Getting the path id wrong is a hard 400.
         LocalDate to = date.plusDays(1);
         Instant hrFrom = date.atStartOfDay(zone).toInstant();
         Instant hrTo = to.atStartOfDay(zone).toInstant();
         try {
             String exercise = getDataPoints(token, "exercise",
                     "exercise.interval.civil_start_time >= \"" + date + "\" AND exercise.interval.civil_start_time < \"" + to + "\"");
-            String hr = getDataPoints(token, "heartRate",
-                    "heartRate.interval.start_time >= \"" + hrFrom + "\" AND heartRate.interval.start_time < \"" + hrTo + "\"");
+            // Heart rate is enrichment, never the payload: a HR fetch failure must not
+            // sink the workout lookup, so it gets its own catch and degrades to no-HR.
+            String hr = "{}";
+            try {
+                hr = getDataPoints(token, "heart-rate",
+                        "heart_rate.sample_time.physical_time >= \"" + hrFrom + "\" AND heart_rate.sample_time.physical_time < \"" + hrTo + "\"");
+            } catch (Exception hrEx) {
+                log.warn("Heart-rate lookup failed for user {} on {} (workout still returned): {}",
+                        userId, date, hrEx.getMessage());
+            }
             ActivityDTO dto = parse(exercise, hr, zone, date);
             if (dto.found() && connections.isWorkoutSyncEnabled(userId)) {
                 save(userId, date, dto);
@@ -230,7 +240,13 @@ public class ActivityService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     record HrPoint(HeartRate heartRate) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record HeartRate(@JsonProperty("beatsPerMinute") Integer beatsPerMinute, Interval interval) {
-        Instant sampleInstant() { return interval != null ? interval.startTime() : null; }
+    record HeartRate(@JsonProperty("beatsPerMinute") Integer beatsPerMinute,
+                     @JsonProperty("sampleTime") SampleTime sampleTime) {
+        // Heart rate is a sample type: its timestamp lives in sampleTime.physicalTime
+        // (RFC-3339), NOT in an interval. beatsPerMinute is a string-encoded int64 in
+        // Google's JSON; Jackson coerces the numeric string to Integer.
+        Instant sampleInstant() { return sampleTime != null ? sampleTime.physicalTime() : null; }
     }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record SampleTime(@JsonProperty("physicalTime") Instant physicalTime) {}
 }
