@@ -290,51 +290,90 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
           )}
           {activity.data && activity.data.found && (
             <div className={styles.activityBody}>
-              <div className={styles.activityRow}>
-                <strong>{prettyActivityType(activity.data.exerciseType)}</strong>
-                {activity.data.durationMin != null && <span> · {activity.data.durationMin} min</span>}
+              <div className={styles.activityHeadline}>
+                {prettyActivityType(activity.data.exerciseType)}
+              </div>
+
+              <div className={styles.statTiles}>
+                {activity.data.durationMin != null && (
+                  <div className={styles.statTile}>
+                    <div className={styles.statValue}>{activity.data.durationMin}<span className={styles.statUnit}>min</span></div>
+                    <div className={styles.statLabel}>Total time</div>
+                  </div>
+                )}
                 {activity.data.activeZoneMinutes != null && (
-                  <span> · {activity.data.activeZoneMinutes} active zone min</span>
+                  <div className={styles.statTile}>
+                    <div className={styles.statValue}>{activity.data.activeZoneMinutes}<span className={styles.statUnit}>min</span></div>
+                    <div className={styles.statLabel}>Active Zone Minutes</div>
+                  </div>
+                )}
+                {activity.data.avgHr != null && (
+                  <div className={styles.statTile}>
+                    <div className={styles.statValue}>{activity.data.avgHr}<span className={styles.statUnit}>bpm</span></div>
+                    <div className={styles.statLabel}>Avg heart rate</div>
+                  </div>
                 )}
               </div>
-              {activity.data.avgHr != null && (
-                <div className={styles.activityRow}>
-                  HR avg {activity.data.avgHr} · min {activity.data.minHr} · max {activity.data.maxHr}
-                </div>
-              )}
-              {activity.data.zones && activity.data.zones.length > 0 && (
-                <div className={styles.activityRow}>
-                  {activity.data.zones.map((z) => `${z.name} ${z.minutes}m`).join(' · ')}
-                </div>
-              )}
+
+              {activity.data.zones && activity.data.zones.length > 0 && (() => {
+                const zoneColors = { Light: '#38bdf8', Moderate: '#22c55e', Vigorous: '#f59e0b', Peak: '#ef4444' };
+                const total = activity.data.zones.reduce((s, z) => s + (z.minutes || 0), 0) || 1;
+                return (
+                  <div className={styles.zoneBlock}>
+                    <div className={styles.zoneHeader}>Heart rate zones</div>
+                    <div className={styles.zoneBar}>
+                      {activity.data.zones.map((z) => (
+                        <div
+                          key={z.name}
+                          className={styles.zoneSeg}
+                          style={{ width: `${(z.minutes / total) * 100}%`, background: zoneColors[z.name] || '#64748b' }}
+                          title={`${z.name}: ${z.minutes} min`}
+                        />
+                      ))}
+                    </div>
+                    <div className={styles.zoneLegend}>
+                      {activity.data.zones.map((z) => (
+                        <div key={z.name} className={styles.zoneLegendItem}>
+                          <span className={styles.zoneDot} style={{ background: zoneColors[z.name] || '#64748b' }} />
+                          <span className={styles.zoneName}>{z.name}</span>
+                          <span className={styles.zoneMin}>{z.minutes}m</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {activity.data.hrSeries && activity.data.hrSeries.length > 1 && (
-                <div className={styles.activityRow} style={{ marginTop: 8, height: 160, width: '100%' }}>
-                  <Line
-                    data={{
-                      labels: activity.data.hrSeries.map((s) =>
-                        new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
-                      datasets: [{
-                        label: 'Heart rate (bpm)',
-                        data: activity.data.hrSeries.map((s) => s.bpm),
-                        borderColor: '#e11d48',
-                        backgroundColor: 'rgba(225,29,72,0.12)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.3,
-                        fill: true,
-                      }],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
-                      scales: {
-                        x: { ticks: { maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
-                        y: { title: { display: true, text: 'bpm' } },
-                      },
-                    }}
-                    height={140}
-                  />
+                <div className={styles.zoneBlock}>
+                  <div className={styles.zoneHeader}>Heart rate over time</div>
+                  <div className={styles.hrChart}>
+                    <Line
+                      data={{
+                        labels: activity.data.hrSeries.map((s) =>
+                          new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                        datasets: [{
+                          label: 'Heart rate (bpm)',
+                          data: activity.data.hrSeries.map((s) => s.bpm),
+                          borderColor: '#ef4444',
+                          backgroundColor: 'rgba(239,68,68,0.14)',
+                          borderWidth: 2,
+                          pointRadius: 0,
+                          tension: 0.35,
+                          fill: true,
+                        }],
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
+                        scales: {
+                          x: { ticks: { maxTicksLimit: 6, autoSkip: true, color: '#94a3b8' }, grid: { display: false } },
+                          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.12)' } },
+                        },
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

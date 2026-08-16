@@ -895,6 +895,71 @@
   cursor: pointer;
 }
 .activityTitle { font-size: 13px; color: var(--color-text-muted, #94a3b8); margin-bottom: 6px; }
-.activityBody { display: flex; flex-direction: column; gap: 4px; }
+.activityBody { display: flex; flex-direction: column; gap: var(--space-3, 12px); }
 .activityRow { font-size: 14px; color: var(--color-text, #e2e8f0); }
 .activityMuted { font-size: 14px; color: var(--color-text-muted, #94a3b8); }
+
+.activityHeadline {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text, #e2e8f0);
+}
+
+/* Stat tiles: total time / active zone minutes / avg HR */
+.statTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--space-2, 8px);
+}
+.statTile {
+  background: var(--color-surface, #0f172a);
+  border: 1px solid var(--color-border, #243049);
+  border-radius: var(--radius-md, 12px);
+  padding: 10px 12px;
+}
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text, #f1f5f9);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.statUnit { font-size: 12px; font-weight: 500; color: var(--color-text-muted, #94a3b8); }
+.statLabel {
+  margin-top: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+/* HR zones + HR-over-time sections */
+.zoneBlock { display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.zoneHeader {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #94a3b8);
+}
+.zoneBar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-surface, #0f172a);
+}
+.zoneSeg { height: 100%; }
+.zoneSeg:not(:last-child) { border-right: 1px solid var(--color-surface-2, #1a2233); }
+.zoneLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.zoneLegendItem { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.zoneDot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.zoneName { color: var(--color-text-muted, #94a3b8); }
+.zoneMin { color: var(--color-text, #e2e8f0); font-weight: 600; }
+.hrChart { height: 160px; width: 100%; }
