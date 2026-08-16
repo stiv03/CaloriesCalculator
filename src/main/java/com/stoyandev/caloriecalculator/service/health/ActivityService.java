@@ -61,14 +61,18 @@ public class ActivityService {
             return ActivityDTO.notFound("not_connected".equals(e.getMessage()) ? "not_connected" : "error");
         }
         ZoneId zone = ZoneId.systemDefault();
-        Instant from = date.atStartOfDay(zone).toInstant();
-        Instant to = date.plusDays(1).atStartOfDay(zone).toInstant();
+        // Google v4 "exercise" is a SESSION type: filter by civil_start_time with a
+        // civil (local, no-Z) date literal — the RFC-3339 interval.start_time field
+        // used for interval types (steps) is not defined for sessions and returns
+        // nothing. Heart rate IS an interval type, so it keeps start_time + "Z".
+        LocalDate to = date.plusDays(1);
+        Instant hrFrom = date.atStartOfDay(zone).toInstant();
+        Instant hrTo = to.atStartOfDay(zone).toInstant();
         try {
             String exercise = getDataPoints(token, "exercise",
-                    "exercise.interval.start_time >= \"" + from + "\" AND exercise.interval.start_time < \"" + to + "\"");
-            // HR scoped to the same day window; parse() further scopes by session bounds.
+                    "exercise.interval.civil_start_time >= \"" + date + "\" AND exercise.interval.civil_start_time < \"" + to + "\"");
             String hr = getDataPoints(token, "heartRate",
-                    "heartRate.interval.start_time >= \"" + from + "\" AND heartRate.interval.start_time < \"" + to + "\"");
+                    "heartRate.interval.start_time >= \"" + hrFrom + "\" AND heartRate.interval.start_time < \"" + hrTo + "\"");
             ActivityDTO dto = parse(exercise, hr, zone, date);
             if (dto.found() && connections.isWorkoutSyncEnabled(userId)) {
                 save(userId, date, dto);
@@ -132,16 +136,25 @@ public class ActivityService {
     static ActivityDTO parse(String exerciseJson, String heartRateJson, ZoneId zone, LocalDate date) {
         ExResp ex = readExercise(exerciseJson);
         List<ExPoint> lifts = new ArrayList<>();
+        List<String> seenTypesOnDate = new ArrayList<>();
         if (ex != null && ex.dataPoints() != null) {
             for (ExPoint p : ex.dataPoints()) {
                 if (p.exercise() == null) continue;
-                if (!WEIGHTLIFTING.equalsIgnoreCase(p.exercise().exerciseType())) continue;
                 LocalDate d = p.exercise().startLocalDate(zone);
                 if (d == null || !d.equals(date)) continue;
+                seenTypesOnDate.add(p.exercise().exerciseType());
+                if (!WEIGHTLIFTING.equalsIgnoreCase(p.exercise().exerciseType())) continue;
                 lifts.add(p);
             }
         }
-        if (lifts.isEmpty()) return ActivityDTO.notFound(null);
+        if (lifts.isEmpty()) {
+            // Surface WHY nothing matched so a failed lookup carries evidence to the
+            // client (visible in the network response), not just an empty result.
+            String reason = seenTypesOnDate.isEmpty()
+                    ? "no_exercise_points"
+                    : "no_weightlifting; saw=" + seenTypesOnDate;
+            return ActivityDTO.notFound(reason);
+        }
 
         long totalMin = 0;
         Instant windowStart = null, windowEnd = null;

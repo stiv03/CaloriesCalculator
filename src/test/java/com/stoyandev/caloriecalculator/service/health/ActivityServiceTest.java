@@ -44,7 +44,16 @@ class ActivityServiceTest {
             ]}""";
         ActivityDTO dto = ActivityService.parse(exercise, "{}", ZONE, DAY);
         assertThat(dto.found()).isFalse();
-        assertThat(dto.reason()).isNull();
+        // The reason surfaces which types Google DID return, so a "no workout"
+        // result on the client still carries evidence of why.
+        assertThat(dto.reason()).isEqualTo("no_weightlifting; saw=[RUNNING]");
+    }
+
+    @Test
+    void emptyExerciseJsonReportsNoPoints() {
+        ActivityDTO dto = ActivityService.parse("{}", "{}", ZONE, DAY);
+        assertThat(dto.found()).isFalse();
+        assertThat(dto.reason()).isEqualTo("no_exercise_points");
     }
 
     @Test
@@ -73,11 +82,5 @@ class ActivityServiceTest {
         assertThat(dto.avgHr()).isNull();
         assertThat(dto.minHr()).isNull();
         assertThat(dto.maxHr()).isNull();
-    }
-
-    @Test
-    void emptyExerciseJsonIsNotFound() {
-        ActivityDTO dto = ActivityService.parse("{}", "{}", ZONE, DAY);
-        assertThat(dto.found()).isFalse();
     }
 }
