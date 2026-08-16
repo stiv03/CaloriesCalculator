@@ -78,9 +78,17 @@ public class ActivityService {
                 save(userId, date, dto);
             }
             return dto;
+        } catch (org.springframework.web.client.RestClientResponseException e) {
+            // Google rejected the request (4xx/5xx). Surface the status + body so a
+            // failing filter/scope is diagnosable from the client, not just server logs.
+            log.warn("Activity lookup HTTP error for user {} on {}: {} {}", userId, date,
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            String body = e.getResponseBodyAsString();
+            if (body != null && body.length() > 300) body = body.substring(0, 300);
+            return ActivityDTO.notFound("http_" + e.getStatusCode().value() + "; " + body);
         } catch (Exception e) {
             log.warn("Activity lookup failed for user {} on {}: {}", userId, date, e.getMessage());
-            return ActivityDTO.notFound("error");
+            return ActivityDTO.notFound("error: " + e.getClass().getSimpleName() + "; " + e.getMessage());
         }
     }
 
