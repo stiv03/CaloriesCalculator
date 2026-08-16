@@ -121,6 +121,8 @@ public class ActivityService {
             rec.setMinHr(dto.minHr());
             rec.setMaxHr(dto.maxHr());
             rec.setZonesJson(writeZones(dto.zones()));
+            rec.setActiveZoneMinutes(dto.activeZoneMinutes());
+            rec.setHrSeriesJson(writeSeries(dto.hrSeries()));
             rec.setSavedAt(Instant.now());
             activityRepo.save(rec);
         } catch (Exception e) {
@@ -130,7 +132,8 @@ public class ActivityService {
 
     private static ActivityDTO toDto(WorkoutActivityRecord r) {
         return new ActivityDTO(true, r.getExerciseType(), r.getDurationMin(),
-                r.getAvgHr(), r.getMinHr(), r.getMaxHr(), readZones(r.getZonesJson()), null);
+                r.getAvgHr(), r.getMinHr(), r.getMaxHr(), r.getActiveZoneMinutes(),
+                readZones(r.getZonesJson()), readSeries(r.getHrSeriesJson()), null);
     }
 
     private static String writeZones(List<ActivityDTO.Zone> zones) {
@@ -148,6 +151,21 @@ public class ActivityService {
         }
     }
 
+    private static String writeSeries(List<ActivityDTO.HrSample> series) {
+        if (series == null || series.isEmpty()) return null;
+        try { return MAPPER.writeValueAsString(series); } catch (Exception e) { return null; }
+    }
+
+    private static List<ActivityDTO.HrSample> readSeries(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return MAPPER.readValue(json, MAPPER.getTypeFactory()
+                    .constructCollectionType(List.class, ActivityDTO.HrSample.class));
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
     private String getDataPoints(String token, String type, String filter) {
         return rest.get().uri(b -> b.scheme("https").host("health.googleapis.com")
                         .path("/v4/users/me/dataTypes/" + type + "/dataPoints")
@@ -156,7 +174,13 @@ public class ActivityService {
                 .retrieve().body(String.class);
     }
 
-    /** Pure parse: keep strength/workout points on `date`, merge duration, compute HR stats. */
+    /**
+     * Pure parse: keep strength/workout points on `date`, merge duration, and
+     * pull every metric Google exposes. Session-level numbers (avg HR, zone
+     * durations, active zone minutes) come off the exercise's
+     * {@code metricsSummary} — no separate query. The {@code heart-rate}
+     * samples give min/max plus the HR-over-time trace for the graph.
+     */
     static ActivityDTO parse(String exerciseJson, String heartRateJson, ZoneId zone, LocalDate date) {
         ExResp ex = readExercise(exerciseJson);
         List<ExPoint> lifts = new ArrayList<>();
@@ -185,6 +209,10 @@ public class ActivityService {
 
         long totalMin = 0;
         Instant windowStart = null, windowEnd = null;
+        Integer summaryAvgHr = null;
+        long zoneLight = 0, zoneModerate = 0, zoneVigorous = 0, zonePeak = 0;
+        long activeZoneMin = 0;
+        boolean sawZones = false, sawAzm = false;
         for (ExPoint p : lifts) {
             Instant s = p.exercise().startInstant();
             Instant e = p.exercise().endInstant();
@@ -193,49 +221,69 @@ public class ActivityService {
                 if (windowStart == null || s.isBefore(windowStart)) windowStart = s;
                 if (windowEnd == null || e.isAfter(windowEnd)) windowEnd = e;
             }
+            MetricsSummary ms = p.exercise().metricsSummary();
+            if (ms != null) {
+                if (ms.averageHeartRateBeatsPerMinute() != null && summaryAvgHr == null) {
+                    summaryAvgHr = ms.averageHeartRateBeatsPerMinute();
+                }
+                TimeInHeartRateZones z = ms.heartRateZoneDurations();
+                if (z != null) {
+                    // Sum across sessions in case a day has more than one lifting block.
+                    long l = z.lightMinutes(), m = z.moderateMinutes(),
+                         v = z.vigorousMinutes(), pk = z.peakMinutes();
+                    zoneLight += l; zoneModerate += m; zoneVigorous += v; zonePeak += pk;
+                    if (l + m + v + pk > 0) sawZones = true;
+                }
+                if (ms.activeZoneMinutes() != null) {
+                    activeZoneMin += ms.activeZoneMinutes();
+                    sawAzm = true;
+                }
+            }
         }
 
-        Integer avg = null, min = null, max = null;
-        int rawHrPoints = countHrPoints(heartRateJson);
-        List<Integer> bpms = heartRatesInWindow(heartRateJson, windowStart, windowEnd);
-        if (!bpms.isEmpty()) {
-            int sum = 0; int mn = Integer.MAX_VALUE, mx = Integer.MIN_VALUE;
-            for (int b : bpms) { sum += b; mn = Math.min(mn, b); mx = Math.max(mx, b); }
-            avg = Math.round((float) sum / bpms.size());
+        // HR trace + min/max from the samples, windowed to the session.
+        List<ActivityDTO.HrSample> series = heartRateSeriesInWindow(heartRateJson, windowStart, windowEnd);
+        Integer min = null, max = null, sampleAvg = null;
+        if (!series.isEmpty()) {
+            long sum = 0; int mn = Integer.MAX_VALUE, mx = Integer.MIN_VALUE;
+            for (ActivityDTO.HrSample hs : series) { sum += hs.bpm(); mn = Math.min(mn, hs.bpm()); mx = Math.max(mx, hs.bpm()); }
+            sampleAvg = Math.round((float) sum / series.size());
             min = mn; max = mx;
         }
-        // DIAGNOSTIC (temporary): when HR came back empty, surface why via reason so the
-        // client (on a different test machine) can see it — raw points fetched vs. how
-        // many fell inside the [windowStart,windowEnd) exercise window.
-        String hrDiag = (avg == null)
-                ? "hr_empty; raw=" + rawHrPoints + " inWindow=" + bpms.size()
-                    + " win=[" + windowStart + "," + windowEnd + ")"
-                : null;
-        return new ActivityDTO(true, matchedType, (int) totalMin, avg, min, max, List.of(), hrDiag);
-    }
+        // Prefer Google's own session average; fall back to the sample mean when
+        // the summary omits it (some sources leave metricsSummary sparse).
+        Integer avg = summaryAvgHr != null ? summaryAvgHr : sampleAvg;
 
-    private static int countHrPoints(String json) {
-        HrResp hr = readHeartRate(json);
-        if (hr == null || hr.dataPoints() == null) return 0;
-        int n = 0;
-        for (HrPoint p : hr.dataPoints()) {
-            if (p.heartRate() != null && p.heartRate().beatsPerMinute() != null) n++;
+        List<ActivityDTO.Zone> zones = new ArrayList<>();
+        if (sawZones) {
+            addZone(zones, "Light", zoneLight);
+            addZone(zones, "Moderate", zoneModerate);
+            addZone(zones, "Vigorous", zoneVigorous);
+            addZone(zones, "Peak", zonePeak);
         }
-        return n;
+        Integer azm = sawAzm ? (int) activeZoneMin : null;
+
+        return new ActivityDTO(true, matchedType, (int) totalMin, avg, min, max,
+                azm, zones, series, null);
     }
 
-    private static List<Integer> heartRatesInWindow(String json, Instant start, Instant end) {
-        List<Integer> out = new ArrayList<>();
+    private static void addZone(List<ActivityDTO.Zone> out, String name, long minutes) {
+        if (minutes > 0) out.add(new ActivityDTO.Zone(name, (int) minutes));
+    }
+
+    private static List<ActivityDTO.HrSample> heartRateSeriesInWindow(String json, Instant start, Instant end) {
+        List<ActivityDTO.HrSample> out = new ArrayList<>();
         HrResp hr = readHeartRate(json);
         if (hr == null || hr.dataPoints() == null) return out;
         for (HrPoint p : hr.dataPoints()) {
             if (p.heartRate() == null || p.heartRate().beatsPerMinute() == null) continue;
             Instant t = p.heartRate().sampleInstant();
-            if (t == null) { out.add(p.heartRate().beatsPerMinute()); continue; }
+            if (t == null) continue; // no timestamp → can't place on the trace
             if ((start == null || !t.isBefore(start)) && (end == null || t.isBefore(end))) {
-                out.add(p.heartRate().beatsPerMinute());
+                out.add(new ActivityDTO.HrSample(t.toEpochMilli(), p.heartRate().beatsPerMinute()));
             }
         }
+        out.sort((a, b) -> Long.compare(a.t(), b.t()));
         return out;
     }
 
@@ -252,7 +300,8 @@ public class ActivityService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ExPoint(Exercise exercise) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Exercise(@JsonProperty("exerciseType") String exerciseType, Interval interval) {
+    record Exercise(@JsonProperty("exerciseType") String exerciseType, Interval interval,
+                    @JsonProperty("metricsSummary") MetricsSummary metricsSummary) {
         Instant startInstant() { return interval != null ? interval.startTime() : null; }
         Instant endInstant() { return interval != null ? interval.endTime() : null; }
         LocalDate startLocalDate(ZoneId zone) {
@@ -261,6 +310,41 @@ public class ActivityService {
     }
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Interval(@JsonProperty("startTime") Instant startTime, @JsonProperty("endTime") Instant endTime) {}
+
+    /**
+     * Session-level rollup Google embeds on the exercise point — avg HR, per-zone
+     * durations, and active zone minutes come free with the exercise fetch (no
+     * extra query). Numbers are string-encoded int64s; durations are google-duration
+     * strings like "4320s".
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record MetricsSummary(@JsonProperty("averageHeartRateBeatsPerMinute") Integer averageHeartRateBeatsPerMinute,
+                          @JsonProperty("activeZoneMinutes") Integer activeZoneMinutes,
+                          @JsonProperty("heartRateZoneDurations") TimeInHeartRateZones heartRateZoneDurations) {}
+
+    /** Per-zone time; each value is a google-duration string ("4320s") → minutes. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record TimeInHeartRateZones(@JsonProperty("lightTime") String lightTime,
+                                @JsonProperty("moderateTime") String moderateTime,
+                                @JsonProperty("vigorousTime") String vigorousTime,
+                                @JsonProperty("peakTime") String peakTime) {
+        long lightMinutes()    { return durationToMinutes(lightTime); }
+        long moderateMinutes() { return durationToMinutes(moderateTime); }
+        long vigorousMinutes() { return durationToMinutes(vigorousTime); }
+        long peakMinutes()     { return durationToMinutes(peakTime); }
+    }
+
+    /** Parse a google-duration string ("4320s", "62.5s") to whole minutes (floor). */
+    static long durationToMinutes(String d) {
+        if (d == null || d.isBlank()) return 0;
+        String s = d.trim();
+        if (s.endsWith("s")) s = s.substring(0, s.length() - 1);
+        try {
+            return (long) Math.floor(Double.parseDouble(s) / 60.0);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record HrResp(List<HrPoint> dataPoints) {}

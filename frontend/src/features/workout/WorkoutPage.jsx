@@ -293,6 +293,9 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
               <div className={styles.activityRow}>
                 <strong>{prettyActivityType(activity.data.exerciseType)}</strong>
                 {activity.data.durationMin != null && <span> · {activity.data.durationMin} min</span>}
+                {activity.data.activeZoneMinutes != null && (
+                  <span> · {activity.data.activeZoneMinutes} active zone min</span>
+                )}
               </div>
               {activity.data.avgHr != null && (
                 <div className={styles.activityRow}>
@@ -304,9 +307,34 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
                   {activity.data.zones.map((z) => `${z.name} ${z.minutes}m`).join(' · ')}
                 </div>
               )}
-              {activity.data.avgHr == null && activity.data.reason && (
-                <div className={styles.activityMuted} style={{ fontSize: '0.8em', opacity: 0.7 }}>
-                  ({activity.data.reason})
+              {activity.data.hrSeries && activity.data.hrSeries.length > 1 && (
+                <div className={styles.activityRow} style={{ marginTop: 8, height: 160, width: '100%' }}>
+                  <Line
+                    data={{
+                      labels: activity.data.hrSeries.map((s) =>
+                        new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                      datasets: [{
+                        label: 'Heart rate (bpm)',
+                        data: activity.data.hrSeries.map((s) => s.bpm),
+                        borderColor: '#e11d48',
+                        backgroundColor: 'rgba(225,29,72,0.12)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.3,
+                        fill: true,
+                      }],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
+                      scales: {
+                        x: { ticks: { maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
+                        y: { title: { display: true, text: 'bpm' } },
+                      },
+                    }}
+                    height={140}
+                  />
                 </div>
               )}
             </div>

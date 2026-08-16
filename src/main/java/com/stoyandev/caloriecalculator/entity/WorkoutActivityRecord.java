@@ -57,6 +57,17 @@ public class WorkoutActivityRecord {
     @Column(name = "zones_json", length = 2048)
     private String zonesJson;
 
+    /** Active zone minutes for the session (Google's activeZoneMinutes); null when absent. */
+    @Column(name = "active_zone_minutes")
+    private Integer activeZoneMinutes;
+
+    /**
+     * HR-over-time trace serialized as JSON (list of {t, bpm}). A 90-min session
+     * yields hundreds of samples, so this needs TEXT rather than a bounded column.
+     */
+    @Column(name = "hr_series_json", columnDefinition = "text")
+    private String hrSeriesJson;
+
     @Column(name = "saved_at", nullable = false)
     private Instant savedAt;
 }

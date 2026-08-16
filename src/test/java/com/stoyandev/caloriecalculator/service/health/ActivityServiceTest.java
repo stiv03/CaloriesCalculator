@@ -123,4 +123,87 @@ class ActivityServiceTest {
         assertThat(dto.minHr()).isEqualTo(140);
         assertThat(dto.maxHr()).isEqualTo(140);
     }
+
+    @Test
+    void buildsHrSeriesFromInWindowSamplesSortedByTime() {
+        // The trace is every in-window sample, ordered by time — even if Google
+        // returns them out of order. Out-of-window samples are dropped, matching
+        // the min/max/avg window logic.
+        String exercise = """
+            {"dataPoints":[
+              {"exercise":{"exerciseType":"WEIGHTLIFTING",
+                "interval":{"startTime":"2026-08-14T18:00:00Z","endTime":"2026-08-14T18:30:00Z"}}}
+            ]}""";
+        String hr = """
+            {"dataPoints":[
+              {"heartRate":{"beatsPerMinute":150,"sampleTime":{"physicalTime":"2026-08-14T18:20:00Z"}}},
+              {"heartRate":{"beatsPerMinute":110,"sampleTime":{"physicalTime":"2026-08-14T18:05:00Z"}}},
+              {"heartRate":{"beatsPerMinute":99,"sampleTime":{"physicalTime":"2026-08-14T23:00:00Z"}}}
+            ]}""";
+        ActivityDTO dto = ActivityService.parse(exercise, hr, ZONE, DAY);
+        assertThat(dto.hrSeries()).hasSize(2);
+        assertThat(dto.hrSeries().get(0).bpm()).isEqualTo(110); // 18:05 first
+        assertThat(dto.hrSeries().get(1).bpm()).isEqualTo(150); // 18:20 second
+        assertThat(dto.hrSeries().get(0).t()).isLessThan(dto.hrSeries().get(1).t());
+    }
+
+    @Test
+    void pullsZonesAvgHrAndActiveZoneMinutesFromMetricsSummary() {
+        // Google embeds a session rollup on the exercise point: avg HR, per-zone
+        // durations (google-duration strings), and active zone minutes. These need
+        // no HR samples at all — they ride on the exercise fetch.
+        String exercise = """
+            {"dataPoints":[
+              {"exercise":{"exerciseType":"WORKOUT",
+                "interval":{"startTime":"2026-08-14T12:00:00Z","endTime":"2026-08-14T13:34:00Z"},
+                "metricsSummary":{
+                  "averageHeartRateBeatsPerMinute":118,
+                  "activeZoneMinutes":47,
+                  "heartRateZoneDurations":{
+                    "lightTime":"1800s","moderateTime":"2400s","vigorousTime":"600s","peakTime":"0s"
+                  }}}}
+            ]}""";
+        ActivityDTO dto = ActivityService.parse(exercise, "{}", ZONE, DAY);
+        assertThat(dto.found()).isTrue();
+        assertThat(dto.avgHr()).isEqualTo(118); // from summary, no samples needed
+        assertThat(dto.activeZoneMinutes()).isEqualTo(47);
+        assertThat(dto.zones()).extracting(ActivityDTO.Zone::name)
+                .containsExactly("Light", "Moderate", "Vigorous"); // Peak 0s is dropped
+        assertThat(dto.zones()).extracting(ActivityDTO.Zone::minutes)
+                .containsExactly(30, 40, 10); // 1800s=30m, 2400s=40m, 600s=10m
+    }
+
+    @Test
+    void summaryAvgHrTakesPrecedenceOverSampleMean() {
+        // When Google gives both a summary avg and raw samples, trust Google's
+        // session number; samples still drive min/max and the trace.
+        String exercise = """
+            {"dataPoints":[
+              {"exercise":{"exerciseType":"WEIGHTLIFTING",
+                "interval":{"startTime":"2026-08-14T18:00:00Z","endTime":"2026-08-14T18:30:00Z"},
+                "metricsSummary":{"averageHeartRateBeatsPerMinute":125}}}
+            ]}""";
+        String hr = """
+            {"dataPoints":[
+              {"heartRate":{"beatsPerMinute":100,"sampleTime":{"physicalTime":"2026-08-14T18:10:00Z"}}},
+              {"heartRate":{"beatsPerMinute":180,"sampleTime":{"physicalTime":"2026-08-14T18:20:00Z"}}}
+            ]}""";
+        ActivityDTO dto = ActivityService.parse(exercise, hr, ZONE, DAY);
+        assertThat(dto.avgHr()).isEqualTo(125);  // summary, not (100+180)/2=140
+        assertThat(dto.minHr()).isEqualTo(100);  // still from samples
+        assertThat(dto.maxHr()).isEqualTo(180);
+    }
+
+    @Test
+    void noMetricsSummaryLeavesZonesEmptyAndAzmNull() {
+        String exercise = """
+            {"dataPoints":[
+              {"exercise":{"exerciseType":"WEIGHTLIFTING",
+                "interval":{"startTime":"2026-08-14T18:00:00Z","endTime":"2026-08-14T18:40:00Z"}}}
+            ]}""";
+        ActivityDTO dto = ActivityService.parse(exercise, "{}", ZONE, DAY);
+        assertThat(dto.found()).isTrue();
+        assertThat(dto.zones()).isEmpty();
+        assertThat(dto.activeZoneMinutes()).isNull();
+    }
 }
