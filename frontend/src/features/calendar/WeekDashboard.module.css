@@ -53,6 +53,17 @@
   .size_sq { grid-column: span 2; }         /* four-col grid → two squares per row */
 }
 
+/* Sleep row: spans the whole bento width and splits into three equal boxes,
+   each the same height/style as the squares above. Its own nested grid keeps
+   the three columns equal regardless of the parent's 2- or 4-column layout. */
+.sleepRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+.size_third { min-height: 92px; min-width: 0; }
+
 .tileLabel {
   font-size: 0.74rem;
   color: var(--color-text-muted);
@@ -78,50 +89,6 @@
 /* Weight tone overrides (good = down, warn = up) win over the tile accent. */
 .tone_good { color: #0ca30c; }
 .tone_warn { color: #d97706; }
-
-/* ── Sleep tile: a tap target (head) plus an expandable deep/REM panel. The
-   tile itself keeps the accent bar/tint; the head is a reset button so the
-   whole card is clickable, and the breakdown sits below it. ── */
-.sleepTileHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  width: 100%;
-  background: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-}
-.sleepTileHead:disabled { cursor: default; }
-.sleepTileHeadText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.sleepChevron {
-  flex-shrink: 0;
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  line-height: 1;
-}
-.sleepBreakdown {
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.sleepStatRow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
-.sleepStatLabel {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.sleepStatValue { font-size: 0.95rem; font-weight: 700; color: var(--accent-text); }
 
 .insight {
   margin: var(--space-3) 0 0;
@@ -164,8 +131,6 @@
 .c_magenta { --accent: #e87ba4; --accent-text: #c14e79; }
 .c_indigo  { --accent: #6d5cd6; --accent-text: #5344bf; }
 .c_teal    { --accent: #0d9aa5; --accent-text: #0a7a83; }
-/* The sleep tile grows downward when expanded, so top-align its content. */
-.c_indigo { justify-content: flex-start; }
 
 /* Dark mode — brighter accents + brighter value text for the dark surface.
    Mirrors tokens.css: both the explicit [data-theme="dark"] and the OS-media
