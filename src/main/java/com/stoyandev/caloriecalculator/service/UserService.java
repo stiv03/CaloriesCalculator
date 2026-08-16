@@ -26,6 +26,9 @@ public interface UserService {
     /** Set (or clear, when null) the user's daily water goal in ml. */
     UserDTO updateWaterGoal(long id, Integer waterGoalMl);
 
+    /** Set (or clear, when null) the user's weekly check-in day (ISO 1=Mon … 7=Sun). */
+    UserDTO updateCheckInDay(long id, Integer checkInDay);
+
     UserDTO updateStatus (final Long userId, Status status);
     UserDTO updateActivity (final Long userId, Activity activity);
 

@@ -24,5 +24,9 @@ public record CalendarDayDTO(
         Integer sleepRem,
         Integer sleepDeep,
         Integer sleepLight,
-        Integer sleepAwake
+        Integer sleepAwake,
+        boolean measurementDue,
+        boolean measurementLogged,
+        boolean photoDue,
+        boolean photoLogged
 ) {}

@@ -34,6 +34,12 @@ export async function updateWaterGoal(userId, waterGoalMl) {
   return data;
 }
 
+/** Set (or clear, when checkInDay is null) the user's weekly check-in day (ISO 1=Mon … 7=Sun). */
+export async function updateCheckInDay(userId, checkInDay) {
+  const { data } = await client.put(`/update/check-in-day/${userId}`, { checkInDay });
+  return data;
+}
+
 export async function updateAge(userId, newAge) {
   const { data } = await client.put(`/update/age/${userId}`, { newAge });
   return data;

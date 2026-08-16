@@ -16,6 +16,7 @@ public final class UserMapper {
                 user.getGoalWeight(),
                 user.getStartWeight(),
                 user.getWaterGoalMl(),
+                user.getCheckInDay(),
                 user.getUsername(),
                 user.getPassword(),
                 user.getStatus(),
@@ -33,6 +34,7 @@ public final class UserMapper {
         user.setGoalWeight(userDTO.goalWeight());
         user.setStartWeight(userDTO.startWeight());
         user.setWaterGoalMl(userDTO.waterGoalMl());
+        user.setCheckInDay(userDTO.checkInDay());
         user.setUsername(userDTO.username());
         user.setPassword(userDTO.password());
         user.setUserType(userDTO.userType());

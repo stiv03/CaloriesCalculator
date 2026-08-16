@@ -124,6 +124,17 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapToUserDTO(savedUser);
     }
 
+    @Override
+    public UserDTO updateCheckInDay(final long id, final Integer checkInDay) {
+        final var user = userRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found" + id));
+        // Accept only a valid ISO day-of-week (1=Mon … 7=Sun); anything else clears it.
+        user.setCheckInDay(checkInDay != null && checkInDay >= 1 && checkInDay <= 7 ? checkInDay : null);
+        final var savedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(savedUser);
+    }
+
 
 
     @Override
