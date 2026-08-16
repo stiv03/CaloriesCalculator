@@ -865,28 +865,34 @@
   border-color: var(--color-text);
 }
 
-/* Clickable session date → Google Health panel */
-.dateBtn {
+/* Per-session "Session details" row → opens the Google Health panel */
+.detailsRow th {
+  padding-top: 2px;
+  padding-bottom: 6px;
+  font-weight: 400;
+}
+.detailsBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  width: 100%;
   background: var(--color-surface-2, #1a2233);
   border: 1px solid var(--color-border, #243049);
-  padding: 3px 9px;
-  border-radius: 999px;
+  padding: 4px 8px;
+  border-radius: var(--radius-md, 8px);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-accent, #3b82f6);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.dateBtn:hover {
+.detailsBtn:hover {
   background: color-mix(in srgb, var(--color-accent, #3b82f6) 16%, transparent);
   border-color: var(--color-accent, #3b82f6);
   color: var(--color-text, #e2e8f0);
 }
-.dateBtnIcon { display: block; flex: none; }
-.dateBtnText { text-decoration: underline dotted; text-underline-offset: 2px; }
+.detailsBtnIcon { display: block; flex: none; }
 .activityPanel {
   position: relative;
   margin-top: var(--space-3, 12px);

@@ -225,14 +225,22 @@ function SessionsTable({ sessions, exercises, highlightId, colorCells = false, a
               <th className={styles.prevExCol}>Exercise</th>
               {sessions.map(w => (
                 <th key={w.id} className={[styles.prevSessionCol, w.id === highlightId ? styles.prevNewest : ''].join(' ')}>
-                  <button type="button" className={styles.dateBtn} onClick={() => openActivity(w.date)}
+                  {w.date}
+                </th>
+              ))}
+            </tr>
+            <tr className={styles.detailsRow}>
+              <th className={styles.prevExCol} aria-hidden="true"></th>
+              {sessions.map(w => (
+                <th key={w.id} className={[styles.prevSessionCol, w.id === highlightId ? styles.prevNewest : ''].join(' ')}>
+                  <button type="button" className={styles.detailsBtn} onClick={() => openActivity(w.date)}
                           title="View Google Health session data (heart rate, zones)">
-                    <svg className={styles.dateBtnIcon} viewBox="0 0 24 24" width="14" height="14"
+                    <svg className={styles.detailsBtnIcon} viewBox="0 0 24 24" width="13" height="13"
                          fill="none" stroke="currentColor" strokeWidth="2"
                          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M3 12h4l2 5 4-12 2 7h6" />
                     </svg>
-                    <span className={styles.dateBtnText}>{w.date}</span>
+                    <span>Session details</span>
                   </button>
                 </th>
               ))}
