@@ -29,6 +29,19 @@ export async function deleteMeal(mealId) {
   await client.delete(`/meals/delete/meal/${mealId}`);
 }
 
+export async function exportWeeklyMealsCsv(userId, startDate /* dd/MM/yyyy */) {
+  const response = await client.get(`/meals/${userId}/export/weekly-csv`, {
+    params: { startDate },
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(response.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `meals-week-${startDate.replace(/\//g, '-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function searchProducts(query) {
   const { data } = await client.get('/products/search', { params: { query } });
   return data;

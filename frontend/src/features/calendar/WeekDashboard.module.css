@@ -8,7 +8,33 @@
 .title {
   font-weight: 700;
   font-size: 1.05rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-3);
+}
+
+.exportBtn {
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised, var(--color-surface));
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.exportBtn:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.exportBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Bento layout: hero rectangle spans the full row, then a 2×2 of squares.

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
   PointElement, LineElement, BarElement, Tooltip, Legend,
 } from 'chart.js';
 import { computeWeeklySummary } from './weeklySummary';
+import { exportWeeklyMealsCsv } from '../../api/meals';
 import styles from './WeekDashboard.module.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend);
@@ -152,8 +153,23 @@ function fmtSleep(mins) {
  * Weekly progress summary rendered below the week grid. `days` is the 7
  * CalendarDayDTO-shaped objects for the visible week (some may be undefined).
  */
-export default function WeekDashboard({ days }) {
+export default function WeekDashboard({ days, userId }) {
   const s = computeWeeklySummary(days);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    const firstDay = (days || []).find(Boolean);
+    if (!firstDay) return;
+    // startDate in dd/MM/yyyy format
+    const [year, month, day] = firstDay.date.split('-');
+    const startDate = `${day}/${month}/${year}`;
+    setExporting(true);
+    try {
+      await exportWeeklyMealsCsv(userId, startDate);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const calValue = s.avgCalories != null ? s.avgCalories.toLocaleString() : '—';
   const calSub = s.avgCalories != null
@@ -171,7 +187,12 @@ export default function WeekDashboard({ days }) {
 
   return (
     <div className={styles.dashboard}>
-      <div className={styles.title}>This week</div>
+      <div className={styles.titleRow}>
+        <div className={styles.title}>This week</div>
+        <button className={styles.exportBtn} onClick={handleExport} disabled={exporting}>
+          {exporting ? 'Exporting…' : 'Export CSV'}
+        </button>
+      </div>
       <div className={styles.bento}>
         {/* Hero: calories — full-width rectangle */}
         <Tile

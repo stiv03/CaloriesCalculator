@@ -4,7 +4,9 @@ import com.stoyandev.caloriecalculator.dto.*;
 import com.stoyandev.caloriecalculator.entity.enums.MealType;
 import com.stoyandev.caloriecalculator.service.UserMealsService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +71,18 @@ public class UserMealsController {
     public ResponseEntity<List<DailyMacrosDTO>> fetchAllMacros(@PathVariable Long userId) {
         List<DailyMacrosDTO> allMacros = userMealsService.fetchAllMacros(userId);
         return ResponseEntity.ok(allMacros);
+    }
+
+    @GetMapping(value = "/meals/{userId}/export/weekly-csv", produces = "text/csv")
+    @PreAuthorize("@userAccessService.hasAccess(#userId)")
+    public ResponseEntity<byte[]> exportWeeklyCsv(@PathVariable Long userId, @RequestParam String startDate) {
+        LocalDate start = LocalDate.parse(startDate, FORMATTER);
+        String csv = userMealsService.exportWeeklyCsv(userId, start);
+        byte[] bytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"meals-week-" + startDate.replace("/", "-") + ".csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(bytes);
     }
 
 

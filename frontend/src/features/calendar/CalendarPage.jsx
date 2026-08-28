@@ -268,7 +268,7 @@ export default function CalendarPage() {
             );
           })}
         </div>
-        <WeekDashboard days={days.map((day) => dayData[isoDate(day)])} />
+        <WeekDashboard days={days.map((day) => dayData[isoDate(day)])} userId={userId} />
       </div>
     );
   };

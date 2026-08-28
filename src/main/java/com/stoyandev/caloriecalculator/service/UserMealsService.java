@@ -21,6 +21,8 @@ public interface UserMealsService {
 
     List<DailyMacrosDTO> fetchAllMacros(Long userId);
 
+    String exportWeeklyCsv(Long userId, LocalDate startDate);
+
 }
 
 
